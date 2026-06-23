@@ -1579,205 +1579,175 @@
         // ============================================================
         // DETAIL & PDF EXPORT
         // ============================================================
-        function showItemDetail(itemName, department) {
-            currentDetailItem = { name: itemName, dept: department };
-            document.getElementById('detailTitle').textContent = '📦 ' + itemName;
-            document.getElementById('detailDateFrom').value = '';
-            document.getElementById('detailDateTo').value = '';
-            document.getElementById('detailOverlay').classList.add('active');
-            renderDetailTable();
-        }
-
-        function closeDetail(e) {
-            if (e && e.target !== e.currentTarget) return;
-            document.getElementById('detailOverlay').classList.remove('active');
-            currentDetailItem = null;
-            detailDataCache = [];
-        }
-
-        function renderDetailTable() {
-            if (!currentDetailItem) return;
-            const container = document.getElementById('detailTableContainer');
-            const from = document.getElementById('detailDateFrom').value;
-            const to = document.getElementById('detailDateTo').value;
-
-            let itemData = originalData.filter(d => d.itemName === currentDetailItem.name && d.department === currentDetailItem.dept);
-            if (from) itemData = itemData.filter(d => d.dateStr >= from);
-            if (to) itemData = itemData.filter(d => d.dateStr <= to);
-            detailDataCache = itemData;
-
-            const dailyData = {};
-            itemData.forEach(d => {
-                if (!dailyData[d.dateStr]) dailyData[d.dateStr] = { qty: 0, amount: 0 };
-                dailyData[d.dateStr].qty += d.qty;
-                dailyData[d.dateStr].amount += d.amount;
-            });
-
-            const dates = Object.keys(dailyData).sort();
-            const totalQty = dates.reduce((s, d) => s + dailyData[d].qty, 0);
-            const totalAmount = dates.reduce((s, d) => s + dailyData[d].amount, 0);
-            document.getElementById('detailTotalQty').textContent = Math.round(totalQty);
-            document.getElementById('detailTotalAmount').textContent = formatRupiah(totalAmount);
-
-            if (dates.length === 0) {
-                container.innerHTML = '<div class="detail-empty">📭 No data for this period</div>';
-                return;
-            }
-
-            let html = '<table class="detail-table"><thead><tr><th>Date</th><th style="text-align:right;">Qty</th><th style="text-align:right;">Amount</th></tr></thead><tbody>';
-            dates.forEach(date => {
-                const d = dailyData[date];
-                html += '<tr><td class="date-cell">' + formatDate(date) + '</td><td class="qty-cell">' + Math.round(d.qty) + '</td><td class="amount-cell">' + formatRupiah(d.amount) + '</td></tr>';
-            });
-            html += '<tr style="border-top:2px solid #e8eaf6;font-weight:600;"><td style="color:#1a237e;">TOTAL</td><td class="qty-cell">' + Math.round(totalQty) + '</td><td class="amount-cell">' + formatRupiah(totalAmount) + '</td></tr>';
-            html += '</tbody></table>';
-            container.innerHTML = html;
-        }
-
-        function formatDate(dateStr) {
-            if (!dateStr) return '-';
-            const p = dateStr.split('-');
-            return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0].substring(2) : dateStr;
-        }
-
-        function escapeString(str) {
-            return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        }
-
-        function formatRupiah(num, short = false) {
-            if (num === 0) return short ? 'Rp0' : 'Rp0';
-            if (short) {
-                if (num >= 1e6) return 'Rp' + (num / 1e6).toFixed(1) + 'M';
-                if (num >= 1e3) return 'Rp' + (num / 1e3).toFixed(0) + 'K';
-                return 'Rp' + Math.round(num);
-            }
-            return 'Rp ' + Math.round(num).toLocaleString('id-ID');
-        }
-
         // ============================================================
-        // PDF EXPORT - FIXED
-        // ============================================================
-        function exportDetailPDF() {
-            if (!currentDetailItem || detailDataCache.length === 0) {
-                showToast('Tidak ada data untuk diexport', 'warning');
-                return;
-            }
+// PDF EXPORT - FIXED
+// ============================================================
+function exportDetailPDF() {
+    if (!currentDetailItem || detailDataCache.length === 0) {
+        showToast('Tidak ada data untuk diexport', 'warning');
+        return;
+    }
 
-            try {
-                const { jsPDF } = window.jspdf;
-                if (!jsPDF) {
-                    showToast('Library PDF tidak tersedia. Coba refresh halaman.', 'warning');
-                    return;
-                }
+    try {
+        const { jsPDF } = window.jspdf;
+        if (!jsPDF) {
+            showToast('Library PDF tidak tersedia. Coba refresh halaman.', 'warning');
+            return;
+        }
 
-                const doc = new jsPDF('p', 'pt', 'a4');
-                const pageWidth = doc.internal.pageSize.width;
-                const margin = 40;
+        const doc = new jsPDF('p', 'pt', 'a4');
+        const pageWidth = doc.internal.pageSize.width;
+        const margin = 40;
+        let y = 50;
 
-                // Title
-                doc.setFontSize(18);
-                doc.setTextColor(26, 35, 126);
-                doc.text('Detail Penjualan: ' + currentDetailItem.name, margin, 50);
+        // Title
+        doc.setFontSize(18);
+        doc.setTextColor(26, 35, 126);
+        doc.text('Detail Penjualan: ' + currentDetailItem.name, margin, y);
+        y += 25;
 
-                // Subtitle
-                doc.setFontSize(11);
-                doc.setTextColor(100);
-                doc.text('Department: ' + currentDetailItem.dept, margin, 75);
+        // Subtitle
+        doc.setFontSize(11);
+        doc.setTextColor(100);
+        doc.text('Department: ' + currentDetailItem.dept, margin, y);
+        y += 20;
 
-                // Date range
-                const from = document.getElementById('detailDateFrom').value;
-                const to = document.getElementById('detailDateTo').value;
-                let range = 'Semua Tanggal';
-                if (from && to) range = formatDate(from) + ' - ' + formatDate(to);
-                else if (from) range = 'Dari ' + formatDate(from);
-                else if (to) range = 'Sampai ' + formatDate(to);
-                doc.text('Periode: ' + range, margin, 95);
+        // Date range
+        const from = document.getElementById('detailDateFrom').value;
+        const to = document.getElementById('detailDateTo').value;
+        let range = 'Semua Tanggal';
+        if (from && to) range = formatDate(from) + ' - ' + formatDate(to);
+        else if (from) range = 'Dari ' + formatDate(from);
+        else if (to) range = 'Sampai ' + formatDate(to);
+        doc.text('Periode: ' + range, margin, y);
+        y += 30;
 
-                // Summary
-                const totalQty = detailDataCache.reduce((s, d) => s + d.qty, 0);
-                const totalAmount = detailDataCache.reduce((s, d) => s + d.amount, 0);
-                doc.setFontSize(12);
-                doc.setTextColor(26, 35, 126);
-                doc.text('Total Qty: ' + Math.round(totalQty), margin, 125);
-                doc.text('Total Amount: ' + formatRupiah(totalAmount), margin, 145);
+        // Summary
+        const totalQty = detailDataCache.reduce((s, d) => s + d.qty, 0);
+        const totalAmount = detailDataCache.reduce((s, d) => s + d.amount, 0);
+        doc.setFontSize(12);
+        doc.setTextColor(26, 35, 126);
+        doc.text('Total Qty: ' + Math.round(totalQty), margin, y);
+        y += 20;
+        doc.text('Total Amount: ' + formatRupiah(totalAmount), margin, y);
+        y += 30;
 
-                // Table
-                const dailyData = {};
-                detailDataCache.forEach(d => {
-                    if (!dailyData[d.dateStr]) dailyData[d.dateStr] = { qty: 0, amount: 0 };
-                    dailyData[d.dateStr].qty += d.qty;
-                    dailyData[d.dateStr].amount += d.amount;
-                });
+        // Prepare table data
+        const dailyData = {};
+        detailDataCache.forEach(d => {
+            if (!dailyData[d.dateStr]) dailyData[d.dateStr] = { qty: 0, amount: 0 };
+            dailyData[d.dateStr].qty += d.qty;
+            dailyData[d.dateStr].amount += d.amount;
+        });
 
-                const dates = Object.keys(dailyData).sort();
-                const tableData = dates.map(date => [formatDate(date), Math.round(dailyData[date].qty).toString(), formatRupiah(dailyData[date].amount)]);
-                tableData.push(['TOTAL', Math.round(totalQty).toString(), formatRupiah(totalAmount)]);
+        const dates = Object.keys(dailyData).sort();
+        const tableData = dates.map(date => [
+            formatDate(date),
+            Math.round(dailyData[date].qty).toString(),
+            formatRupiah(dailyData[date].amount)
+        ]);
+        tableData.push(['TOTAL', Math.round(totalQty).toString(), formatRupiah(totalAmount)]);
 
-                const colWidths = [150, 80, 200];
-                const rowHeight = 25;
-                let y = 175;
+        const colWidths = [150, 80, 200];
+        const rowHeight = 25;
+        const startY = y;
 
-                // Table header
+        // Draw table using simple rectangles (FIXED)
+        let currentY = startY;
+
+        // Table header
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255);
+        doc.setFillColor(26, 35, 126);
+
+        // Header background
+        doc.rect(margin, currentY, colWidths[0], rowHeight, 'F');
+        doc.rect(margin + colWidths[0], currentY, colWidths[1], rowHeight, 'F');
+        doc.rect(margin + colWidths[0] + colWidths[1], currentY, colWidths[2], rowHeight, 'F');
+
+        // Header text
+        doc.text('Tanggal', margin + 8, currentY + 17);
+        doc.text('Qty', margin + colWidths[0] + 8, currentY + 17);
+        doc.text('Amount', margin + colWidths[0] + colWidths[1] + 8, currentY + 17);
+
+        currentY += rowHeight;
+        doc.setFont('helvetica', 'normal');
+
+        const maxRows = Math.floor((doc.internal.pageSize.height - currentY - 40) / rowHeight);
+
+        tableData.forEach((row, idx) => {
+            // Check if need new page
+            if (idx > 0 && idx % maxRows === 0) {
+                doc.addPage();
+                currentY = 40;
+
+                // Re-draw header on new page
                 doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
                 doc.setTextColor(255);
                 doc.setFillColor(26, 35, 126);
-                doc.rect(margin, y, colWidths[0], rowHeight, 'F');
-                doc.rect(margin + colWidths[0], y, colWidths[1], rowHeight, 'F');
-                doc.rect(margin + colWidths[0] + colWidths[1], y, colWidths[2], rowHeight, 'F');
-                doc.text('Tanggal', margin + 8, y + 17);
-                doc.text('Qty', margin + colWidths[0] + 8, y + 17);
-                doc.text('Amount', margin + colWidths[0] + colWidths[1] + 8, y + 17);
-                y += rowHeight;
 
-                const maxRows = Math.floor((doc.internal.pageSize.height - y - 40) / rowHeight);
+                doc.rect(margin, currentY, colWidths[0], rowHeight, 'F');
+                doc.rect(margin + colWidths[0], currentY, colWidths[1], rowHeight, 'F');
+                doc.rect(margin + colWidths[0] + colWidths[1], currentY, colWidths[2], rowHeight, 'F');
 
-                tableData.forEach((row, idx) => {
-                    if (idx > 0 && idx % maxRows === 0) {
-                        doc.addPage();
-                        y = 40;
-                        doc.setFontSize(10);
-                        doc.setTextColor(255);
-                        doc.setFillColor(26, 35, 126);
-                        doc.rect(margin, y, colWidths[0], rowHeight, 'F');
-                        doc.rect(margin + colWidths[0], y, colWidths[1], rowHeight, 'F');
-                        doc.rect(margin + colWidths[0] + colWidths[1], y, colWidths[2], rowHeight, 'F');
-                        doc.text('Tanggal', margin + 8, y + 17);
-                        doc.text('Qty', margin + colWidths[0] + 8, y + 17);
-                        doc.text('Amount', margin + colWidths[0] + colWidths[1] + 8, y + 17);
-                        y += rowHeight;
-                    }
+                doc.text('Tanggal', margin + 8, currentY + 17);
+                doc.text('Qty', margin + colWidths[0] + 8, currentY + 17);
+                doc.text('Amount', margin + colWidths[0] + colWidths[1] + 8, currentY + 17);
 
-                    const isTotal = row[0] === 'TOTAL';
-                    doc.setFontSize(10);
-                    doc.setTextColor(isTotal ? 26 : 51, isTotal ? 35 : 51, isTotal ? 126 : 51);
-                    doc.setFillColor(isTotal ? 232 : 255, isTotal ? 234 : 255, isTotal ? 246 : 255);
-                    doc.rect(margin, y, colWidths[0], rowHeight, isTotal ? 'F' : '');
-                    doc.rect(margin + colWidths[0], y, colWidths[1], rowHeight, isTotal ? 'F' : '');
-                    doc.rect(margin + colWidths[0] + colWidths[1], y, colWidths[2], rowHeight, isTotal ? 'F' : '');
-                    doc.text(row[0], margin + 8, y + 17);
-                    doc.text(row[1], margin + colWidths[0] + 8, y + 17);
-                    doc.text(row[2], margin + colWidths[0] + colWidths[1] + 8, y + 17);
-                    y += rowHeight;
-                });
-
-                // Footer
-                const totalPages = doc.internal.getNumberOfPages();
-                doc.setFontSize(9);
-                doc.setTextColor(150);
-                for (let i = 1; i <= totalPages; i++) {
-                    doc.setPage(i);
-                    doc.text('Halaman ' + i + ' dari ' + totalPages, pageWidth - 120, doc.internal.pageSize.height - 20);
-                    doc.text('Generated: ' + new Date().toLocaleDateString('id-ID') + ' ' + new Date().toLocaleTimeString('id-ID'), margin, doc.internal.pageSize.height - 20);
-                }
-
-                doc.save('Detail_' + currentDetailItem.name.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf');
-                showToast('✅ PDF berhasil diexport!', 'success');
-
-            } catch (err) {
-                console.error('PDF Export error:', err);
-                showToast('Error export PDF: ' + err.message, 'warning');
+                currentY += rowHeight;
+                doc.setFont('helvetica', 'normal');
             }
+
+            const isTotal = row[0] === 'TOTAL';
+
+            // Set style for row
+            doc.setFontSize(10);
+            doc.setTextColor(isTotal ? 26 : 51, isTotal ? 35 : 51, isTotal ? 126 : 51);
+            doc.setFillColor(isTotal ? 240 : 255, isTotal ? 242 : 255, isTotal ? 250 : 255);
+
+            // Draw row background
+            doc.rect(margin, currentY, colWidths[0], rowHeight, isTotal ? 'F' : '');
+            doc.rect(margin + colWidths[0], currentY, colWidths[1], rowHeight, isTotal ? 'F' : '');
+            doc.rect(margin + colWidths[0] + colWidths[1], currentY, colWidths[2], rowHeight, isTotal ? 'F' : '');
+
+            // Draw text
+            doc.text(row[0], margin + 8, currentY + 17);
+            doc.text(row[1], margin + colWidths[0] + 8, currentY + 17);
+            doc.text(row[2], margin + colWidths[0] + colWidths[1] + 8, currentY + 17);
+
+            currentY += rowHeight;
+        });
+
+        // Footer
+        const totalPages = doc.internal.getNumberOfPages();
+        doc.setFontSize(9);
+        doc.setTextColor(150);
+        for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            doc.text(
+                'Halaman ' + i + ' dari ' + totalPages,
+                pageWidth - 120,
+                doc.internal.pageSize.height - 20
+            );
+            doc.text(
+                'Generated: ' + new Date().toLocaleDateString('id-ID') + ' ' + new Date().toLocaleTimeString('id-ID'),
+                margin,
+                doc.internal.pageSize.height - 20
+            );
         }
+
+        // Save PDF
+        const filename = 'Detail_' + currentDetailItem.name.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf';
+        doc.save(filename);
+        showToast('✅ PDF berhasil diexport!', 'success');
+
+    } catch (err) {
+        console.error('PDF Export error:', err);
+        showToast('Error export PDF: ' + err.message, 'warning');
+    }
+}
 
         // ============================================================
         // AUTO FILTERS
