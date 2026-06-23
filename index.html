@@ -762,36 +762,64 @@
             return localStorage.getItem('firebaseCollection') || 'sales_data';
         }
 
-        async function initFirebase() {
-            const config = getFirebaseConfig();
-            if (!config) {
-                updateSyncStatus('offline', 'Not Configured');
-                return false;
-            }
-            try {
-                firebaseApp = firebase.initializeApp(config);
-                firestore = firebase.firestore();
-                await firestore.collection(getCollectionName()).limit(1).get();
-                isFirebaseReady = true;
-                updateSyncStatus('synced', 'Connected');
-                console.log('✅ Firebase connected');
-                await loadFromFirebase();
-                return true;
-            } catch (err) {
-                console.error('Firebase init error:', err);
-                updateSyncStatus('error', 'Error: ' + err.message);
-                isFirebaseReady = false;
-                return false;
+        // ============================================================
+// FIREBASE INIT - WITH AUTO LOAD
+// ============================================================
+async function initFirebase() {
+    const config = getFirebaseConfig();
+    if (!config) {
+        updateSyncStatus('offline', 'Not Configured');
+        // Tampilkan pesan di area utama
+        const summaryContent = document.getElementById('summaryContent');
+        if (summaryContent) {
+            summaryContent.innerHTML = `
+                <div class="empty-state" style="padding:30px;">
+                    <div class="icon">⚙️</div>
+                    <p style="font-weight:500; color:#333;">Firebase Belum Dikonfigurasi</p>
+                    <p style="font-size:13px; color:#888; margin-top:4px;">
+                        Klik tombol <strong>Config</strong> untuk mengatur koneksi Firebase<br>
+                        atau <strong>Upload</strong> file Excel/CSV untuk analisis offline
+                    </p>
+                </div>
+            `;
+        }
+        return false;
+    }
+    try {
+        firebaseApp = firebase.initializeApp(config);
+        firestore = firebase.firestore();
+        await firestore.collection(getCollectionName()).limit(1).get();
+        isFirebaseReady = true;
+        updateSyncStatus('synced', 'Connected');
+        console.log('✅ Firebase connected');
+
+        // ========== AUTO LOAD DATA ==========
+        // Coba muat data terakhir dari Firebase
+        const hasData = await loadFromFirebase();
+        if (!hasData) {
+            // Jika tidak ada data, tampilkan pesan
+            const summaryContent = document.getElementById('summaryContent');
+            if (summaryContent && !originalData.length) {
+                summaryContent.innerHTML = `
+                    <div class="empty-state" style="padding:30px;">
+                        <div class="icon">☁️</div>
+                        <p style="font-weight:500; color:#333;">Belum Ada Data di Cloud</p>
+                        <p style="font-size:13px; color:#888; margin-top:4px;">
+                            Upload file Excel/CSV untuk memulai,<br>
+                            atau klik <strong>Load from Cloud</strong> untuk memuat data tersimpan
+                        </p>
+                    </div>
+                `;
             }
         }
-
-        function updateSyncStatus(status, text) {
-            const dot = document.getElementById('syncDot');
-            const label = document.getElementById('syncText');
-            dot.className = 'dot ' + status;
-            label.textContent = text || status;
-        }
-
+        return true;
+    } catch (err) {
+        console.error('Firebase init error:', err);
+        updateSyncStatus('error', 'Error: ' + err.message);
+        isFirebaseReady = false;
+        return false;
+    }
+}
         // ============================================================
         // SAVE TO FIREBASE - FIXED FOR 1MB LIMIT
         // ============================================================
