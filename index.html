@@ -7,11 +7,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
     <style>
         * {
@@ -28,7 +25,6 @@
             padding-bottom: 80px;
         }
 
-        /* Header */
         .header {
             background: linear-gradient(135deg, #1a237e, #283593);
             color: white;
@@ -70,29 +66,16 @@
             display: inline-block;
         }
 
-        .header .sync-status .dot.synced {
-            background: #4caf50;
-        }
-
-        .header .sync-status .dot.syncing {
-            background: #ff9800;
-            animation: pulse 1s infinite;
-        }
-
-        .header .sync-status .dot.error {
-            background: #f44336;
-        }
-
-        .header .sync-status .dot.offline {
-            background: #9e9e9e;
-        }
+        .header .sync-status .dot.synced { background: #4caf50; }
+        .header .sync-status .dot.syncing { background: #ff9800; animation: pulse 1s infinite; }
+        .header .sync-status .dot.error { background: #f44336; }
+        .header .sync-status .dot.offline { background: #9e9e9e; }
 
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.3; }
         }
 
-        /* Upload Area */
         .upload-area {
             background: white;
             border-radius: 16px;
@@ -110,21 +93,9 @@
             background: #e8eaf6;
         }
 
-        .upload-area .icon {
-            font-size: 48px;
-            margin-bottom: 12px;
-        }
-
-        .upload-area h3 {
-            color: #1a237e;
-            font-size: 16px;
-            margin-bottom: 4px;
-        }
-
-        .upload-area p {
-            color: #666;
-            font-size: 13px;
-        }
+        .upload-area .icon { font-size: 48px; margin-bottom: 12px; }
+        .upload-area h3 { color: #1a237e; font-size: 16px; margin-bottom: 4px; }
+        .upload-area p { color: #666; font-size: 13px; }
 
         .upload-btn {
             display: inline-block;
@@ -140,26 +111,12 @@
             transition: all 0.3s;
         }
 
-        .upload-btn:active {
-            transform: scale(0.96);
-        }
+        .upload-btn:active { transform: scale(0.96); }
+        .upload-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .upload-btn.secondary { background: #e8eaf6; color: #283593; margin-left: 8px; }
 
-        .upload-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
+        #fileInput { display: none; }
 
-        .upload-btn.secondary {
-            background: #e8eaf6;
-            color: #283593;
-            margin-left: 8px;
-        }
-
-        #fileInput {
-            display: none;
-        }
-
-        /* Upload Loading */
         .upload-loading {
             display: none;
             position: absolute;
@@ -175,9 +132,7 @@
             justify-content: center;
         }
 
-        .upload-loading.active {
-            display: flex;
-        }
+        .upload-loading.active { display: flex; }
 
         .upload-loading .spinner {
             width: 40px;
@@ -188,20 +143,11 @@
             animation: spin 1s linear infinite;
         }
 
-        .upload-loading p {
-            margin-top: 12px;
-            font-size: 14px;
-            color: #333;
-            font-weight: 500;
-        }
+        .upload-loading p { margin-top: 12px; font-size: 14px; color: #333; font-weight: 500; }
+        .upload-loading .sub { font-size: 12px; color: #888; font-weight: 400; }
 
-        .upload-loading .sub {
-            font-size: 12px;
-            color: #888;
-            font-weight: 400;
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Stats Cards */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -217,19 +163,9 @@
             text-align: center;
         }
 
-        .stat-card .number {
-            font-size: 22px;
-            font-weight: 700;
-            color: #1a237e;
-        }
+        .stat-card .number { font-size: 22px; font-weight: 700; color: #1a237e; }
+        .stat-card .label { font-size: 11px; color: #888; margin-top: 2px; }
 
-        .stat-card .label {
-            font-size: 11px;
-            color: #888;
-            margin-top: 2px;
-        }
-
-        /* Tab Navigation */
         .tabs {
             display: flex;
             background: white;
@@ -253,10 +189,7 @@
             position: relative;
         }
 
-        .tab.active {
-            color: #283593;
-        }
-
+        .tab.active { color: #283593; }
         .tab.active::after {
             content: '';
             position: absolute;
@@ -267,27 +200,13 @@
             background: #283593;
             border-radius: 3px;
         }
+        .tab:active { background: #e8eaf6; }
 
-        .tab:active {
-            background: #e8eaf6;
-        }
+        .tab-content { display: none; animation: fadeIn 0.3s; }
+        .tab-content.active { display: block; }
 
-        /* Tab Content */
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.3s;
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .tab-content.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Product List */
         .product-list {
             background: white;
             border-radius: 12px;
@@ -305,21 +224,10 @@
             transition: background 0.2s;
         }
 
-        .product-item:active {
-            background: #e8eaf6;
-        }
+        .product-item:active { background: #e8eaf6; }
+        .product-item:last-child { border-bottom: none; }
 
-        .product-item:last-child {
-            border-bottom: none;
-        }
-
-        .product-item .name {
-            font-size: 13px;
-            font-weight: 500;
-            color: #333;
-            flex: 1;
-        }
-
+        .product-item .name { font-size: 13px; font-weight: 500; color: #333; flex: 1; }
         .product-item .dept {
             font-size: 10px;
             color: #888;
@@ -328,27 +236,10 @@
             border-radius: 10px;
             margin-right: 10px;
         }
+        .product-item .amount { font-size: 14px; font-weight: 600; color: #1a237e; white-space: nowrap; }
+        .product-item .qty { font-size: 11px; color: #888; margin-right: 12px; }
+        .product-item .click-hint { font-size: 10px; color: #bbb; margin-left: 8px; }
 
-        .product-item .amount {
-            font-size: 14px;
-            font-weight: 600;
-            color: #1a237e;
-            white-space: nowrap;
-        }
-
-        .product-item .qty {
-            font-size: 11px;
-            color: #888;
-            margin-right: 12px;
-        }
-
-        .product-item .click-hint {
-            font-size: 10px;
-            color: #bbb;
-            margin-left: 8px;
-        }
-
-        /* Chart Container */
         .chart-container {
             background: white;
             border-radius: 12px;
@@ -357,18 +248,9 @@
             margin-bottom: 16px;
         }
 
-        .chart-container h4 {
-            font-size: 14px;
-            color: #333;
-            margin-bottom: 12px;
-        }
+        .chart-container h4 { font-size: 14px; color: #333; margin-bottom: 12px; }
+        .chart-wrapper { position: relative; height: 200px; }
 
-        .chart-wrapper {
-            position: relative;
-            height: 200px;
-        }
-
-        /* Filter Section */
         .filter-section {
             background: white;
             border-radius: 12px;
@@ -394,13 +276,8 @@
             border-color: #283593;
         }
 
-        .filter-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
+        .filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-        /* Department Summary */
         .dept-summary {
             background: white;
             border-radius: 12px;
@@ -416,23 +293,10 @@
             border-bottom: 1px solid #f5f5f5;
         }
 
-        .dept-row:last-child {
-            border-bottom: none;
-        }
+        .dept-row:last-child { border-bottom: none; }
+        .dept-row .name { font-size: 13px; font-weight: 500; color: #333; }
+        .dept-row .value { font-size: 13px; font-weight: 600; color: #1a237e; }
 
-        .dept-row .name {
-            font-size: 13px;
-            font-weight: 500;
-            color: #333;
-        }
-
-        .dept-row .value {
-            font-size: 13px;
-            font-weight: 600;
-            color: #1a237e;
-        }
-
-        /* Loading */
         .loading {
             text-align: center;
             padding: 40px 20px;
@@ -449,22 +313,9 @@
             margin: 0 auto 12px;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        .empty-state { text-align: center; padding: 40px 20px; color: #999; }
+        .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
 
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #999;
-        }
-
-        .empty-state .icon {
-            font-size: 48px;
-            margin-bottom: 12px;
-        }
-
-        /* Info Bar */
         .info-bar {
             background: white;
             border-radius: 12px;
@@ -480,14 +331,8 @@
             gap: 4px;
         }
 
-        .info-bar .warning {
-            color: #e65100;
-        }
-
-        .info-bar .success {
-            color: #2e7d32;
-        }
-
+        .info-bar .warning { color: #e65100; }
+        .info-bar .success { color: #2e7d32; }
         .info-bar .saved-badge {
             background: #4caf50;
             color: white;
@@ -497,7 +342,6 @@
             font-weight: 600;
         }
 
-        /* Modal / Detail Panel */
         .detail-overlay {
             display: none;
             position: fixed;
@@ -512,11 +356,7 @@
             overflow-y: auto;
         }
 
-        .detail-overlay.active {
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
-        }
+        .detail-overlay.active { display: flex; align-items: flex-start; justify-content: center; }
 
         .detail-panel {
             background: white;
@@ -530,10 +370,7 @@
             animation: slideUp 0.3s ease;
         }
 
-        @keyframes slideUp {
-            from { transform: translateY(30px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
         .detail-header {
             display: flex;
@@ -544,11 +381,7 @@
             border-bottom: 2px solid #e8eaf6;
         }
 
-        .detail-header h3 {
-            font-size: 16px;
-            color: #1a237e;
-            flex: 1;
-        }
+        .detail-header h3 { font-size: 16px; color: #1a237e; flex: 1; }
 
         .detail-header .close-btn {
             background: none;
@@ -559,10 +392,7 @@
             padding: 0 4px;
             line-height: 1;
         }
-
-        .detail-header .close-btn:active {
-            color: #333;
-        }
+        .detail-header .close-btn:active { color: #333; }
 
         .detail-header .export-btn {
             background: #283593;
@@ -575,10 +405,7 @@
             cursor: pointer;
             margin-right: 8px;
         }
-
-        .detail-header .export-btn:active {
-            transform: scale(0.96);
-        }
+        .detail-header .export-btn:active { transform: scale(0.96); }
 
         .detail-summary {
             display: grid;
@@ -590,27 +417,11 @@
             padding: 12px;
         }
 
-        .detail-summary .item {
-            text-align: center;
-        }
+        .detail-summary .item { text-align: center; }
+        .detail-summary .label { font-size: 10px; color: #888; }
+        .detail-summary .value { font-size: 16px; font-weight: 600; color: #1a237e; }
 
-        .detail-summary .label {
-            font-size: 10px;
-            color: #888;
-        }
-
-        .detail-summary .value {
-            font-size: 16px;
-            font-weight: 600;
-            color: #1a237e;
-        }
-
-        .detail-filter {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-
+        .detail-filter { display: flex; gap: 8px; margin-bottom: 12px; }
         .detail-filter input {
             flex: 1;
             padding: 8px 12px;
@@ -618,18 +429,9 @@
             border-radius: 8px;
             font-size: 12px;
         }
+        .detail-filter input:focus { outline: none; border-color: #283593; }
 
-        .detail-filter input:focus {
-            outline: none;
-            border-color: #283593;
-        }
-
-        .detail-table {
-            width: 100%;
-            font-size: 12px;
-            border-collapse: collapse;
-        }
-
+        .detail-table { width: 100%; font-size: 12px; border-collapse: collapse; }
         .detail-table th {
             text-align: left;
             padding: 8px 4px;
@@ -638,40 +440,13 @@
             font-weight: 600;
             font-size: 11px;
         }
+        .detail-table td { padding: 6px 4px; border-bottom: 1px solid #f5f5f5; }
+        .detail-table tr:last-child td { border-bottom: none; }
+        .detail-table .qty-cell { text-align: right; font-weight: 500; }
+        .detail-table .amount-cell { text-align: right; font-weight: 600; color: #1a237e; }
+        .detail-table .date-cell { color: #666; font-size: 11px; }
+        .detail-empty { text-align: center; padding: 20px; color: #999; font-size: 13px; }
 
-        .detail-table td {
-            padding: 6px 4px;
-            border-bottom: 1px solid #f5f5f5;
-        }
-
-        .detail-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .detail-table .qty-cell {
-            text-align: right;
-            font-weight: 500;
-        }
-
-        .detail-table .amount-cell {
-            text-align: right;
-            font-weight: 600;
-            color: #1a237e;
-        }
-
-        .detail-table .date-cell {
-            color: #666;
-            font-size: 11px;
-        }
-
-        .detail-empty {
-            text-align: center;
-            padding: 20px;
-            color: #999;
-            font-size: 13px;
-        }
-
-        /* Search Section */
         .search-section {
             background: white;
             border-radius: 12px;
@@ -680,15 +455,8 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
 
-        .search-section .search-row {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-
-        .search-section .search-row:last-child {
-            margin-bottom: 0;
-        }
+        .search-section .search-row { display: flex; gap: 8px; margin-bottom: 8px; }
+        .search-section .search-row:last-child { margin-bottom: 0; }
 
         .search-section input {
             flex: 1;
@@ -698,11 +466,7 @@
             font-size: 13px;
             background: #fafafa;
         }
-
-        .search-section input:focus {
-            outline: none;
-            border-color: #283593;
-        }
+        .search-section input:focus { outline: none; border-color: #283593; }
 
         .search-section .search-btn {
             padding: 10px 20px;
@@ -715,10 +479,7 @@
             cursor: pointer;
             white-space: nowrap;
         }
-
-        .search-section .search-btn:active {
-            transform: scale(0.96);
-        }
+        .search-section .search-btn:active { transform: scale(0.96); }
 
         .search-section .clear-btn {
             padding: 10px 16px;
@@ -729,14 +490,8 @@
             font-size: 13px;
             cursor: pointer;
         }
+        .search-section .search-hint { font-size: 11px; color: #999; margin-top: 6px; }
 
-        .search-section .search-hint {
-            font-size: 11px;
-            color: #999;
-            margin-top: 6px;
-        }
-
-        /* Summary header */
         .summary-header {
             display: flex;
             justify-content: space-between;
@@ -745,11 +500,7 @@
             flex-wrap: wrap;
             gap: 8px;
         }
-
-        .summary-header h4 {
-            font-size: 14px;
-            color: #333;
-        }
+        .summary-header h4 { font-size: 14px; color: #333; }
 
         .summary-header .search-toggle-btn {
             background: none;
@@ -763,18 +514,13 @@
             align-items: center;
             gap: 4px;
         }
-
-        .summary-header .search-toggle-btn:active {
-            background: #f5f5f5;
-        }
-
+        .summary-header .search-toggle-btn:active { background: #f5f5f5; }
         .summary-header .search-toggle-btn.active {
             background: #e8eaf6;
             border-color: #283593;
             color: #283593;
         }
 
-        /* Toast */
         .toast {
             position: fixed;
             bottom: 20px;
@@ -794,20 +540,10 @@
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
 
-        .toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .toast.warning { background: #e65100; }
+        .toast.success { background: #2e7d32; }
 
-        .toast.warning {
-            background: #e65100;
-        }
-
-        .toast.success {
-            background: #2e7d32;
-        }
-
-        /* Firebase Config Modal */
         .config-overlay {
             display: none;
             position: fixed;
@@ -821,12 +557,7 @@
             animation: fadeIn 0.3s;
             overflow-y: auto;
         }
-
-        .config-overlay.active {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        .config-overlay.active { display: flex; align-items: center; justify-content: center; }
 
         .config-panel {
             background: white;
@@ -837,26 +568,9 @@
             animation: slideUp 0.3s ease;
         }
 
-        .config-panel h3 {
-            color: #1a237e;
-            font-size: 18px;
-            margin-bottom: 4px;
-        }
-
-        .config-panel p {
-            color: #666;
-            font-size: 13px;
-            margin-bottom: 16px;
-        }
-
-        .config-panel label {
-            font-size: 13px;
-            font-weight: 600;
-            color: #333;
-            display: block;
-            margin-top: 12px;
-            margin-bottom: 4px;
-        }
+        .config-panel h3 { color: #1a237e; font-size: 18px; margin-bottom: 4px; }
+        .config-panel p { color: #666; font-size: 13px; margin-bottom: 16px; }
+        .config-panel label { font-size: 13px; font-weight: 600; color: #333; display: block; margin-top: 12px; margin-bottom: 4px; }
 
         .config-panel input,
         .config-panel textarea {
@@ -867,124 +581,58 @@
             font-size: 13px;
             background: #fafafa;
         }
+        .config-panel textarea { min-height: 80px; font-family: monospace; font-size: 12px; resize: vertical; }
 
-        .config-panel input:focus,
-        .config-panel textarea:focus {
-            outline: none;
-            border-color: #283593;
+        .config-panel .btn-row { display: flex; gap: 8px; margin-top: 16px; }
+        .config-panel .btn-row button { flex: 1; padding: 10px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .config-panel .btn-row .btn-save { background: #283593; color: white; }
+        .config-panel .btn-row .btn-cancel { background: #e8eaf6; color: #666; }
+        .config-panel .btn-row button:active { transform: scale(0.96); }
+
+        .supported-formats {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
         }
 
-        .config-panel textarea {
-            min-height: 80px;
-            font-family: monospace;
-            font-size: 12px;
-            resize: vertical;
-        }
-
-        .config-panel .btn-row {
-            display: flex;
-            gap: 8px;
-            margin-top: 16px;
-        }
-
-        .config-panel .btn-row button {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .config-panel .btn-row .btn-save {
-            background: #283593;
-            color: white;
-        }
-
-        .config-panel .btn-row .btn-cancel {
-            background: #e8eaf6;
-            color: #666;
-        }
-
-        .config-panel .btn-row .btn-save:active,
-        .config-panel .btn-row .btn-cancel:active {
-            transform: scale(0.96);
-        }
-
-        /* Responsive */
         @media (max-width: 480px) {
-            body {
-                padding: 12px;
-            }
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 8px;
-            }
-            .stat-card .number {
-                font-size: 18px;
-            }
-            .detail-panel {
-                padding: 16px;
-                margin: 8px;
-            }
-            .detail-table {
-                font-size: 11px;
-            }
-            .detail-table th,
-            .detail-table td {
-                padding: 4px 3px;
-            }
-            .search-section .search-row {
-                flex-wrap: wrap;
-            }
-            .search-section .search-btn {
-                flex: 1;
-            }
-            .toast {
-                font-size: 12px;
-                padding: 10px 16px;
-                bottom: 12px;
-            }
-            .info-bar {
-                flex-direction: column;
-                gap: 6px;
-            }
-            .header .sync-status {
-                position: static;
-                margin-top: 8px;
-                justify-content: center;
-            }
-            .config-panel {
-                padding: 16px;
-                margin: 8px;
-            }
+            body { padding: 12px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .stat-card .number { font-size: 18px; }
+            .detail-panel { padding: 16px; margin: 8px; }
+            .detail-table { font-size: 11px; }
+            .detail-table th, .detail-table td { padding: 4px 3px; }
+            .search-section .search-row { flex-wrap: wrap; }
+            .search-section .search-btn { flex: 1; }
+            .toast { font-size: 12px; padding: 10px 16px; bottom: 12px; }
+            .info-bar { flex-direction: column; gap: 6px; }
+            .header .sync-status { position: static; margin-top: 8px; justify-content: center; }
+            .config-panel { padding: 16px; margin: 8px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Header -->
     <div class="header">
         <h1>📊 Sales Data Analyzer</h1>
-        <p>Upload file Excel untuk analisis penjualan</p>
+        <p>Upload file Excel atau CSV untuk analisis penjualan</p>
         <div class="sync-status" id="syncStatus">
             <span class="dot offline" id="syncDot"></span>
             <span id="syncText">Offline</span>
         </div>
     </div>
 
-    <!-- Upload Area -->
     <div class="upload-area" id="uploadArea">
         <div class="icon">📁</div>
-        <h3>Upload File Excel</h3>
+        <h3>Upload File Excel atau CSV</h3>
         <p>Drag & drop atau klik untuk upload</p>
+        <div class="supported-formats">Support: .xlsx, .xls, .csv</div>
         <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:8px;">
             <button class="upload-btn" id="uploadBtn">Pilih File</button>
             <button class="upload-btn secondary" id="loadFromFirebaseBtn">☁️ Load from Cloud</button>
             <button class="upload-btn secondary" id="configBtn">⚙️ Config</button>
         </div>
-        <input type="file" id="fileInput" accept=".xlsx,.xls">
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
 
         <div class="upload-loading" id="uploadLoading">
             <div class="spinner"></div>
@@ -993,27 +641,13 @@
         </div>
     </div>
 
-    <!-- Stats -->
     <div class="stats-grid" id="statsGrid" style="display:none;">
-        <div class="stat-card">
-            <div class="number" id="totalSales">0</div>
-            <div class="label">Total Sales (Rp)</div>
-        </div>
-        <div class="stat-card">
-            <div class="number" id="totalQty">0</div>
-            <div class="label">Total Qty Sold</div>
-        </div>
-        <div class="stat-card">
-            <div class="number" id="totalItems">0</div>
-            <div class="label">Total Items</div>
-        </div>
-        <div class="stat-card">
-            <div class="number" id="totalDays">0</div>
-            <div class="label">Days of Data</div>
-        </div>
+        <div class="stat-card"><div class="number" id="totalSales">0</div><div class="label">Total Sales (Rp)</div></div>
+        <div class="stat-card"><div class="number" id="totalQty">0</div><div class="label">Total Qty Sold</div></div>
+        <div class="stat-card"><div class="number" id="totalItems">0</div><div class="label">Total Items</div></div>
+        <div class="stat-card"><div class="number" id="totalDays">0</div><div class="label">Days of Data</div></div>
     </div>
 
-    <!-- Tabs -->
     <div class="tabs" id="tabs" style="display:none;">
         <button class="tab active" data-tab="summary">📈 Summary</button>
         <button class="tab" data-tab="products">🏷️ Products</button>
@@ -1021,21 +655,15 @@
         <button class="tab" data-tab="dept">📂 Dept</button>
     </div>
 
-    <!-- Tab Content -->
     <div id="tabContent">
-
-        <!-- Summary Tab -->
         <div class="tab-content active" id="tab-summary">
             <div class="filter-section">
-                <select id="filterDept" onchange="applyFilters()">
-                    <option value="all">All Departments</option>
-                </select>
+                <select id="filterDept" onchange="applyFilters()"><option value="all">All Departments</option></select>
                 <div class="filter-row">
                     <input type="date" id="filterDateFrom" onchange="applyFilters()">
                     <input type="date" id="filterDateTo" onchange="applyFilters()">
                 </div>
             </div>
-
             <div class="search-section" id="searchSection" style="display:none;">
                 <div class="search-row">
                     <input type="text" id="searchInput" placeholder="Cari Item Name atau SKU..." onkeyup="if(event.key==='Enter') applySearch()">
@@ -1044,63 +672,35 @@
                 </div>
                 <div class="search-hint">Cari berdasarkan nama item atau SKU/Item Code</div>
             </div>
-
-            <div id="summaryContent">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>Loading data...</p>
-                </div>
-            </div>
+            <div id="summaryContent"><div class="loading"><div class="spinner"></div><p>Loading data...</p></div></div>
         </div>
 
-        <!-- Products Tab -->
         <div class="tab-content" id="tab-products">
             <div class="filter-section">
-                <select id="productFilterDept" onchange="renderProducts()">
-                    <option value="all">All Departments</option>
-                </select>
+                <select id="productFilterDept" onchange="renderProducts()"><option value="all">All Departments</option></select>
                 <div style="display:flex; gap:8px;">
                     <input type="number" id="productLimit" value="20" style="flex:1;" placeholder="Limit" onchange="renderProducts()">
                     <button class="upload-btn" style="padding:8px 16px; font-size:12px; margin:0;" onclick="renderProducts()">Apply</button>
                 </div>
             </div>
-            <div class="product-list" id="productList">
-                <div class="loading"><div class="spinner"></div></div>
-            </div>
+            <div class="product-list" id="productList"><div class="loading"><div class="spinner"></div></div></div>
         </div>
 
-        <!-- Trend Tab -->
         <div class="tab-content" id="tab-trend">
-            <div class="chart-container">
-                <h4>📈 Daily Sales Trend</h4>
-                <div class="chart-wrapper">
-                    <canvas id="trendChart"></canvas>
-                </div>
-            </div>
-            <div class="chart-container">
-                <h4>📊 Top Department Sales</h4>
-                <div class="chart-wrapper">
-                    <canvas id="deptChart"></canvas>
-                </div>
-            </div>
+            <div class="chart-container"><h4>📈 Daily Sales Trend</h4><div class="chart-wrapper"><canvas id="trendChart"></canvas></div></div>
+            <div class="chart-container"><h4>📊 Top Department Sales</h4><div class="chart-wrapper"><canvas id="deptChart"></canvas></div></div>
         </div>
 
-        <!-- Department Tab -->
         <div class="tab-content" id="tab-dept">
-            <div class="dept-summary" id="deptSummary">
-                <div class="loading"><div class="spinner"></div></div>
-            </div>
+            <div class="dept-summary" id="deptSummary"><div class="loading"><div class="spinner"></div></div></div>
         </div>
-
     </div>
 
-    <!-- Info Bar -->
     <div class="info-bar" id="infoBar" style="display:none;">
         <span id="fileInfo">No file loaded</span>
         <span id="saveStatus"></span>
     </div>
 
-    <!-- Detail Modal -->
     <div class="detail-overlay" id="detailOverlay" onclick="closeDetail(event)">
         <div class="detail-panel" onclick="event.stopPropagation()">
             <div class="detail-header">
@@ -1111,39 +711,23 @@
                 </div>
             </div>
             <div class="detail-summary" id="detailSummary">
-                <div class="item">
-                    <div class="label">Total Qty</div>
-                    <div class="value" id="detailTotalQty">0</div>
-                </div>
-                <div class="item">
-                    <div class="label">Total Amount</div>
-                    <div class="value" id="detailTotalAmount">Rp0</div>
-                </div>
+                <div class="item"><div class="label">Total Qty</div><div class="value" id="detailTotalQty">0</div></div>
+                <div class="item"><div class="label">Total Amount</div><div class="value" id="detailTotalAmount">Rp0</div></div>
             </div>
             <div class="detail-filter">
                 <input type="date" id="detailDateFrom" onchange="renderDetailTable()" placeholder="From">
                 <input type="date" id="detailDateTo" onchange="renderDetailTable()" placeholder="To">
             </div>
-            <div id="detailTableContainer">
-                <div class="loading"><div class="spinner"></div></div>
-            </div>
+            <div id="detailTableContainer"><div class="loading"><div class="spinner"></div></div></div>
         </div>
     </div>
 
-    <!-- Firebase Config Modal -->
     <div class="config-overlay" id="configOverlay">
         <div class="config-panel">
             <h3>⚙️ Firebase Configuration</h3>
             <p>Masukkan konfigurasi Firebase Anda. Data akan disimpan di Firestore.</p>
             <label>Firebase Config (JSON)</label>
-            <textarea id="firebaseConfigInput" placeholder='{
-  "apiKey": "your-api-key",
-  "authDomain": "your-auth-domain",
-  "projectId": "your-project-id",
-  "storageBucket": "your-storage-bucket",
-  "messagingSenderId": "your-sender-id",
-  "appId": "your-app-id"
-}'></textarea>
+            <textarea id="firebaseConfigInput" placeholder='{\n  "apiKey": "your-api-key",\n  "authDomain": "your-auth-domain",\n  "projectId": "your-project-id",\n  "storageBucket": "your-storage-bucket",\n  "messagingSenderId": "your-sender-id",\n  "appId": "your-app-id"\n}'></textarea>
             <label>Collection Name</label>
             <input type="text" id="collectionNameInput" value="sales_data">
             <div class="btn-row">
@@ -1154,12 +738,11 @@
         </div>
     </div>
 
-    <!-- Toast -->
     <div class="toast" id="toast"></div>
 
     <script>
         // ============================================================
-        // 1. FIREBASE INITIALIZATION
+        // FIREBASE CONFIG
         // ============================================================
         let firebaseApp = null;
         let firestore = null;
@@ -1167,15 +750,12 @@
         let currentDocId = null;
         let isSaving = false;
 
-        // Get config from localStorage
         function getFirebaseConfig() {
             try {
                 const saved = localStorage.getItem('firebaseConfig');
                 if (saved) return JSON.parse(saved);
                 return null;
-            } catch {
-                return null;
-            }
+            } catch { return null; }
         }
 
         function getCollectionName() {
@@ -1188,20 +768,13 @@
                 updateSyncStatus('offline', 'Not Configured');
                 return false;
             }
-
             try {
-                // Initialize Firebase
                 firebaseApp = firebase.initializeApp(config);
                 firestore = firebase.firestore();
-                
-                // Test connection
                 await firestore.collection(getCollectionName()).limit(1).get();
-                
                 isFirebaseReady = true;
                 updateSyncStatus('synced', 'Connected');
-                console.log('✅ Firebase connected successfully');
-                
-                // Try to load saved data
+                console.log('✅ Firebase connected');
                 await loadFromFirebase();
                 return true;
             } catch (err) {
@@ -1220,59 +793,63 @@
         }
 
         // ============================================================
-        // 2. FIREBASE CRUD OPERATIONS
+        // SAVE TO FIREBASE - FIXED FOR 1MB LIMIT
         // ============================================================
+        function splitDataForFirestore(data) {
+            const chunks = [];
+            const chunkSize = 400;
+            for (let i = 0; i < data.length; i += chunkSize) {
+                chunks.push(data.slice(i, i + chunkSize));
+            }
+            return chunks;
+        }
 
-        // Save data to Firebase
         async function saveToFirebase(data, filename) {
             if (!isFirebaseReady) {
-                showToast('Firebase not configured. Please set up config first.', 'warning');
+                showToast('Firebase not configured.', 'warning');
                 return false;
             }
-
             if (isSaving) {
                 showToast('Saving in progress...', 'warning');
                 return false;
             }
-
             try {
                 isSaving = true;
                 updateSyncStatus('syncing', 'Saving...');
-
                 const collection = getCollectionName();
-                const docData = {
+                const chunks = splitDataForFirestore(data);
+
+                let docRef;
+                const mainData = {
                     filename: filename,
                     uploadedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     recordCount: data.length,
-                    data: data,
-                    metadata: {
-                        totalAmount: data.reduce((sum, d) => sum + d.amount, 0),
-                        totalQty: data.reduce((sum, d) => sum + d.qty, 0),
-                        uniqueItems: new Set(data.map(d => d.itemName)).size,
-                        departments: [...new Set(data.map(d => d.department))],
-                        dateRange: {
-                            from: data.reduce((min, d) => d.dateStr < min ? d.dateStr : min, data[0]?.dateStr || ''),
-                            to: data.reduce((max, d) => d.dateStr > max ? d.dateStr : max, data[0]?.dateStr || '')
-                        }
-                    }
+                    totalAmount: data.reduce((sum, d) => sum + d.amount, 0),
+                    totalQty: data.reduce((sum, d) => sum + d.qty, 0),
+                    departments: [...new Set(data.map(d => d.department))],
+                    chunkCount: chunks.length
                 };
 
-                // If we have a docId, update; otherwise create new
-                let docRef;
                 if (currentDocId) {
                     docRef = firestore.collection(collection).doc(currentDocId);
-                    await docRef.update(docData);
-                    showToast('✅ Data updated in Firebase!', 'success');
+                    await docRef.update(mainData);
                 } else {
-                    docRef = await firestore.collection(collection).add(docData);
+                    docRef = await firestore.collection(collection).add(mainData);
                     currentDocId = docRef.id;
-                    showToast('✅ Data saved to Firebase!', 'success');
                 }
 
+                // Save chunks as sub-collection
+                const batch = firestore.batch();
+                for (let i = 0; i < chunks.length; i++) {
+                    const chunkRef = docRef.collection('chunks').doc('chunk_' + i);
+                    batch.set(chunkRef, { index: i, data: chunks[i], count: chunks[i].length });
+                }
+                await batch.commit();
+
+                showToast('✅ ' + data.length + ' records saved in ' + chunks.length + ' chunks!', 'success');
                 updateSyncStatus('synced', 'Saved');
                 document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Saved to Cloud</span>';
                 return true;
-
             } catch (err) {
                 console.error('Save error:', err);
                 updateSyncStatus('error', 'Save failed');
@@ -1283,22 +860,21 @@
             }
         }
 
-        // Load data from Firebase
+        // ============================================================
+        // LOAD FROM FIREBASE
+        // ============================================================
         async function loadFromFirebase(docId = null) {
             if (!isFirebaseReady) {
                 showToast('Firebase not configured.', 'warning');
                 return false;
             }
-
             try {
                 updateSyncStatus('syncing', 'Loading...');
                 showToast('Loading data from cloud...', 'info', 2000);
-
                 const collection = getCollectionName();
                 let query = firestore.collection(collection);
 
                 if (docId) {
-                    // Load specific document
                     const doc = await query.doc(docId).get();
                     if (!doc.exists) {
                         showToast('Document not found', 'warning');
@@ -1307,28 +883,21 @@
                     }
                     const data = doc.data();
                     currentDocId = docId;
-                    restoreData(data);
+                    await restoreData(data, docId);
                     return true;
                 } else {
-                    // Load latest document
-                    const snapshot = await query
-                        .orderBy('uploadedAt', 'desc')
-                        .limit(1)
-                        .get();
-
+                    const snapshot = await query.orderBy('uploadedAt', 'desc').limit(1).get();
                     if (snapshot.empty) {
-                        showToast('No saved data found in cloud', 'info', 2000);
+                        showToast('No saved data found', 'info', 2000);
                         updateSyncStatus('synced', 'No data');
                         return false;
                     }
-
                     const doc = snapshot.docs[0];
                     const data = doc.data();
                     currentDocId = doc.id;
-                    restoreData(data);
+                    await restoreData(data, doc.id);
                     return true;
                 }
-
             } catch (err) {
                 console.error('Load error:', err);
                 updateSyncStatus('error', 'Load failed');
@@ -1337,24 +906,45 @@
             }
         }
 
-        // Restore data from Firebase document
-        function restoreData(docData) {
-            if (!docData || !docData.data || docData.data.length === 0) {
+        async function restoreData(docData, docId) {
+            if (!docData || !docData.recordCount) {
                 showToast('No data in document', 'warning');
                 return;
             }
 
-            const data = docData.data;
-            const filename = docData.filename || 'cloud_data';
+            let allData = [];
+            const chunkCount = docData.chunkCount || 1;
 
-            // Restore data
-            originalData = data;
-            salesData = [...data];
-            
-            console.log(`✅ Restored ${data.length} records from Firebase`);
+            if (chunkCount > 1) {
+                const collection = getCollectionName();
+                for (let i = 0; i < chunkCount; i++) {
+                    try {
+                        const chunkRef = firestore.collection(collection).doc(docId).collection('chunks').doc('chunk_' + i);
+                        const chunkSnap = await chunkRef.get();
+                        if (chunkSnap.exists) {
+                            const chunkData = chunkSnap.data();
+                            if (chunkData && chunkData.data) {
+                                allData = allData.concat(chunkData.data);
+                            }
+                        }
+                    } catch (err) {
+                        console.warn('Error loading chunk ' + i + ':', err);
+                    }
+                }
+            } else if (docData.data) {
+                allData = docData.data;
+            }
 
-            // Update UI
-            showUI(filename);
+            if (allData.length === 0) {
+                showToast('No data found in chunks', 'warning');
+                return;
+            }
+
+            originalData = allData;
+            salesData = [...allData];
+            console.log('✅ Restored ' + allData.length + ' records');
+
+            showUI(docData.filename || 'cloud_data');
             updateStats();
             populateFilters();
             renderSummary();
@@ -1362,17 +952,11 @@
             renderDeptSummary();
             renderCharts();
 
-            // Update info
-            const metadata = docData.metadata || {};
-            let infoText = `☁️ ${filename} • ${data.length} records • ID: ${currentDocId.substring(0, 8)}`;
-            if (metadata.dateRange && metadata.dateRange.from) {
-                infoText += ` • ${metadata.dateRange.from} - ${metadata.dateRange.to}`;
-            }
+            let infoText = '☁️ ' + (docData.filename || 'cloud_data') + ' • ' + allData.length + ' records';
             fileInfo.textContent = infoText;
             document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Loaded from Cloud</span>';
 
-            // Show validation
-            const validation = validateData(data);
+            const validation = validateData(allData);
             if (validation.warnings.length > 0) {
                 setTimeout(() => {
                     showToast('⚠️ ' + validation.warnings.join(' • '), 'warning', 4000);
@@ -1380,77 +964,20 @@
             }
 
             updateSyncStatus('synced', 'Loaded');
-            showToast('✅ Loaded ' + data.length + ' records from cloud', 'success');
-        }
-
-        // Get list of saved documents
-        async function getSavedDocuments() {
-            if (!isFirebaseReady) return [];
-
-            try {
-                const collection = getCollectionName();
-                const snapshot = await firestore.collection(collection)
-                    .orderBy('uploadedAt', 'desc')
-                    .limit(50)
-                    .get();
-
-                return snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-            } catch (err) {
-                console.error('Error getting documents:', err);
-                return [];
-            }
-        }
-
-        // Show document list to user
-        async function showDocumentList() {
-            if (!isFirebaseReady) {
-                showToast('Firebase not configured', 'warning');
-                return;
-            }
-
-            const docs = await getSavedDocuments();
-            if (docs.length === 0) {
-                showToast('No saved documents found', 'info', 2000);
-                return;
-            }
-
-            // Create a simple selection dialog
-            const docList = docs.map((doc, i) => {
-                const date = doc.uploadedAt ? new Date(doc.uploadedAt.seconds * 1000).toLocaleDateString('id-ID') : 'Unknown';
-                return `${i+1}. ${doc.filename || 'Untitled'} (${doc.recordCount || 0} records) - ${date}`;
-            }).join('\n');
-
-            const choice = prompt(
-                `Pilih data yang akan dimuat:\n\n${docList}\n\nMasukkan nomor (1-${docs.length}) atau ketik 'cancel':`
-            );
-
-            if (choice && choice !== 'cancel') {
-                const idx = parseInt(choice) - 1;
-                if (idx >= 0 && idx < docs.length) {
-                    await loadFromFirebase(docs[idx].id);
-                } else {
-                    showToast('Invalid selection', 'warning');
-                }
-            }
+            showToast('✅ Loaded ' + allData.length + ' records from cloud', 'success');
         }
 
         // ============================================================
-        // 3. EXISTING CODE (with Firebase integration)
+        // MAIN APPLICATION CODE
         // ============================================================
-
         let salesData = [];
         let originalData = [];
         let chartTrend = null;
         let chartDept = null;
         let currentDetailItem = null;
         let searchQuery = '';
-        let searchResults = [];
         let detailDataCache = [];
 
-        // DOM refs
         const fileInput = document.getElementById('fileInput');
         const uploadBtn = document.getElementById('uploadBtn');
         const uploadArea = document.getElementById('uploadArea');
@@ -1471,14 +998,13 @@
                 if (this.dataset.tab === 'trend') renderCharts();
                 if (this.dataset.tab === 'products') renderProducts();
                 if (this.dataset.tab === 'dept') renderDeptSummary();
-                if (this.dataset.tab === 'summary') {
-                    renderSummary();
-                }
+                if (this.dataset.tab === 'summary') renderSummary();
             });
         });
 
         // Upload handlers
         uploadBtn.addEventListener('click', () => fileInput.click());
+
         uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
             uploadArea.classList.add('dragover');
@@ -1489,11 +1015,11 @@
             uploadArea.classList.remove('dragover');
             if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
         });
+
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length) handleFile(e.target.files[0]);
         });
 
-        // Config button
         document.getElementById('configBtn').addEventListener('click', openConfig);
         document.getElementById('loadFromFirebaseBtn').addEventListener('click', async () => {
             if (!isFirebaseReady) {
@@ -1505,17 +1031,12 @@
         });
 
         // ============================================================
-        // 4. CONFIG FUNCTIONS
+        // CONFIG FUNCTIONS
         // ============================================================
-
         function openConfig() {
             const config = getFirebaseConfig();
             const input = document.getElementById('firebaseConfigInput');
-            if (config) {
-                input.value = JSON.stringify(config, null, 2);
-            } else {
-                input.value = '';
-            }
+            input.value = config ? JSON.stringify(config, null, 2) : '';
             document.getElementById('collectionNameInput').value = getCollectionName();
             document.getElementById('configOverlay').classList.add('active');
             document.getElementById('configStatus').textContent = '';
@@ -1528,44 +1049,68 @@
         function saveFirebaseConfig() {
             const input = document.getElementById('firebaseConfigInput');
             const collection = document.getElementById('collectionNameInput').value.trim() || 'sales_data';
-
             try {
                 const config = JSON.parse(input.value);
-                
-                // Validate required fields
                 const required = ['apiKey', 'authDomain', 'projectId'];
                 for (const field of required) {
                     if (!config[field]) {
-                        document.getElementById('configStatus').textContent = '❌ Missing required field: ' + field;
+                        document.getElementById('configStatus').textContent = '❌ Missing: ' + field;
                         document.getElementById('configStatus').style.color = '#e65100';
                         return;
                     }
                 }
-
-                // Save to localStorage
                 localStorage.setItem('firebaseConfig', JSON.stringify(config));
                 localStorage.setItem('firebaseCollection', collection);
-
                 document.getElementById('configStatus').textContent = '✅ Config saved! Reconnecting...';
                 document.getElementById('configStatus').style.color = '#2e7d32';
-
                 closeConfig();
-
-                // Reinitialize Firebase
                 isFirebaseReady = false;
                 initFirebase();
-
                 showToast('✅ Firebase config saved!', 'success');
-
             } catch (err) {
                 document.getElementById('configStatus').textContent = '❌ Invalid JSON: ' + err.message;
                 document.getElementById('configStatus').style.color = '#e65100';
             }
         }
 
+        async function showDocumentList() {
+            if (!isFirebaseReady) {
+                showToast('Firebase not configured', 'warning');
+                return;
+            }
+            try {
+                const collection = getCollectionName();
+                const snapshot = await firestore.collection(collection).orderBy('uploadedAt', 'desc').limit(50).get();
+                const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                if (docs.length === 0) {
+                    showToast('No saved documents found', 'info', 2000);
+                    return;
+                }
+
+                const docList = docs.map((doc, i) => {
+                    const date = doc.uploadedAt ? new Date(doc.uploadedAt.seconds * 1000).toLocaleDateString('id-ID') : 'Unknown';
+                    return (i + 1) + '. ' + (doc.filename || 'Untitled') + ' (' + (doc.recordCount || 0) + ' records) - ' + date;
+                }).join('\n');
+
+                const choice = prompt('Pilih data yang akan dimuat:\n\n' + docList + '\n\nMasukkan nomor (1-' + docs.length + '):');
+                if (choice && choice !== 'cancel') {
+                    const idx = parseInt(choice) - 1;
+                    if (idx >= 0 && idx < docs.length) {
+                        await loadFromFirebase(docs[idx].id);
+                    } else {
+                        showToast('Invalid selection', 'warning');
+                    }
+                }
+            } catch (err) {
+                showToast('Error loading list: ' + err.message, 'warning');
+            }
+        }
+
         // ============================================================
-        // 5. EXISTING FUNCTIONS (modified for Firebase)
+        // TOAST
         // ============================================================
+        let toastTimeout = null;
 
         function showToast(message, type = 'info', duration = 3000) {
             const toast = document.getElementById('toast');
@@ -1574,16 +1119,19 @@
             if (type === 'warning') toast.classList.add('warning');
             if (type === 'success') toast.classList.add('success');
             toast.classList.add('show');
-
-            if (window.toastTimeout) clearTimeout(window.toastTimeout);
-            window.toastTimeout = setTimeout(() => {
-                toast.classList.remove('show');
-            }, duration);
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, duration);
         }
 
+        // ============================================================
+        // FILE HANDLER - SUPPORT CSV, XLSX, XLS
+        // ============================================================
         function handleFile(file) {
-            if (!file.name.match(/\.(xlsx|xls)$/)) {
-                showToast('Please upload an Excel file (.xlsx or .xls)', 'warning');
+            const isCSV = file.name.match(/\.csv$/i);
+            const isExcel = file.name.match(/\.(xlsx|xls)$/i);
+
+            if (!isCSV && !isExcel) {
+                showToast('Upload Excel (.xlsx, .xls) atau CSV (.csv)', 'warning');
                 return;
             }
 
@@ -1592,29 +1140,32 @@
             uploadProgress.textContent = 'Membaca file...';
 
             const reader = new FileReader();
+
             reader.onprogress = (e) => {
                 if (e.lengthComputable) {
-                    const pct = Math.round((e.loaded / e.total) * 100);
-                    uploadProgress.textContent = `Memproses ${pct}%...`;
+                    uploadProgress.textContent = 'Memproses ' + Math.round((e.loaded / e.total) * 100) + '%...';
                 }
             };
 
             reader.onload = function(e) {
                 try {
                     uploadProgress.textContent = 'Parsing data...';
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
+                    let workbook;
+                    if (isCSV) {
+                        const text = e.target.result;
+                        workbook = XLSX.read(text, { type: 'string' });
+                    } else {
+                        const data = new Uint8Array(e.target.result);
+                        workbook = XLSX.read(data, { type: 'array' });
+                    }
                     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                     const json = XLSX.utils.sheet_to_json(firstSheet);
-
                     uploadProgress.textContent = 'Memproses data...';
-                    setTimeout(() => {
-                        processData(json, file.name);
-                    }, 100);
+                    setTimeout(() => processData(json, file.name), 100);
                 } catch (err) {
                     uploadLoading.classList.remove('active');
                     uploadBtn.disabled = false;
-                    showToast('Error reading file: ' + err.message, 'warning');
+                    showToast('Error: ' + err.message, 'warning');
                 }
             };
 
@@ -1624,55 +1175,46 @@
                 showToast('Error reading file', 'warning');
             };
 
-            reader.readAsArrayBuffer(file);
+            if (isCSV) {
+                reader.readAsText(file);
+            } else {
+                reader.readAsArrayBuffer(file);
+            }
         }
 
+        // ============================================================
+        // VALIDATION
+        // ============================================================
         function validateData(data) {
             const warnings = [];
-            const errors = [];
-            let dateErrors = 0;
-            let emptyItems = 0;
-            let zeroAmount = 0;
+            let dateErrors = 0, emptyItems = 0, zeroAmount = 0;
 
-            data.forEach((row, index) => {
-                if (row.date && row.dateStr === 'Unknown') {
-                    dateErrors++;
-                }
-                if (!row.itemName || row.itemName === 'Unknown Item' || row.itemName.trim() === '') {
-                    emptyItems++;
-                }
-                if (row.qty > 0 && row.amount === 0) {
-                    zeroAmount++;
-                }
+            data.forEach(row => {
+                if (row.date && row.dateStr === 'Unknown') dateErrors++;
+                if (!row.itemName || row.itemName === 'Unknown Item' || row.itemName.trim() === '') emptyItems++;
+                if (row.qty > 0 && row.amount === 0) zeroAmount++;
             });
 
             const seen = new Set();
             let duplicates = 0;
             data.forEach(row => {
-                const key = `${row.dateStr}|${row.itemName}|${row.department}`;
+                const key = row.dateStr + '|' + row.itemName + '|' + row.department;
                 if (seen.has(key)) duplicates++;
                 seen.add(key);
             });
 
-            if (dateErrors > 0) {
-                warnings.push(`${dateErrors} baris memiliki format tanggal yang tidak valid`);
-            }
-            if (emptyItems > 0) {
-                warnings.push(`${emptyItems} baris memiliki nama item kosong`);
-            }
-            if (zeroAmount > 0) {
-                warnings.push(`${zeroAmount} baris memiliki Qty > 0 tapi Amount = 0`);
-            }
-            if (duplicates > 0) {
-                warnings.push(`${duplicates} data duplikat ditemukan (tanggal + item + department)`);
-            }
+            if (dateErrors > 0) warnings.push(dateErrors + ' baris tanggal tidak valid');
+            if (emptyItems > 0) warnings.push(emptyItems + ' baris nama item kosong');
+            if (zeroAmount > 0) warnings.push(zeroAmount + ' baris Qty>0 tapi Amount=0');
+            if (duplicates > 0) warnings.push(duplicates + ' data duplikat ditemukan');
 
-            return { warnings, errors, dateErrors, emptyItems, zeroAmount, duplicates };
+            return { warnings, dateErrors, emptyItems, zeroAmount, duplicates };
         }
 
+        // ============================================================
+        // PROCESS DATA
+        // ============================================================
         function processData(json, filename) {
-            console.log('Raw data sample:', json.slice(0, 3));
-
             const headers = Object.keys(json[0] || {});
             console.log('Headers:', headers);
 
@@ -1686,23 +1228,11 @@
                 amount: findColumn(headers, ['Sales Amount(Without VAT)', 'Amount', 'Sales Amount', 'amount', 'Total'])
             };
 
-            console.log('Column mapping:', colMap);
-
             if (!colMap.amount && !colMap.qty) {
                 uploadLoading.classList.remove('active');
                 uploadBtn.disabled = false;
-                showToast('Could not find required columns (Sales Qty or Sales Amount). Please check your file.', 'warning');
+                showToast('Kolom Sales Qty atau Sales Amount tidak ditemukan', 'warning');
                 return;
-            }
-
-            const sampleRow = json[0] || {};
-            let deptName = colMap.dept ? sampleRow[colMap.dept] : 'Unknown';
-            if (!deptName || deptName === '') {
-                const deptDescCol = headers.find(h => h.includes('Department') || h.includes('Dept'));
-                if (deptDescCol) {
-                    colMap.dept = deptDescCol;
-                    deptName = sampleRow[deptDescCol];
-                }
             }
 
             salesData = json.map(row => {
@@ -1732,16 +1262,13 @@
                 let itemCode = colMap.itemCode ? String(row[colMap.itemCode] || '').trim() : '';
                 itemCode = itemCode.replace(/^="|"$/g, '');
 
-                let category = colMap.category ? String(row[colMap.category] || '').trim() : '';
-                category = category.replace(/^="|"$/g, '');
-
                 return {
                     date: parsedDate,
                     dateStr: dateStr,
                     department: dept || 'Unknown',
                     itemName: itemName || 'Unknown Item',
                     itemCode: itemCode || '',
-                    category: category || '',
+                    category: colMap.category ? String(row[colMap.category] || '').trim() : '',
                     qty: qty,
                     amount: amount,
                     _raw: row
@@ -1753,37 +1280,17 @@
             if (salesData.length === 0) {
                 uploadLoading.classList.remove('active');
                 uploadBtn.disabled = false;
-                showToast('No valid sales data found in the file. Please check the format.', 'warning');
+                showToast('Tidak ada data penjualan yang valid', 'warning');
                 return;
             }
 
             originalData = [...salesData];
-            console.log(`Loaded ${salesData.length} records`);
 
             const validation = validateData(salesData);
-            let warningMessages = [];
-
-            if (validation.dateErrors > 0) {
-                warningMessages.push(`${validation.dateErrors} baris tanggal tidak valid`);
-            }
-            if (validation.duplicates > 0) {
-                warningMessages.push(`${validation.duplicates} data duplikat ditemukan`);
-            }
-            if (validation.emptyItems > 0) {
-                warningMessages.push(`${validation.emptyItems} baris nama item kosong`);
-            }
-            if (validation.zeroAmount > 0) {
-                warningMessages.push(`${validation.zeroAmount} baris Qty > 0 tapi Amount = 0`);
-            }
-
-            if (warningMessages.length > 0) {
-                setTimeout(() => {
-                    showToast('⚠️ ' + warningMessages.join(' • '), 'warning', 5000);
-                }, 500);
+            if (validation.warnings.length > 0) {
+                setTimeout(() => showToast('⚠️ ' + validation.warnings.join(' • '), 'warning', 5000), 500);
             } else {
-                setTimeout(() => {
-                    showToast('✅ Data valid! ' + salesData.length + ' records loaded', 'success', 3000);
-                }, 500);
+                setTimeout(() => showToast('✅ ' + salesData.length + ' records loaded', 'success', 3000), 500);
             }
 
             showUI(filename);
@@ -1797,30 +1304,23 @@
             uploadLoading.classList.remove('active');
             uploadBtn.disabled = false;
 
-            let infoText = `📄 ${filename} • ${salesData.length} records`;
-            if (validation.duplicates > 0) {
-                infoText += ` • ⚠️ ${validation.duplicates} duplicates`;
-            }
-            if (validation.dateErrors > 0) {
-                infoText += ` • ⚠️ ${validation.dateErrors} invalid dates`;
-            }
+            let infoText = '📄 ' + filename + ' • ' + salesData.length + ' records';
+            if (validation.duplicates > 0) infoText += ' • ⚠️ ' + validation.duplicates + ' duplicates';
+            if (validation.dateErrors > 0) infoText += ' • ⚠️ ' + validation.dateErrors + ' invalid dates';
             fileInfo.textContent = infoText;
 
-            // Auto-save to Firebase if configured
             if (isFirebaseReady && originalData.length > 0) {
-                setTimeout(async () => {
-                    await saveToFirebase(originalData, filename);
-                }, 1000);
+                setTimeout(async () => await saveToFirebase(originalData, filename), 1000);
             }
         }
 
         function findColumn(headers, candidates) {
-            for (const candidate of candidates) {
-                const found = headers.find(h => h.toLowerCase().trim() === candidate.toLowerCase().trim());
+            for (const c of candidates) {
+                const found = headers.find(h => h.toLowerCase().trim() === c.toLowerCase().trim());
                 if (found) return found;
             }
-            for (const candidate of candidates) {
-                const found = headers.find(h => h.toLowerCase().includes(candidate.toLowerCase()));
+            for (const c of candidates) {
+                const found = headers.find(h => h.toLowerCase().includes(c.toLowerCase()));
                 if (found) return found;
             }
             return null;
@@ -1835,57 +1335,40 @@
 
         function getFilteredData() {
             let data = [...originalData];
-
             const from = document.getElementById('filterDateFrom').value;
             const to = document.getElementById('filterDateTo').value;
             if (from) data = data.filter(d => d.dateStr >= from);
             if (to) data = data.filter(d => d.dateStr <= to);
-
             const dept = document.getElementById('filterDept').value;
             if (dept !== 'all') data = data.filter(d => d.department === dept);
-
             return data;
         }
 
         function updateStats() {
             const data = getFilteredData();
-            const totalAmount = data.reduce((sum, d) => sum + d.amount, 0);
-            const totalQty = data.reduce((sum, d) => sum + d.qty, 0);
-            const uniqueItems = new Set(data.map(d => d.itemName + '|' + d.department)).size;
-            const uniqueDates = new Set(data.map(d => d.dateStr)).size;
-
-            document.getElementById('totalSales').textContent = formatRupiah(totalAmount);
-            document.getElementById('totalQty').textContent = Math.round(totalQty);
-            document.getElementById('totalItems').textContent = uniqueItems;
-            document.getElementById('totalDays').textContent = uniqueDates || 'N/A';
+            document.getElementById('totalSales').textContent = formatRupiah(data.reduce((s, d) => s + d.amount, 0));
+            document.getElementById('totalQty').textContent = Math.round(data.reduce((s, d) => s + d.qty, 0));
+            document.getElementById('totalItems').textContent = new Set(data.map(d => d.itemName + '|' + d.department)).size;
+            document.getElementById('totalDays').textContent = new Set(data.map(d => d.dateStr)).size || 'N/A';
         }
 
         function populateFilters() {
             const depts = [...new Set(originalData.map(d => d.department))].sort();
-            const selects = ['filterDept', 'productFilterDept'];
-            selects.forEach(selId => {
+            ['filterDept', 'productFilterDept'].forEach(selId => {
                 const sel = document.getElementById(selId);
                 if (!sel) return;
                 const current = sel.value;
                 sel.innerHTML = '<option value="all">All Departments</option>';
-                depts.forEach(d => {
-                    const opt = document.createElement('option');
-                    opt.value = d;
-                    opt.textContent = d;
-                    sel.appendChild(opt);
-                });
+                depts.forEach(d => { const opt = document.createElement('option'); opt.value = d; opt.textContent = d; sel.appendChild(opt); });
                 if (depts.includes(current)) sel.value = current;
             });
         }
 
-        function applyFilters() {
-            updateStats();
-            renderSummary();
-            renderProducts();
-            renderDeptSummary();
-            renderCharts();
-        }
+        function applyFilters() { updateStats(); renderSummary(); renderProducts(); renderDeptSummary(); renderCharts(); }
 
+        // ============================================================
+        // SEARCH
+        // ============================================================
         function toggleSearch() {
             const section = document.getElementById('searchSection');
             const btn = document.querySelector('.search-toggle-btn');
@@ -1901,8 +1384,7 @@
         }
 
         function applySearch() {
-            const input = document.getElementById('searchInput');
-            searchQuery = input.value.trim();
+            searchQuery = document.getElementById('searchInput').value.trim();
             renderSummary();
         }
 
@@ -1912,45 +1394,33 @@
             renderSummary();
         }
 
+        // ============================================================
+        // RENDER FUNCTIONS
+        // ============================================================
         function renderSummary() {
             const data = getFilteredData();
             const container = document.getElementById('summaryContent');
-
             if (data.length === 0) {
-                container.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>No data matching filters</p></div>`;
+                container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>No data matching filters</p></div>';
                 return;
             }
 
             const productSales = {};
             data.forEach(d => {
-                const key = d.itemName;
-                if (!productSales[key]) {
-                    productSales[key] = {
-                        qty: 0,
-                        amount: 0,
-                        dept: d.department,
-                        name: d.itemName,
-                        code: d.itemCode || ''
-                    };
+                if (!productSales[d.itemName]) {
+                    productSales[d.itemName] = { qty: 0, amount: 0, dept: d.department, name: d.itemName, code: d.itemCode || '' };
                 }
-                productSales[key].qty += d.qty;
-                productSales[key].amount += d.amount;
+                productSales[d.itemName].qty += d.qty;
+                productSales[d.itemName].amount += d.amount;
             });
 
             let productArray = Object.values(productSales);
-
             if (searchQuery) {
-                const query = searchQuery.toLowerCase();
-                productArray = productArray.filter(p =>
-                    p.name.toLowerCase().includes(query) ||
-                    p.code.toLowerCase().includes(query)
-                );
+                const q = searchQuery.toLowerCase();
+                productArray = productArray.filter(p => p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q));
             }
-
             productArray.sort((a, b) => b.amount - a.amount);
-
             const topProducts = productArray.slice(0, 10);
-            const totalFound = productArray.length;
 
             let html = `
                 <div style="background:white; border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); margin-bottom:12px;">
@@ -1960,26 +1430,21 @@
                             🔍 ${searchQuery ? 'Search Active' : 'Search'}
                         </button>
                     </div>
-                    ${searchQuery ? `<p style="font-size:11px; color:#666; margin-top:4px;">Hasil pencarian: <strong>"${searchQuery}"</strong> • ${totalFound} item ditemukan</p>` : ''}
+                    ${searchQuery ? '<p style="font-size:11px; color:#666; margin-top:4px;">Hasil pencarian: <strong>"' + searchQuery + '"</strong> • ' + productArray.length + ' item ditemukan</p>' : ''}
                     <p style="font-size:11px; color:#999; margin-top:2px;">Klik item untuk melihat detail penjualan per tanggal</p>
                 </div>
                 <div class="product-list">
             `;
 
             if (topProducts.length === 0) {
-                html += `
-                    <div class="empty-state" style="padding:20px;">
-                        <div class="icon">🔍</div>
-                        <p>Tidak ada item yang cocok dengan pencarian "${searchQuery}"</p>
-                    </div>
-                `;
+                html += '<div class="empty-state" style="padding:20px;"><div class="icon">🔍</div><p>Tidak ada item yang cocok dengan pencarian "' + searchQuery + '"</p></div>';
             } else {
                 topProducts.forEach((item, i) => {
-                    const displayCode = item.code ? `[${item.code}]` : '';
+                    const code = item.code ? '[' + item.code + ']' : '';
                     html += `
                         <div class="product-item" onclick="showItemDetail('${escapeString(item.name)}', '${escapeString(item.dept)}')">
                             <span style="font-size:12px; color:#999; margin-right:8px; min-width:24px;">#${i+1}</span>
-                            <span class="name">${item.name} ${displayCode}</span>
+                            <span class="name">${item.name} ${code}</span>
                             <span class="dept">${item.dept}</span>
                             <span style="display:flex; align-items:center; gap:4px;">
                                 <span class="qty">${Math.round(item.qty)}x</span>
@@ -1990,24 +1455,15 @@
                     `;
                 });
             }
-
             html += '</div>';
-
-            if (searchQuery) {
-                const searchSection = document.getElementById('searchSection');
-                searchSection.style.display = 'block';
-                document.querySelector('.search-toggle-btn')?.classList.add('active');
-            }
-
             container.innerHTML = html;
         }
 
         function renderProducts() {
             const data = getFilteredData();
             const container = document.getElementById('productList');
-
             if (data.length === 0) {
-                container.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>No data</p></div>`;
+                container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>No data</p></div>';
                 return;
             }
 
@@ -2019,29 +1475,21 @@
             filtered.forEach(d => {
                 const key = d.itemName + '|' + d.department;
                 if (!productSales[key]) {
-                    productSales[key] = {
-                        qty: 0,
-                        amount: 0,
-                        dept: d.department,
-                        name: d.itemName,
-                        code: d.itemCode || ''
-                    };
+                    productSales[key] = { qty: 0, amount: 0, dept: d.department, name: d.itemName, code: d.itemCode || '' };
                 }
                 productSales[key].qty += d.qty;
                 productSales[key].amount += d.amount;
             });
 
             const limit = parseInt(document.getElementById('productLimit').value) || 20;
-            const sorted = Object.values(productSales)
-                .sort((a, b) => b.amount - a.amount)
-                .slice(0, limit);
+            const sorted = Object.values(productSales).sort((a, b) => b.amount - a.amount).slice(0, limit);
 
             let html = '';
-            sorted.forEach((item) => {
-                const displayCode = item.code ? `[${item.code}]` : '';
+            sorted.forEach(item => {
+                const code = item.code ? '[' + item.code + ']' : '';
                 html += `
                     <div class="product-item" onclick="showItemDetail('${escapeString(item.name)}', '${escapeString(item.dept)}')">
-                        <span class="name">${item.name} ${displayCode}</span>
+                        <span class="name">${item.name} ${code}</span>
                         <span class="dept">${item.dept}</span>
                         <span style="display:flex; align-items:center; gap:8px;">
                             <span class="qty">${Math.round(item.qty)}x</span>
@@ -2051,17 +1499,14 @@
                     </div>
                 `;
             });
-
-            if (!html) html = `<div class="empty-state"><p>No products found</p></div>`;
-            container.innerHTML = html;
+            container.innerHTML = html || '<div class="empty-state"><p>No products found</p></div>';
         }
 
         function renderDeptSummary() {
             const data = getFilteredData();
             const container = document.getElementById('deptSummary');
-
             if (data.length === 0) {
-                container.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>No data</p></div>`;
+                container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>No data</p></div>';
                 return;
             }
 
@@ -2072,126 +1517,74 @@
                 deptData[d.department].qty += d.qty;
             });
 
-            const sorted = Object.entries(deptData).sort((a, b) => b[1].amount - a[1].amount);
-
             let html = '';
-            sorted.forEach(([dept, data]) => {
-                html += `
-                    <div class="dept-row">
-                        <span class="name">${dept}</span>
-                        <span class="value">${formatRupiah(data.amount)} (${Math.round(data.qty)} pcs)</span>
-                    </div>
-                `;
+            Object.entries(deptData).sort((a, b) => b[1].amount - a[1].amount).forEach(([dept, d]) => {
+                html += '<div class="dept-row"><span class="name">' + dept + '</span><span class="value">' + formatRupiah(d.amount) + ' (' + Math.round(d.qty) + ' pcs)</span></div>';
             });
-
             container.innerHTML = html;
         }
 
         function renderCharts() {
             const data = getFilteredData();
             if (data.length === 0) {
-                if (chartTrend) { chartTrend.destroy(); chartTrend = null; }
-                if (chartDept) { chartDept.destroy(); chartDept = null; }
+                if (chartTrend) { chartTrend.destroy();
+                    chartTrend = null; }
+                if (chartDept) { chartDept.destroy();
+                    chartDept = null; }
                 return;
             }
 
             const dailyData = {};
-            data.forEach(d => {
-                if (!dailyData[d.dateStr]) dailyData[d.dateStr] = 0;
-                dailyData[d.dateStr] += d.amount;
-            });
-
-            const sortedDates = Object.keys(dailyData).sort();
-            const labels = sortedDates.map(d => d.substring(5));
-            const values = sortedDates.map(d => dailyData[d]);
-
+            data.forEach(d => { if (!dailyData[d.dateStr]) dailyData[d.dateStr] = 0;
+                dailyData[d.dateStr] += d.amount; });
+            const sorted = Object.keys(dailyData).sort();
             const ctx = document.getElementById('trendChart').getContext('2d');
             if (chartTrend) chartTrend.destroy();
-
             chartTrend = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Daily Sales (Rp)',
-                        data: values,
-                        borderColor: '#283593',
-                        backgroundColor: 'rgba(40, 53, 147, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }]
+                    labels: sorted.map(d => d.substring(5)),
+                    datasets: [{ label: 'Daily Sales (Rp)', data: sorted.map(d => dailyData[d]), borderColor: '#283593', backgroundColor: 'rgba(40,53,147,0.1)', fill: true, tension: 0.4 }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: v => formatRupiah(v, true)
-                            }
-                        }
-                    }
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { callback: v => formatRupiah(v, true) } } }
                 }
             });
 
             const deptData = {};
-            data.forEach(d => {
-                if (!deptData[d.department]) deptData[d.department] = 0;
-                deptData[d.department] += d.amount;
-            });
-
-            const sortedDepts = Object.entries(deptData).sort((a, b) => b[1] - a[1]);
-            const deptLabels = sortedDepts.map(d => d[0]);
-            const deptValues = sortedDepts.map(d => d[1]);
-
+            data.forEach(d => { if (!deptData[d.department]) deptData[d.department] = 0;
+                deptData[d.department] += d.amount; });
+            const depts = Object.entries(deptData).sort((a, b) => b[1] - a[1]);
             const ctx2 = document.getElementById('deptChart').getContext('2d');
             if (chartDept) chartDept.destroy();
-
             const colors = ['#283593', '#1a237e', '#3f51b5', '#5c6bc0', '#7986cb', '#9fa8da', '#c5cae9'];
-
             chartDept = new Chart(ctx2, {
                 type: 'bar',
                 data: {
-                    labels: deptLabels,
-                    datasets: [{
-                        label: 'Sales by Department',
-                        data: deptValues,
-                        backgroundColor: colors.slice(0, deptLabels.length),
-                        borderRadius: 4
-                    }]
+                    labels: depts.map(d => d[0]),
+                    datasets: [{ label: 'Sales by Department', data: depts.map(d => d[1]), backgroundColor: colors.slice(0, depts.length), borderRadius: 4 }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: v => formatRupiah(v, true)
-                            }
-                        }
-                    }
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { callback: v => formatRupiah(v, true) } } }
                 }
             });
         }
 
+        // ============================================================
+        // DETAIL & PDF EXPORT
+        // ============================================================
         function showItemDetail(itemName, department) {
             currentDetailItem = { name: itemName, dept: department };
-
-            document.getElementById('detailTitle').textContent = `📦 ${itemName}`;
-
+            document.getElementById('detailTitle').textContent = '📦 ' + itemName;
             document.getElementById('detailDateFrom').value = '';
             document.getElementById('detailDateTo').value = '';
-
             document.getElementById('detailOverlay').classList.add('active');
-
             renderDetailTable();
         }
 
@@ -2204,208 +1597,47 @@
 
         function renderDetailTable() {
             if (!currentDetailItem) return;
-
             const container = document.getElementById('detailTableContainer');
             const from = document.getElementById('detailDateFrom').value;
             const to = document.getElementById('detailDateTo').value;
 
-            let itemData = originalData.filter(d =>
-                d.itemName === currentDetailItem.name &&
-                d.department === currentDetailItem.dept
-            );
-
+            let itemData = originalData.filter(d => d.itemName === currentDetailItem.name && d.department === currentDetailItem.dept);
             if (from) itemData = itemData.filter(d => d.dateStr >= from);
             if (to) itemData = itemData.filter(d => d.dateStr <= to);
-
             detailDataCache = itemData;
 
             const dailyData = {};
             itemData.forEach(d => {
-                if (!dailyData[d.dateStr]) {
-                    dailyData[d.dateStr] = { qty: 0, amount: 0 };
-                }
+                if (!dailyData[d.dateStr]) dailyData[d.dateStr] = { qty: 0, amount: 0 };
                 dailyData[d.dateStr].qty += d.qty;
                 dailyData[d.dateStr].amount += d.amount;
             });
 
-            const sortedDates = Object.keys(dailyData).sort();
-            const totalQty = sortedDates.reduce((sum, d) => sum + dailyData[d].qty, 0);
-            const totalAmount = sortedDates.reduce((sum, d) => sum + dailyData[d].amount, 0);
-
+            const dates = Object.keys(dailyData).sort();
+            const totalQty = dates.reduce((s, d) => s + dailyData[d].qty, 0);
+            const totalAmount = dates.reduce((s, d) => s + dailyData[d].amount, 0);
             document.getElementById('detailTotalQty').textContent = Math.round(totalQty);
             document.getElementById('detailTotalAmount').textContent = formatRupiah(totalAmount);
 
-            if (sortedDates.length === 0) {
-                container.innerHTML = `<div class="detail-empty">📭 No data for this period</div>`;
+            if (dates.length === 0) {
+                container.innerHTML = '<div class="detail-empty">📭 No data for this period</div>';
                 return;
             }
 
-            let html = `
-                <table class="detail-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th style="text-align:right;">Qty</th>
-                            <th style="text-align:right;">Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
-            sortedDates.forEach(date => {
-                const data = dailyData[date];
-                html += `
-                    <tr>
-                        <td class="date-cell">${formatDate(date)}</td>
-                        <td class="qty-cell">${Math.round(data.qty)}</td>
-                        <td class="amount-cell">${formatRupiah(data.amount)}</td>
-                    </tr>
-                `;
+            let html = '<table class="detail-table"><thead><tr><th>Date</th><th style="text-align:right;">Qty</th><th style="text-align:right;">Amount</th></tr></thead><tbody>';
+            dates.forEach(date => {
+                const d = dailyData[date];
+                html += '<tr><td class="date-cell">' + formatDate(date) + '</td><td class="qty-cell">' + Math.round(d.qty) + '</td><td class="amount-cell">' + formatRupiah(d.amount) + '</td></tr>';
             });
-
-            html += `
-                    <tr style="border-top: 2px solid #e8eaf6; font-weight: 600;">
-                        <td style="color:#1a237e;">TOTAL</td>
-                        <td class="qty-cell">${Math.round(totalQty)}</td>
-                        <td class="amount-cell">${formatRupiah(totalAmount)}</td>
-                    </tr>
-            `;
-
-            html += `</tbody></table>`;
+            html += '<tr style="border-top:2px solid #e8eaf6;font-weight:600;"><td style="color:#1a237e;">TOTAL</td><td class="qty-cell">' + Math.round(totalQty) + '</td><td class="amount-cell">' + formatRupiah(totalAmount) + '</td></tr>';
+            html += '</tbody></table>';
             container.innerHTML = html;
         }
 
         function formatDate(dateStr) {
             if (!dateStr) return '-';
-            const parts = dateStr.split('-');
-            if (parts.length === 3) {
-                return `${parts[2]}/${parts[1]}/${parts[0].substring(2)}`;
-            }
-            return dateStr;
-        }
-
-        function exportDetailPDF() {
-            if (!currentDetailItem || detailDataCache.length === 0) {
-                showToast('Tidak ada data untuk diexport', 'warning');
-                return;
-            }
-
-            try {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF('p', 'pt', 'a4');
-
-                doc.setFontSize(18);
-                doc.setTextColor(26, 35, 126);
-                doc.text(`Detail Penjualan: ${currentDetailItem.name}`, 40, 50);
-
-                doc.setFontSize(11);
-                doc.setTextColor(100);
-                doc.text(`Department: ${currentDetailItem.dept}`, 40, 75);
-
-                const from = document.getElementById('detailDateFrom').value;
-                const to = document.getElementById('detailDateTo').value;
-                let dateRange = 'Semua Tanggal';
-                if (from && to) dateRange = `${formatDate(from)} - ${formatDate(to)}`;
-                else if (from) dateRange = `Dari ${formatDate(from)}`;
-                else if (to) dateRange = `Sampai ${formatDate(to)}`;
-                doc.text(`Periode: ${dateRange}`, 40, 95);
-
-                const totalQty = detailDataCache.reduce((sum, d) => sum + d.qty, 0);
-                const totalAmount = detailDataCache.reduce((sum, d) => sum + d.amount, 0);
-
-                doc.setFontSize(12);
-                doc.setTextColor(26, 35, 126);
-                doc.text(`Total Qty: ${Math.round(totalQty)}`, 40, 125);
-                doc.text(`Total Amount: ${formatRupiah(totalAmount)}`, 40, 145);
-
-                const headers = ['Tanggal', 'Qty', 'Amount'];
-                const tableData = [];
-
-                const dailyData = {};
-                detailDataCache.forEach(d => {
-                    if (!dailyData[d.dateStr]) dailyData[d.dateStr] = { qty: 0, amount: 0 };
-                    dailyData[d.dateStr].qty += d.qty;
-                    dailyData[d.dateStr].amount += d.amount;
-                });
-
-                const sortedDates = Object.keys(dailyData).sort();
-                sortedDates.forEach(date => {
-                    const data = dailyData[date];
-                    tableData.push([
-                        formatDate(date),
-                        Math.round(data.qty).toString(),
-                        formatRupiah(data.amount)
-                    ]);
-                });
-
-                tableData.push(['TOTAL', Math.round(totalQty).toString(), formatRupiah(totalAmount)]);
-
-                const startY = 175;
-                const margin = 40;
-                const colWidths = [150, 80, 200];
-                const rowHeight = 25;
-
-                doc.setFontSize(10);
-                doc.setTextColor(255);
-                doc.setFillColor(26, 35, 126);
-                doc.rect(margin, startY, colWidths[0], rowHeight, 'F');
-                doc.rect(margin + colWidths[0], startY, colWidths[1], rowHeight, 'F');
-                doc.rect(margin + colWidths[0] + colWidths[1], startY, colWidths[2], rowHeight, 'F');
-                doc.text(headers[0], margin + 8, startY + 17);
-                doc.text(headers[1], margin + colWidths[0] + 8, startY + 17);
-                doc.text(headers[2], margin + colWidths[0] + colWidths[1] + 8, startY + 17);
-
-                let currentY = startY + rowHeight;
-                const maxRows = Math.floor((doc.internal.pageSize.height - currentY - 40) / rowHeight);
-
-                tableData.forEach((row, index) => {
-                    if (index > 0 && index % maxRows === 0) {
-                        doc.addPage();
-                        currentY = 40;
-                        doc.setFontSize(10);
-                        doc.setTextColor(255);
-                        doc.setFillColor(26, 35, 126);
-                        doc.rect(margin, currentY, colWidths[0], rowHeight, 'F');
-                        doc.rect(margin + colWidths[0], currentY, colWidths[1], rowHeight, 'F');
-                        doc.rect(margin + colWidths[0] + colWidths[1], currentY, colWidths[2], rowHeight, 'F');
-                        doc.text(headers[0], margin + 8, currentY + 17);
-                        doc.text(headers[1], margin + colWidths[0] + 8, currentY + 17);
-                        doc.text(headers[2], margin + colWidths[0] + colWidths[1] + 8, currentY + 17);
-                        currentY += rowHeight;
-                    }
-
-                    const isTotal = row[0] === 'TOTAL';
-                    doc.setFontSize(10);
-                    doc.setTextColor(isTotal ? 26 : 51, isTotal ? 35 : 51, isTotal ? 126 : 51);
-                    doc.setFillColor(isTotal ? 232 : 255, isTotal ? 234 : 255, isTotal ? 246 : 255);
-
-                    doc.rect(margin, currentY, colWidths[0], rowHeight, isTotal ? 'F' : '');
-                    doc.rect(margin + colWidths[0], currentY, colWidths[1], rowHeight, isTotal ? 'F' : '');
-                    doc.rect(margin + colWidths[0] + colWidths[1], currentY, colWidths[2], rowHeight, isTotal ? 'F' : '');
-
-                    doc.text(row[0], margin + 8, currentY + 17);
-                    doc.text(row[1], margin + colWidths[0] + 8, currentY + 17);
-                    doc.text(row[2], margin + colWidths[0] + colWidths[1] + 8, currentY + 17);
-
-                    currentY += rowHeight;
-                });
-
-                const totalPages = doc.internal.getNumberOfPages();
-                doc.setFontSize(9);
-                doc.setTextColor(150);
-                for (let i = 1; i <= totalPages; i++) {
-                    doc.setPage(i);
-                    doc.text(`Halaman ${i} dari ${totalPages}`, doc.internal.pageSize.width - 120, doc.internal.pageSize.height - 20);
-                    doc.text(`Generated: ${new Date().toLocaleDateString('id-ID')} ${new Date().toLocaleTimeString('id-ID')}`, 40, doc.internal.pageSize.height - 20);
-                }
-
-                doc.save(`Detail_${currentDetailItem.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
-                showToast('✅ PDF berhasil diexport!', 'success');
-
-            } catch (err) {
-                console.error('PDF Export error:', err);
-                showToast('Error export PDF: ' + err.message, 'warning');
-            }
+            const p = dateStr.split('-');
+            return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0].substring(2) : dateStr;
         }
 
         function escapeString(str) {
@@ -2422,28 +1654,148 @@
             return 'Rp ' + Math.round(num).toLocaleString('id-ID');
         }
 
-        // Auto-apply filters
+        // ============================================================
+        // PDF EXPORT - FIXED
+        // ============================================================
+        function exportDetailPDF() {
+            if (!currentDetailItem || detailDataCache.length === 0) {
+                showToast('Tidak ada data untuk diexport', 'warning');
+                return;
+            }
+
+            try {
+                const { jsPDF } = window.jspdf;
+                if (!jsPDF) {
+                    showToast('Library PDF tidak tersedia. Coba refresh halaman.', 'warning');
+                    return;
+                }
+
+                const doc = new jsPDF('p', 'pt', 'a4');
+                const pageWidth = doc.internal.pageSize.width;
+                const margin = 40;
+
+                // Title
+                doc.setFontSize(18);
+                doc.setTextColor(26, 35, 126);
+                doc.text('Detail Penjualan: ' + currentDetailItem.name, margin, 50);
+
+                // Subtitle
+                doc.setFontSize(11);
+                doc.setTextColor(100);
+                doc.text('Department: ' + currentDetailItem.dept, margin, 75);
+
+                // Date range
+                const from = document.getElementById('detailDateFrom').value;
+                const to = document.getElementById('detailDateTo').value;
+                let range = 'Semua Tanggal';
+                if (from && to) range = formatDate(from) + ' - ' + formatDate(to);
+                else if (from) range = 'Dari ' + formatDate(from);
+                else if (to) range = 'Sampai ' + formatDate(to);
+                doc.text('Periode: ' + range, margin, 95);
+
+                // Summary
+                const totalQty = detailDataCache.reduce((s, d) => s + d.qty, 0);
+                const totalAmount = detailDataCache.reduce((s, d) => s + d.amount, 0);
+                doc.setFontSize(12);
+                doc.setTextColor(26, 35, 126);
+                doc.text('Total Qty: ' + Math.round(totalQty), margin, 125);
+                doc.text('Total Amount: ' + formatRupiah(totalAmount), margin, 145);
+
+                // Table
+                const dailyData = {};
+                detailDataCache.forEach(d => {
+                    if (!dailyData[d.dateStr]) dailyData[d.dateStr] = { qty: 0, amount: 0 };
+                    dailyData[d.dateStr].qty += d.qty;
+                    dailyData[d.dateStr].amount += d.amount;
+                });
+
+                const dates = Object.keys(dailyData).sort();
+                const tableData = dates.map(date => [formatDate(date), Math.round(dailyData[date].qty).toString(), formatRupiah(dailyData[date].amount)]);
+                tableData.push(['TOTAL', Math.round(totalQty).toString(), formatRupiah(totalAmount)]);
+
+                const colWidths = [150, 80, 200];
+                const rowHeight = 25;
+                let y = 175;
+
+                // Table header
+                doc.setFontSize(10);
+                doc.setTextColor(255);
+                doc.setFillColor(26, 35, 126);
+                doc.rect(margin, y, colWidths[0], rowHeight, 'F');
+                doc.rect(margin + colWidths[0], y, colWidths[1], rowHeight, 'F');
+                doc.rect(margin + colWidths[0] + colWidths[1], y, colWidths[2], rowHeight, 'F');
+                doc.text('Tanggal', margin + 8, y + 17);
+                doc.text('Qty', margin + colWidths[0] + 8, y + 17);
+                doc.text('Amount', margin + colWidths[0] + colWidths[1] + 8, y + 17);
+                y += rowHeight;
+
+                const maxRows = Math.floor((doc.internal.pageSize.height - y - 40) / rowHeight);
+
+                tableData.forEach((row, idx) => {
+                    if (idx > 0 && idx % maxRows === 0) {
+                        doc.addPage();
+                        y = 40;
+                        doc.setFontSize(10);
+                        doc.setTextColor(255);
+                        doc.setFillColor(26, 35, 126);
+                        doc.rect(margin, y, colWidths[0], rowHeight, 'F');
+                        doc.rect(margin + colWidths[0], y, colWidths[1], rowHeight, 'F');
+                        doc.rect(margin + colWidths[0] + colWidths[1], y, colWidths[2], rowHeight, 'F');
+                        doc.text('Tanggal', margin + 8, y + 17);
+                        doc.text('Qty', margin + colWidths[0] + 8, y + 17);
+                        doc.text('Amount', margin + colWidths[0] + colWidths[1] + 8, y + 17);
+                        y += rowHeight;
+                    }
+
+                    const isTotal = row[0] === 'TOTAL';
+                    doc.setFontSize(10);
+                    doc.setTextColor(isTotal ? 26 : 51, isTotal ? 35 : 51, isTotal ? 126 : 51);
+                    doc.setFillColor(isTotal ? 232 : 255, isTotal ? 234 : 255, isTotal ? 246 : 255);
+                    doc.rect(margin, y, colWidths[0], rowHeight, isTotal ? 'F' : '');
+                    doc.rect(margin + colWidths[0], y, colWidths[1], rowHeight, isTotal ? 'F' : '');
+                    doc.rect(margin + colWidths[0] + colWidths[1], y, colWidths[2], rowHeight, isTotal ? 'F' : '');
+                    doc.text(row[0], margin + 8, y + 17);
+                    doc.text(row[1], margin + colWidths[0] + 8, y + 17);
+                    doc.text(row[2], margin + colWidths[0] + colWidths[1] + 8, y + 17);
+                    y += rowHeight;
+                });
+
+                // Footer
+                const totalPages = doc.internal.getNumberOfPages();
+                doc.setFontSize(9);
+                doc.setTextColor(150);
+                for (let i = 1; i <= totalPages; i++) {
+                    doc.setPage(i);
+                    doc.text('Halaman ' + i + ' dari ' + totalPages, pageWidth - 120, doc.internal.pageSize.height - 20);
+                    doc.text('Generated: ' + new Date().toLocaleDateString('id-ID') + ' ' + new Date().toLocaleTimeString('id-ID'), margin, doc.internal.pageSize.height - 20);
+                }
+
+                doc.save('Detail_' + currentDetailItem.name.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf');
+                showToast('✅ PDF berhasil diexport!', 'success');
+
+            } catch (err) {
+                console.error('PDF Export error:', err);
+                showToast('Error export PDF: ' + err.message, 'warning');
+            }
+        }
+
+        // ============================================================
+        // AUTO FILTERS
+        // ============================================================
         document.getElementById('filterDateFrom').addEventListener('change', applyFilters);
         document.getElementById('filterDateTo').addEventListener('change', applyFilters);
 
-        // Close detail with Escape key
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeDetail();
-            if (e.key === 'Escape' && document.getElementById('configOverlay').classList.contains('active')) {
-                closeConfig();
-            }
+            if (e.key === 'Escape') { closeDetail();
+                closeConfig(); }
         });
 
         // ============================================================
-        // 6. INITIALIZATION
+        // INIT
         // ============================================================
-
         console.log('🚀 Sales Data Analyzer starting...');
-
-        // Try to initialize Firebase
         initFirebase();
-
-        console.log('✅ Sales Data Analyzer loaded. Upload your Excel file to start.');
+        console.log('✅ Sales Data Analyzer loaded. Upload Excel or CSV to start.');
     </script>
 
 </body>
