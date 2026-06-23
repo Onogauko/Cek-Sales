@@ -7,6 +7,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
     <style>
         * {
             margin: 0;
@@ -31,6 +37,7 @@
             margin-bottom: 16px;
             text-align: center;
             box-shadow: 0 4px 20px rgba(26, 35, 126, 0.3);
+            position: relative;
         }
 
         .header h1 {
@@ -43,6 +50,46 @@
             font-size: 13px;
             opacity: 0.8;
             margin-top: 4px;
+        }
+
+        .header .sync-status {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            opacity: 0.8;
+        }
+
+        .header .sync-status .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .header .sync-status .dot.synced {
+            background: #4caf50;
+        }
+
+        .header .sync-status .dot.syncing {
+            background: #ff9800;
+            animation: pulse 1s infinite;
+        }
+
+        .header .sync-status .dot.error {
+            background: #f44336;
+        }
+
+        .header .sync-status .dot.offline {
+            background: #9e9e9e;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
         }
 
         /* Upload Area */
@@ -102,11 +149,17 @@
             cursor: not-allowed;
         }
 
+        .upload-btn.secondary {
+            background: #e8eaf6;
+            color: #283593;
+            margin-left: 8px;
+        }
+
         #fileInput {
             display: none;
         }
 
-        /* Loading Overlay untuk upload */
+        /* Upload Loading */
         .upload-loading {
             display: none;
             position: absolute;
@@ -411,7 +464,7 @@
             margin-bottom: 12px;
         }
 
-        /* Footer Info */
+        /* Info Bar */
         .info-bar {
             background: white;
             border-radius: 12px;
@@ -420,6 +473,11 @@
             color: #999;
             text-align: center;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px;
         }
 
         .info-bar .warning {
@@ -428,6 +486,15 @@
 
         .info-bar .success {
             color: #2e7d32;
+        }
+
+        .info-bar .saved-badge {
+            background: #4caf50;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
         }
 
         /* Modal / Detail Panel */
@@ -669,13 +736,7 @@
             margin-top: 6px;
         }
 
-        .search-result-count {
-            font-size: 12px;
-            color: #666;
-            padding: 8px 0 4px 0;
-        }
-
-        /* Summary header with title and search toggle */
+        /* Summary header */
         .summary-header {
             display: flex;
             justify-content: space-between;
@@ -713,7 +774,7 @@
             color: #283593;
         }
 
-        /* Toast / Notification */
+        /* Toast */
         .toast {
             position: fixed;
             bottom: 20px;
@@ -744,6 +805,111 @@
 
         .toast.success {
             background: #2e7d32;
+        }
+
+        /* Firebase Config Modal */
+        .config-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 3000;
+            padding: 16px;
+            animation: fadeIn 0.3s;
+            overflow-y: auto;
+        }
+
+        .config-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .config-panel {
+            background: white;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 100%;
+            padding: 24px;
+            animation: slideUp 0.3s ease;
+        }
+
+        .config-panel h3 {
+            color: #1a237e;
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+
+        .config-panel p {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+
+        .config-panel label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            display: block;
+            margin-top: 12px;
+            margin-bottom: 4px;
+        }
+
+        .config-panel input,
+        .config-panel textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 13px;
+            background: #fafafa;
+        }
+
+        .config-panel input:focus,
+        .config-panel textarea:focus {
+            outline: none;
+            border-color: #283593;
+        }
+
+        .config-panel textarea {
+            min-height: 80px;
+            font-family: monospace;
+            font-size: 12px;
+            resize: vertical;
+        }
+
+        .config-panel .btn-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .config-panel .btn-row button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .config-panel .btn-row .btn-save {
+            background: #283593;
+            color: white;
+        }
+
+        .config-panel .btn-row .btn-cancel {
+            background: #e8eaf6;
+            color: #666;
+        }
+
+        .config-panel .btn-row .btn-save:active,
+        .config-panel .btn-row .btn-cancel:active {
+            transform: scale(0.96);
         }
 
         /* Responsive */
@@ -780,6 +946,19 @@
                 padding: 10px 16px;
                 bottom: 12px;
             }
+            .info-bar {
+                flex-direction: column;
+                gap: 6px;
+            }
+            .header .sync-status {
+                position: static;
+                margin-top: 8px;
+                justify-content: center;
+            }
+            .config-panel {
+                padding: 16px;
+                margin: 8px;
+            }
         }
     </style>
 </head>
@@ -789,6 +968,10 @@
     <div class="header">
         <h1>📊 Sales Data Analyzer</h1>
         <p>Upload file Excel untuk analisis penjualan</p>
+        <div class="sync-status" id="syncStatus">
+            <span class="dot offline" id="syncDot"></span>
+            <span id="syncText">Offline</span>
+        </div>
     </div>
 
     <!-- Upload Area -->
@@ -796,10 +979,13 @@
         <div class="icon">📁</div>
         <h3>Upload File Excel</h3>
         <p>Drag & drop atau klik untuk upload</p>
-        <button class="upload-btn" id="uploadBtn">Pilih File</button>
+        <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:8px;">
+            <button class="upload-btn" id="uploadBtn">Pilih File</button>
+            <button class="upload-btn secondary" id="loadFromFirebaseBtn">☁️ Load from Cloud</button>
+            <button class="upload-btn secondary" id="configBtn">⚙️ Config</button>
+        </div>
         <input type="file" id="fileInput" accept=".xlsx,.xls">
 
-        <!-- Upload Loading Indicator -->
         <div class="upload-loading" id="uploadLoading">
             <div class="spinner"></div>
             <p>Memproses file...</p>
@@ -850,7 +1036,6 @@
                 </div>
             </div>
 
-            <!-- Search Section -->
             <div class="search-section" id="searchSection" style="display:none;">
                 <div class="search-row">
                     <input type="text" id="searchInput" placeholder="Cari Item Name atau SKU..." onkeyup="if(event.key==='Enter') applySearch()">
@@ -909,9 +1094,10 @@
 
     </div>
 
-    <!-- Info -->
+    <!-- Info Bar -->
     <div class="info-bar" id="infoBar" style="display:none;">
         <span id="fileInfo">No file loaded</span>
+        <span id="saveStatus"></span>
     </div>
 
     <!-- Detail Modal -->
@@ -944,10 +1130,317 @@
         </div>
     </div>
 
+    <!-- Firebase Config Modal -->
+    <div class="config-overlay" id="configOverlay">
+        <div class="config-panel">
+            <h3>⚙️ Firebase Configuration</h3>
+            <p>Masukkan konfigurasi Firebase Anda. Data akan disimpan di Firestore.</p>
+            <label>Firebase Config (JSON)</label>
+            <textarea id="firebaseConfigInput" placeholder='{
+  "apiKey": "your-api-key",
+  "authDomain": "your-auth-domain",
+  "projectId": "your-project-id",
+  "storageBucket": "your-storage-bucket",
+  "messagingSenderId": "your-sender-id",
+  "appId": "your-app-id"
+}'></textarea>
+            <label>Collection Name</label>
+            <input type="text" id="collectionNameInput" value="sales_data">
+            <div class="btn-row">
+                <button class="btn-save" onclick="saveFirebaseConfig()">💾 Save</button>
+                <button class="btn-cancel" onclick="closeConfig()">Cancel</button>
+            </div>
+            <div id="configStatus" style="margin-top:12px; font-size:12px; color:#666;"></div>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
     <script>
+        // ============================================================
+        // 1. FIREBASE INITIALIZATION
+        // ============================================================
+        let firebaseApp = null;
+        let firestore = null;
+        let isFirebaseReady = false;
+        let currentDocId = null;
+        let isSaving = false;
+
+        // Get config from localStorage
+        function getFirebaseConfig() {
+            try {
+                const saved = localStorage.getItem('firebaseConfig');
+                if (saved) return JSON.parse(saved);
+                return null;
+            } catch {
+                return null;
+            }
+        }
+
+        function getCollectionName() {
+            return localStorage.getItem('firebaseCollection') || 'sales_data';
+        }
+
+        async function initFirebase() {
+            const config = getFirebaseConfig();
+            if (!config) {
+                updateSyncStatus('offline', 'Not Configured');
+                return false;
+            }
+
+            try {
+                // Initialize Firebase
+                firebaseApp = firebase.initializeApp(config);
+                firestore = firebase.firestore();
+                
+                // Test connection
+                await firestore.collection(getCollectionName()).limit(1).get();
+                
+                isFirebaseReady = true;
+                updateSyncStatus('synced', 'Connected');
+                console.log('✅ Firebase connected successfully');
+                
+                // Try to load saved data
+                await loadFromFirebase();
+                return true;
+            } catch (err) {
+                console.error('Firebase init error:', err);
+                updateSyncStatus('error', 'Error: ' + err.message);
+                isFirebaseReady = false;
+                return false;
+            }
+        }
+
+        function updateSyncStatus(status, text) {
+            const dot = document.getElementById('syncDot');
+            const label = document.getElementById('syncText');
+            dot.className = 'dot ' + status;
+            label.textContent = text || status;
+        }
+
+        // ============================================================
+        // 2. FIREBASE CRUD OPERATIONS
+        // ============================================================
+
+        // Save data to Firebase
+        async function saveToFirebase(data, filename) {
+            if (!isFirebaseReady) {
+                showToast('Firebase not configured. Please set up config first.', 'warning');
+                return false;
+            }
+
+            if (isSaving) {
+                showToast('Saving in progress...', 'warning');
+                return false;
+            }
+
+            try {
+                isSaving = true;
+                updateSyncStatus('syncing', 'Saving...');
+
+                const collection = getCollectionName();
+                const docData = {
+                    filename: filename,
+                    uploadedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    recordCount: data.length,
+                    data: data,
+                    metadata: {
+                        totalAmount: data.reduce((sum, d) => sum + d.amount, 0),
+                        totalQty: data.reduce((sum, d) => sum + d.qty, 0),
+                        uniqueItems: new Set(data.map(d => d.itemName)).size,
+                        departments: [...new Set(data.map(d => d.department))],
+                        dateRange: {
+                            from: data.reduce((min, d) => d.dateStr < min ? d.dateStr : min, data[0]?.dateStr || ''),
+                            to: data.reduce((max, d) => d.dateStr > max ? d.dateStr : max, data[0]?.dateStr || '')
+                        }
+                    }
+                };
+
+                // If we have a docId, update; otherwise create new
+                let docRef;
+                if (currentDocId) {
+                    docRef = firestore.collection(collection).doc(currentDocId);
+                    await docRef.update(docData);
+                    showToast('✅ Data updated in Firebase!', 'success');
+                } else {
+                    docRef = await firestore.collection(collection).add(docData);
+                    currentDocId = docRef.id;
+                    showToast('✅ Data saved to Firebase!', 'success');
+                }
+
+                updateSyncStatus('synced', 'Saved');
+                document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Saved to Cloud</span>';
+                return true;
+
+            } catch (err) {
+                console.error('Save error:', err);
+                updateSyncStatus('error', 'Save failed');
+                showToast('Error saving: ' + err.message, 'warning');
+                return false;
+            } finally {
+                isSaving = false;
+            }
+        }
+
+        // Load data from Firebase
+        async function loadFromFirebase(docId = null) {
+            if (!isFirebaseReady) {
+                showToast('Firebase not configured.', 'warning');
+                return false;
+            }
+
+            try {
+                updateSyncStatus('syncing', 'Loading...');
+                showToast('Loading data from cloud...', 'info', 2000);
+
+                const collection = getCollectionName();
+                let query = firestore.collection(collection);
+
+                if (docId) {
+                    // Load specific document
+                    const doc = await query.doc(docId).get();
+                    if (!doc.exists) {
+                        showToast('Document not found', 'warning');
+                        updateSyncStatus('error', 'Not found');
+                        return false;
+                    }
+                    const data = doc.data();
+                    currentDocId = docId;
+                    restoreData(data);
+                    return true;
+                } else {
+                    // Load latest document
+                    const snapshot = await query
+                        .orderBy('uploadedAt', 'desc')
+                        .limit(1)
+                        .get();
+
+                    if (snapshot.empty) {
+                        showToast('No saved data found in cloud', 'info', 2000);
+                        updateSyncStatus('synced', 'No data');
+                        return false;
+                    }
+
+                    const doc = snapshot.docs[0];
+                    const data = doc.data();
+                    currentDocId = doc.id;
+                    restoreData(data);
+                    return true;
+                }
+
+            } catch (err) {
+                console.error('Load error:', err);
+                updateSyncStatus('error', 'Load failed');
+                showToast('Error loading: ' + err.message, 'warning');
+                return false;
+            }
+        }
+
+        // Restore data from Firebase document
+        function restoreData(docData) {
+            if (!docData || !docData.data || docData.data.length === 0) {
+                showToast('No data in document', 'warning');
+                return;
+            }
+
+            const data = docData.data;
+            const filename = docData.filename || 'cloud_data';
+
+            // Restore data
+            originalData = data;
+            salesData = [...data];
+            
+            console.log(`✅ Restored ${data.length} records from Firebase`);
+
+            // Update UI
+            showUI(filename);
+            updateStats();
+            populateFilters();
+            renderSummary();
+            renderProducts();
+            renderDeptSummary();
+            renderCharts();
+
+            // Update info
+            const metadata = docData.metadata || {};
+            let infoText = `☁️ ${filename} • ${data.length} records • ID: ${currentDocId.substring(0, 8)}`;
+            if (metadata.dateRange && metadata.dateRange.from) {
+                infoText += ` • ${metadata.dateRange.from} - ${metadata.dateRange.to}`;
+            }
+            fileInfo.textContent = infoText;
+            document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Loaded from Cloud</span>';
+
+            // Show validation
+            const validation = validateData(data);
+            if (validation.warnings.length > 0) {
+                setTimeout(() => {
+                    showToast('⚠️ ' + validation.warnings.join(' • '), 'warning', 4000);
+                }, 500);
+            }
+
+            updateSyncStatus('synced', 'Loaded');
+            showToast('✅ Loaded ' + data.length + ' records from cloud', 'success');
+        }
+
+        // Get list of saved documents
+        async function getSavedDocuments() {
+            if (!isFirebaseReady) return [];
+
+            try {
+                const collection = getCollectionName();
+                const snapshot = await firestore.collection(collection)
+                    .orderBy('uploadedAt', 'desc')
+                    .limit(50)
+                    .get();
+
+                return snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+            } catch (err) {
+                console.error('Error getting documents:', err);
+                return [];
+            }
+        }
+
+        // Show document list to user
+        async function showDocumentList() {
+            if (!isFirebaseReady) {
+                showToast('Firebase not configured', 'warning');
+                return;
+            }
+
+            const docs = await getSavedDocuments();
+            if (docs.length === 0) {
+                showToast('No saved documents found', 'info', 2000);
+                return;
+            }
+
+            // Create a simple selection dialog
+            const docList = docs.map((doc, i) => {
+                const date = doc.uploadedAt ? new Date(doc.uploadedAt.seconds * 1000).toLocaleDateString('id-ID') : 'Unknown';
+                return `${i+1}. ${doc.filename || 'Untitled'} (${doc.recordCount || 0} records) - ${date}`;
+            }).join('\n');
+
+            const choice = prompt(
+                `Pilih data yang akan dimuat:\n\n${docList}\n\nMasukkan nomor (1-${docs.length}) atau ketik 'cancel':`
+            );
+
+            if (choice && choice !== 'cancel') {
+                const idx = parseInt(choice) - 1;
+                if (idx >= 0 && idx < docs.length) {
+                    await loadFromFirebase(docs[idx].id);
+                } else {
+                    showToast('Invalid selection', 'warning');
+                }
+            }
+        }
+
+        // ============================================================
+        // 3. EXISTING CODE (with Firebase integration)
+        // ============================================================
+
         let salesData = [];
         let originalData = [];
         let chartTrend = null;
@@ -1000,8 +1493,79 @@
             if (e.target.files.length) handleFile(e.target.files[0]);
         });
 
-        // ============= TOAST =============
-        let toastTimeout = null;
+        // Config button
+        document.getElementById('configBtn').addEventListener('click', openConfig);
+        document.getElementById('loadFromFirebaseBtn').addEventListener('click', async () => {
+            if (!isFirebaseReady) {
+                showToast('Firebase not configured. Please set up config first.', 'warning');
+                openConfig();
+                return;
+            }
+            await showDocumentList();
+        });
+
+        // ============================================================
+        // 4. CONFIG FUNCTIONS
+        // ============================================================
+
+        function openConfig() {
+            const config = getFirebaseConfig();
+            const input = document.getElementById('firebaseConfigInput');
+            if (config) {
+                input.value = JSON.stringify(config, null, 2);
+            } else {
+                input.value = '';
+            }
+            document.getElementById('collectionNameInput').value = getCollectionName();
+            document.getElementById('configOverlay').classList.add('active');
+            document.getElementById('configStatus').textContent = '';
+        }
+
+        function closeConfig() {
+            document.getElementById('configOverlay').classList.remove('active');
+        }
+
+        function saveFirebaseConfig() {
+            const input = document.getElementById('firebaseConfigInput');
+            const collection = document.getElementById('collectionNameInput').value.trim() || 'sales_data';
+
+            try {
+                const config = JSON.parse(input.value);
+                
+                // Validate required fields
+                const required = ['apiKey', 'authDomain', 'projectId'];
+                for (const field of required) {
+                    if (!config[field]) {
+                        document.getElementById('configStatus').textContent = '❌ Missing required field: ' + field;
+                        document.getElementById('configStatus').style.color = '#e65100';
+                        return;
+                    }
+                }
+
+                // Save to localStorage
+                localStorage.setItem('firebaseConfig', JSON.stringify(config));
+                localStorage.setItem('firebaseCollection', collection);
+
+                document.getElementById('configStatus').textContent = '✅ Config saved! Reconnecting...';
+                document.getElementById('configStatus').style.color = '#2e7d32';
+
+                closeConfig();
+
+                // Reinitialize Firebase
+                isFirebaseReady = false;
+                initFirebase();
+
+                showToast('✅ Firebase config saved!', 'success');
+
+            } catch (err) {
+                document.getElementById('configStatus').textContent = '❌ Invalid JSON: ' + err.message;
+                document.getElementById('configStatus').style.color = '#e65100';
+            }
+        }
+
+        // ============================================================
+        // 5. EXISTING FUNCTIONS (modified for Firebase)
+        // ============================================================
 
         function showToast(message, type = 'info', duration = 3000) {
             const toast = document.getElementById('toast');
@@ -1011,20 +1575,18 @@
             if (type === 'success') toast.classList.add('success');
             toast.classList.add('show');
 
-            if (toastTimeout) clearTimeout(toastTimeout);
-            toastTimeout = setTimeout(() => {
+            if (window.toastTimeout) clearTimeout(window.toastTimeout);
+            window.toastTimeout = setTimeout(() => {
                 toast.classList.remove('show');
             }, duration);
         }
 
-        // ============= FILE HANDLER WITH LOADING =============
         function handleFile(file) {
             if (!file.name.match(/\.(xlsx|xls)$/)) {
                 showToast('Please upload an Excel file (.xlsx or .xls)', 'warning');
                 return;
             }
 
-            // Show loading
             uploadLoading.classList.add('active');
             uploadBtn.disabled = true;
             uploadProgress.textContent = 'Membaca file...';
@@ -1065,7 +1627,6 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // ============= DATA VALIDATION =============
         function validateData(data) {
             const warnings = [];
             const errors = [];
@@ -1074,23 +1635,17 @@
             let zeroAmount = 0;
 
             data.forEach((row, index) => {
-                // Check date format
                 if (row.date && row.dateStr === 'Unknown') {
                     dateErrors++;
                 }
-
-                // Check empty item name
                 if (!row.itemName || row.itemName === 'Unknown Item' || row.itemName.trim() === '') {
                     emptyItems++;
                 }
-
-                // Check zero amount but positive qty
                 if (row.qty > 0 && row.amount === 0) {
                     zeroAmount++;
                 }
             });
 
-            // Detect duplicates
             const seen = new Set();
             let duplicates = 0;
             data.forEach(row => {
@@ -1102,15 +1657,12 @@
             if (dateErrors > 0) {
                 warnings.push(`${dateErrors} baris memiliki format tanggal yang tidak valid`);
             }
-
             if (emptyItems > 0) {
                 warnings.push(`${emptyItems} baris memiliki nama item kosong`);
             }
-
             if (zeroAmount > 0) {
                 warnings.push(`${zeroAmount} baris memiliki Qty > 0 tapi Amount = 0`);
             }
-
             if (duplicates > 0) {
                 warnings.push(`${duplicates} data duplikat ditemukan (tanggal + item + department)`);
             }
@@ -1118,7 +1670,6 @@
             return { warnings, errors, dateErrors, emptyItems, zeroAmount, duplicates };
         }
 
-        // ============= PROCESS DATA =============
         function processData(json, filename) {
             console.log('Raw data sample:', json.slice(0, 3));
 
@@ -1197,7 +1748,6 @@
                 };
             });
 
-            // Filter out rows with no data
             salesData = salesData.filter(d => d.amount > 0 || d.qty > 0);
 
             if (salesData.length === 0) {
@@ -1210,27 +1760,22 @@
             originalData = [...salesData];
             console.log(`Loaded ${salesData.length} records`);
 
-            // ============= VALIDATION =============
             const validation = validateData(salesData);
             let warningMessages = [];
 
             if (validation.dateErrors > 0) {
                 warningMessages.push(`${validation.dateErrors} baris tanggal tidak valid`);
             }
-
             if (validation.duplicates > 0) {
                 warningMessages.push(`${validation.duplicates} data duplikat ditemukan`);
             }
-
             if (validation.emptyItems > 0) {
                 warningMessages.push(`${validation.emptyItems} baris nama item kosong`);
             }
-
             if (validation.zeroAmount > 0) {
                 warningMessages.push(`${validation.zeroAmount} baris Qty > 0 tapi Amount = 0`);
             }
 
-            // Show validation warnings
             if (warningMessages.length > 0) {
                 setTimeout(() => {
                     showToast('⚠️ ' + warningMessages.join(' • '), 'warning', 5000);
@@ -1249,11 +1794,9 @@
             renderDeptSummary();
             renderCharts();
 
-            // Hide loading
             uploadLoading.classList.remove('active');
             uploadBtn.disabled = false;
 
-            // Update info with validation
             let infoText = `📄 ${filename} • ${salesData.length} records`;
             if (validation.duplicates > 0) {
                 infoText += ` • ⚠️ ${validation.duplicates} duplicates`;
@@ -1262,6 +1805,13 @@
                 infoText += ` • ⚠️ ${validation.dateErrors} invalid dates`;
             }
             fileInfo.textContent = infoText;
+
+            // Auto-save to Firebase if configured
+            if (isFirebaseReady && originalData.length > 0) {
+                setTimeout(async () => {
+                    await saveToFirebase(originalData, filename);
+                }, 1000);
+            }
         }
 
         function findColumn(headers, candidates) {
@@ -1279,7 +1829,7 @@
         function showUI(filename) {
             statsGrid.style.display = 'grid';
             tabs.style.display = 'flex';
-            infoBar.style.display = 'block';
+            infoBar.style.display = 'flex';
             document.getElementById('summaryContent').innerHTML = '';
         }
 
@@ -1336,7 +1886,6 @@
             renderCharts();
         }
 
-        // ============= SEARCH FUNCTIONS =============
         function toggleSearch() {
             const section = document.getElementById('searchSection');
             const btn = document.querySelector('.search-toggle-btn');
@@ -1363,7 +1912,6 @@
             renderSummary();
         }
 
-        // ============= SUMMARY WITH SEARCH =============
         function renderSummary() {
             const data = getFilteredData();
             const container = document.getElementById('summaryContent');
@@ -1634,7 +2182,6 @@
             });
         }
 
-        // ============= DETAIL FEATURE =============
         function showItemDetail(itemName, department) {
             currentDetailItem = { name: itemName, dept: department };
 
@@ -1670,7 +2217,6 @@
             if (from) itemData = itemData.filter(d => d.dateStr >= from);
             if (to) itemData = itemData.filter(d => d.dateStr <= to);
 
-            // Cache for PDF export
             detailDataCache = itemData;
 
             const dailyData = {};
@@ -1738,7 +2284,6 @@
             return dateStr;
         }
 
-        // ============= EXPORT DETAIL TO PDF =============
         function exportDetailPDF() {
             if (!currentDetailItem || detailDataCache.length === 0) {
                 showToast('Tidak ada data untuk diexport', 'warning');
@@ -1749,7 +2294,6 @@
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF('p', 'pt', 'a4');
 
-                // Title
                 doc.setFontSize(18);
                 doc.setTextColor(26, 35, 126);
                 doc.text(`Detail Penjualan: ${currentDetailItem.name}`, 40, 50);
@@ -1758,7 +2302,6 @@
                 doc.setTextColor(100);
                 doc.text(`Department: ${currentDetailItem.dept}`, 40, 75);
 
-                // Date range
                 const from = document.getElementById('detailDateFrom').value;
                 const to = document.getElementById('detailDateTo').value;
                 let dateRange = 'Semua Tanggal';
@@ -1767,7 +2310,6 @@
                 else if (to) dateRange = `Sampai ${formatDate(to)}`;
                 doc.text(`Periode: ${dateRange}`, 40, 95);
 
-                // Summary
                 const totalQty = detailDataCache.reduce((sum, d) => sum + d.qty, 0);
                 const totalAmount = detailDataCache.reduce((sum, d) => sum + d.amount, 0);
 
@@ -1776,11 +2318,9 @@
                 doc.text(`Total Qty: ${Math.round(totalQty)}`, 40, 125);
                 doc.text(`Total Amount: ${formatRupiah(totalAmount)}`, 40, 145);
 
-                // Table header
                 const headers = ['Tanggal', 'Qty', 'Amount'];
                 const tableData = [];
 
-                // Aggregate by date
                 const dailyData = {};
                 detailDataCache.forEach(d => {
                     if (!dailyData[d.dateStr]) dailyData[d.dateStr] = { qty: 0, amount: 0 };
@@ -1798,16 +2338,13 @@
                     ]);
                 });
 
-                // Add total row
                 tableData.push(['TOTAL', Math.round(totalQty).toString(), formatRupiah(totalAmount)]);
 
-                // Draw table
                 const startY = 175;
                 const margin = 40;
                 const colWidths = [150, 80, 200];
                 const rowHeight = 25;
 
-                // Headers
                 doc.setFontSize(10);
                 doc.setTextColor(255);
                 doc.setFillColor(26, 35, 126);
@@ -1822,11 +2359,9 @@
                 const maxRows = Math.floor((doc.internal.pageSize.height - currentY - 40) / rowHeight);
 
                 tableData.forEach((row, index) => {
-                    // Check if need new page
                     if (index > 0 && index % maxRows === 0) {
                         doc.addPage();
                         currentY = 40;
-                        // Re-draw header on new page
                         doc.setFontSize(10);
                         doc.setTextColor(255);
                         doc.setFillColor(26, 35, 126);
@@ -1855,7 +2390,6 @@
                     currentY += rowHeight;
                 });
 
-                // Footer
                 const totalPages = doc.internal.getNumberOfPages();
                 doc.setFontSize(9);
                 doc.setTextColor(150);
@@ -1874,7 +2408,6 @@
             }
         }
 
-        // ============= UTILITY =============
         function escapeString(str) {
             return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
         }
@@ -1889,14 +2422,26 @@
             return 'Rp ' + Math.round(num).toLocaleString('id-ID');
         }
 
-        // Auto-apply filters on input change
+        // Auto-apply filters
         document.getElementById('filterDateFrom').addEventListener('change', applyFilters);
         document.getElementById('filterDateTo').addEventListener('change', applyFilters);
 
         // Close detail with Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') closeDetail();
+            if (e.key === 'Escape' && document.getElementById('configOverlay').classList.contains('active')) {
+                closeConfig();
+            }
         });
+
+        // ============================================================
+        // 6. INITIALIZATION
+        // ============================================================
+
+        console.log('🚀 Sales Data Analyzer starting...');
+
+        // Try to initialize Firebase
+        initFirebase();
 
         console.log('✅ Sales Data Analyzer loaded. Upload your Excel file to start.');
     </script>
