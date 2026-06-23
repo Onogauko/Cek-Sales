@@ -6,6 +6,7 @@
     <title>Sales Data Analyzer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -54,6 +55,7 @@
             transition: all 0.3s;
             margin-bottom: 16px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            position: relative;
         }
 
         .upload-area.dragover {
@@ -95,8 +97,55 @@
             transform: scale(0.96);
         }
 
+        .upload-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         #fileInput {
             display: none;
+        }
+
+        /* Loading Overlay untuk upload */
+        .upload-loading {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.9);
+            border-radius: 16px;
+            z-index: 10;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .upload-loading.active {
+            display: flex;
+        }
+
+        .upload-loading .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e8eaf6;
+            border-top: 4px solid #283593;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .upload-loading p {
+            margin-top: 12px;
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .upload-loading .sub {
+            font-size: 12px;
+            color: #888;
+            font-weight: 400;
         }
 
         /* Stats Cards */
@@ -373,6 +422,14 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
 
+        .info-bar .warning {
+            color: #e65100;
+        }
+
+        .info-bar .success {
+            color: #2e7d32;
+        }
+
         /* Modal / Detail Panel */
         .detail-overlay {
             display: none;
@@ -438,6 +495,22 @@
 
         .detail-header .close-btn:active {
             color: #333;
+        }
+
+        .detail-header .export-btn {
+            background: #283593;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 8px;
+        }
+
+        .detail-header .export-btn:active {
+            transform: scale(0.96);
         }
 
         .detail-summary {
@@ -640,6 +713,39 @@
             color: #283593;
         }
 
+        /* Toast / Notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #323232;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 13px;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            max-width: 90%;
+            text-align: center;
+            pointer-events: none;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast.warning {
+            background: #e65100;
+        }
+
+        .toast.success {
+            background: #2e7d32;
+        }
+
         /* Responsive */
         @media (max-width: 480px) {
             body {
@@ -669,6 +775,11 @@
             .search-section .search-btn {
                 flex: 1;
             }
+            .toast {
+                font-size: 12px;
+                padding: 10px 16px;
+                bottom: 12px;
+            }
         }
     </style>
 </head>
@@ -687,6 +798,13 @@
         <p>Drag & drop atau klik untuk upload</p>
         <button class="upload-btn" id="uploadBtn">Pilih File</button>
         <input type="file" id="fileInput" accept=".xlsx,.xls">
+
+        <!-- Upload Loading Indicator -->
+        <div class="upload-loading" id="uploadLoading">
+            <div class="spinner"></div>
+            <p>Memproses file...</p>
+            <span class="sub" id="uploadProgress">Membaca data</span>
+        </div>
     </div>
 
     <!-- Stats -->
@@ -801,7 +919,10 @@
         <div class="detail-panel" onclick="event.stopPropagation()">
             <div class="detail-header">
                 <h3 id="detailTitle">Item Detail</h3>
-                <button class="close-btn" onclick="closeDetail()">&times;</button>
+                <div style="display:flex; align-items:center;">
+                    <button class="export-btn" onclick="exportDetailPDF()">📄 PDF</button>
+                    <button class="close-btn" onclick="closeDetail()">&times;</button>
+                </div>
             </div>
             <div class="detail-summary" id="detailSummary">
                 <div class="item">
@@ -823,6 +944,9 @@
         </div>
     </div>
 
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
     <script>
         let salesData = [];
         let originalData = [];
@@ -831,11 +955,14 @@
         let currentDetailItem = null;
         let searchQuery = '';
         let searchResults = [];
+        let detailDataCache = [];
 
         // DOM refs
         const fileInput = document.getElementById('fileInput');
         const uploadBtn = document.getElementById('uploadBtn');
         const uploadArea = document.getElementById('uploadArea');
+        const uploadLoading = document.getElementById('uploadLoading');
+        const uploadProgress = document.getElementById('uploadProgress');
         const statsGrid = document.getElementById('statsGrid');
         const tabs = document.getElementById('tabs');
         const infoBar = document.getElementById('infoBar');
@@ -852,7 +979,6 @@
                 if (this.dataset.tab === 'products') renderProducts();
                 if (this.dataset.tab === 'dept') renderDeptSummary();
                 if (this.dataset.tab === 'summary') {
-                    // Re-render summary with search state preserved
                     renderSummary();
                 }
             });
@@ -874,28 +1000,125 @@
             if (e.target.files.length) handleFile(e.target.files[0]);
         });
 
-        // File handler
+        // ============= TOAST =============
+        let toastTimeout = null;
+
+        function showToast(message, type = 'info', duration = 3000) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast';
+            if (type === 'warning') toast.classList.add('warning');
+            if (type === 'success') toast.classList.add('success');
+            toast.classList.add('show');
+
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
+        }
+
+        // ============= FILE HANDLER WITH LOADING =============
         function handleFile(file) {
             if (!file.name.match(/\.(xlsx|xls)$/)) {
-                alert('Please upload an Excel file (.xlsx or .xls)');
+                showToast('Please upload an Excel file (.xlsx or .xls)', 'warning');
                 return;
             }
+
+            // Show loading
+            uploadLoading.classList.add('active');
+            uploadBtn.disabled = true;
+            uploadProgress.textContent = 'Membaca file...';
+
             const reader = new FileReader();
+            reader.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const pct = Math.round((e.loaded / e.total) * 100);
+                    uploadProgress.textContent = `Memproses ${pct}%...`;
+                }
+            };
+
             reader.onload = function(e) {
                 try {
+                    uploadProgress.textContent = 'Parsing data...';
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
                     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                     const json = XLSX.utils.sheet_to_json(firstSheet);
-                    processData(json, file.name);
+
+                    uploadProgress.textContent = 'Memproses data...';
+                    setTimeout(() => {
+                        processData(json, file.name);
+                    }, 100);
                 } catch (err) {
-                    alert('Error reading file: ' + err.message);
+                    uploadLoading.classList.remove('active');
+                    uploadBtn.disabled = false;
+                    showToast('Error reading file: ' + err.message, 'warning');
                 }
             };
+
+            reader.onerror = function() {
+                uploadLoading.classList.remove('active');
+                uploadBtn.disabled = false;
+                showToast('Error reading file', 'warning');
+            };
+
             reader.readAsArrayBuffer(file);
         }
 
-        // Process data
+        // ============= DATA VALIDATION =============
+        function validateData(data) {
+            const warnings = [];
+            const errors = [];
+            let dateErrors = 0;
+            let emptyItems = 0;
+            let zeroAmount = 0;
+
+            data.forEach((row, index) => {
+                // Check date format
+                if (row.date && row.dateStr === 'Unknown') {
+                    dateErrors++;
+                }
+
+                // Check empty item name
+                if (!row.itemName || row.itemName === 'Unknown Item' || row.itemName.trim() === '') {
+                    emptyItems++;
+                }
+
+                // Check zero amount but positive qty
+                if (row.qty > 0 && row.amount === 0) {
+                    zeroAmount++;
+                }
+            });
+
+            // Detect duplicates
+            const seen = new Set();
+            let duplicates = 0;
+            data.forEach(row => {
+                const key = `${row.dateStr}|${row.itemName}|${row.department}`;
+                if (seen.has(key)) duplicates++;
+                seen.add(key);
+            });
+
+            if (dateErrors > 0) {
+                warnings.push(`${dateErrors} baris memiliki format tanggal yang tidak valid`);
+            }
+
+            if (emptyItems > 0) {
+                warnings.push(`${emptyItems} baris memiliki nama item kosong`);
+            }
+
+            if (zeroAmount > 0) {
+                warnings.push(`${zeroAmount} baris memiliki Qty > 0 tapi Amount = 0`);
+            }
+
+            if (duplicates > 0) {
+                warnings.push(`${duplicates} data duplikat ditemukan (tanggal + item + department)`);
+            }
+
+            return { warnings, errors, dateErrors, emptyItems, zeroAmount, duplicates };
+        }
+
+        // ============= PROCESS DATA =============
         function processData(json, filename) {
             console.log('Raw data sample:', json.slice(0, 3));
 
@@ -915,7 +1138,9 @@
             console.log('Column mapping:', colMap);
 
             if (!colMap.amount && !colMap.qty) {
-                alert('Could not find required columns (Sales Qty or Sales Amount). Please check your file.');
+                uploadLoading.classList.remove('active');
+                uploadBtn.disabled = false;
+                showToast('Could not find required columns (Sales Qty or Sales Amount). Please check your file.', 'warning');
                 return;
             }
 
@@ -932,13 +1157,16 @@
             salesData = json.map(row => {
                 const dateVal = colMap.date ? row[colMap.date] : null;
                 let parsedDate = null;
+                let dateStr = 'Unknown';
                 if (dateVal) {
                     if (typeof dateVal === 'number') {
                         parsedDate = new Date((dateVal - 25569) * 86400 * 1000);
                     } else {
                         parsedDate = new Date(dateVal);
                     }
-                    if (isNaN(parsedDate.getTime())) parsedDate = null;
+                    if (!isNaN(parsedDate.getTime())) {
+                        dateStr = parsedDate.toISOString().split('T')[0];
+                    }
                 }
 
                 const qty = parseFloat(colMap.qty ? row[colMap.qty] : 0) || 0;
@@ -958,26 +1186,60 @@
 
                 return {
                     date: parsedDate,
-                    dateStr: parsedDate ? parsedDate.toISOString().split('T')[0] : 'Unknown',
+                    dateStr: dateStr,
                     department: dept || 'Unknown',
-                    itemName: itemName,
-                    itemCode: itemCode,
-                    category: category,
+                    itemName: itemName || 'Unknown Item',
+                    itemCode: itemCode || '',
+                    category: category || '',
                     qty: qty,
                     amount: amount,
                     _raw: row
                 };
             });
 
+            // Filter out rows with no data
             salesData = salesData.filter(d => d.amount > 0 || d.qty > 0);
 
             if (salesData.length === 0) {
-                alert('No valid sales data found in the file. Please check the format.');
+                uploadLoading.classList.remove('active');
+                uploadBtn.disabled = false;
+                showToast('No valid sales data found in the file. Please check the format.', 'warning');
                 return;
             }
 
             originalData = [...salesData];
             console.log(`Loaded ${salesData.length} records`);
+
+            // ============= VALIDATION =============
+            const validation = validateData(salesData);
+            let warningMessages = [];
+
+            if (validation.dateErrors > 0) {
+                warningMessages.push(`${validation.dateErrors} baris tanggal tidak valid`);
+            }
+
+            if (validation.duplicates > 0) {
+                warningMessages.push(`${validation.duplicates} data duplikat ditemukan`);
+            }
+
+            if (validation.emptyItems > 0) {
+                warningMessages.push(`${validation.emptyItems} baris nama item kosong`);
+            }
+
+            if (validation.zeroAmount > 0) {
+                warningMessages.push(`${validation.zeroAmount} baris Qty > 0 tapi Amount = 0`);
+            }
+
+            // Show validation warnings
+            if (warningMessages.length > 0) {
+                setTimeout(() => {
+                    showToast('⚠️ ' + warningMessages.join(' • '), 'warning', 5000);
+                }, 500);
+            } else {
+                setTimeout(() => {
+                    showToast('✅ Data valid! ' + salesData.length + ' records loaded', 'success', 3000);
+                }, 500);
+            }
 
             showUI(filename);
             updateStats();
@@ -986,6 +1248,20 @@
             renderProducts();
             renderDeptSummary();
             renderCharts();
+
+            // Hide loading
+            uploadLoading.classList.remove('active');
+            uploadBtn.disabled = false;
+
+            // Update info with validation
+            let infoText = `📄 ${filename} • ${salesData.length} records`;
+            if (validation.duplicates > 0) {
+                infoText += ` • ⚠️ ${validation.duplicates} duplicates`;
+            }
+            if (validation.dateErrors > 0) {
+                infoText += ` • ⚠️ ${validation.dateErrors} invalid dates`;
+            }
+            fileInfo.textContent = infoText;
         }
 
         function findColumn(headers, candidates) {
@@ -1004,7 +1280,6 @@
             statsGrid.style.display = 'grid';
             tabs.style.display = 'flex';
             infoBar.style.display = 'block';
-            fileInfo.textContent = `📄 ${filename} • ${salesData.length} records loaded`;
             document.getElementById('summaryContent').innerHTML = '';
         }
 
@@ -1098,7 +1373,6 @@
                 return;
             }
 
-            // Build product list with search
             const productSales = {};
             data.forEach(d => {
                 const key = d.itemName;
@@ -1117,7 +1391,6 @@
 
             let productArray = Object.values(productSales);
 
-            // Apply search filter
             if (searchQuery) {
                 const query = searchQuery.toLowerCase();
                 productArray = productArray.filter(p =>
@@ -1126,13 +1399,11 @@
                 );
             }
 
-            // Sort by amount
             productArray.sort((a, b) => b.amount - a.amount);
 
             const topProducts = productArray.slice(0, 10);
             const totalFound = productArray.length;
 
-            // Build header with search toggle
             let html = `
                 <div style="background:white; border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); margin-bottom:12px;">
                     <div class="summary-header">
@@ -1174,7 +1445,6 @@
 
             html += '</div>';
 
-            // Show search section if search is active
             if (searchQuery) {
                 const searchSection = document.getElementById('searchSection');
                 searchSection.style.display = 'block';
@@ -1382,6 +1652,7 @@
             if (e && e.target !== e.currentTarget) return;
             document.getElementById('detailOverlay').classList.remove('active');
             currentDetailItem = null;
+            detailDataCache = [];
         }
 
         function renderDetailTable() {
@@ -1398,6 +1669,9 @@
 
             if (from) itemData = itemData.filter(d => d.dateStr >= from);
             if (to) itemData = itemData.filter(d => d.dateStr <= to);
+
+            // Cache for PDF export
+            detailDataCache = itemData;
 
             const dailyData = {};
             itemData.forEach(d => {
@@ -1462,6 +1736,142 @@
                 return `${parts[2]}/${parts[1]}/${parts[0].substring(2)}`;
             }
             return dateStr;
+        }
+
+        // ============= EXPORT DETAIL TO PDF =============
+        function exportDetailPDF() {
+            if (!currentDetailItem || detailDataCache.length === 0) {
+                showToast('Tidak ada data untuk diexport', 'warning');
+                return;
+            }
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('p', 'pt', 'a4');
+
+                // Title
+                doc.setFontSize(18);
+                doc.setTextColor(26, 35, 126);
+                doc.text(`Detail Penjualan: ${currentDetailItem.name}`, 40, 50);
+
+                doc.setFontSize(11);
+                doc.setTextColor(100);
+                doc.text(`Department: ${currentDetailItem.dept}`, 40, 75);
+
+                // Date range
+                const from = document.getElementById('detailDateFrom').value;
+                const to = document.getElementById('detailDateTo').value;
+                let dateRange = 'Semua Tanggal';
+                if (from && to) dateRange = `${formatDate(from)} - ${formatDate(to)}`;
+                else if (from) dateRange = `Dari ${formatDate(from)}`;
+                else if (to) dateRange = `Sampai ${formatDate(to)}`;
+                doc.text(`Periode: ${dateRange}`, 40, 95);
+
+                // Summary
+                const totalQty = detailDataCache.reduce((sum, d) => sum + d.qty, 0);
+                const totalAmount = detailDataCache.reduce((sum, d) => sum + d.amount, 0);
+
+                doc.setFontSize(12);
+                doc.setTextColor(26, 35, 126);
+                doc.text(`Total Qty: ${Math.round(totalQty)}`, 40, 125);
+                doc.text(`Total Amount: ${formatRupiah(totalAmount)}`, 40, 145);
+
+                // Table header
+                const headers = ['Tanggal', 'Qty', 'Amount'];
+                const tableData = [];
+
+                // Aggregate by date
+                const dailyData = {};
+                detailDataCache.forEach(d => {
+                    if (!dailyData[d.dateStr]) dailyData[d.dateStr] = { qty: 0, amount: 0 };
+                    dailyData[d.dateStr].qty += d.qty;
+                    dailyData[d.dateStr].amount += d.amount;
+                });
+
+                const sortedDates = Object.keys(dailyData).sort();
+                sortedDates.forEach(date => {
+                    const data = dailyData[date];
+                    tableData.push([
+                        formatDate(date),
+                        Math.round(data.qty).toString(),
+                        formatRupiah(data.amount)
+                    ]);
+                });
+
+                // Add total row
+                tableData.push(['TOTAL', Math.round(totalQty).toString(), formatRupiah(totalAmount)]);
+
+                // Draw table
+                const startY = 175;
+                const margin = 40;
+                const colWidths = [150, 80, 200];
+                const rowHeight = 25;
+
+                // Headers
+                doc.setFontSize(10);
+                doc.setTextColor(255);
+                doc.setFillColor(26, 35, 126);
+                doc.rect(margin, startY, colWidths[0], rowHeight, 'F');
+                doc.rect(margin + colWidths[0], startY, colWidths[1], rowHeight, 'F');
+                doc.rect(margin + colWidths[0] + colWidths[1], startY, colWidths[2], rowHeight, 'F');
+                doc.text(headers[0], margin + 8, startY + 17);
+                doc.text(headers[1], margin + colWidths[0] + 8, startY + 17);
+                doc.text(headers[2], margin + colWidths[0] + colWidths[1] + 8, startY + 17);
+
+                let currentY = startY + rowHeight;
+                const maxRows = Math.floor((doc.internal.pageSize.height - currentY - 40) / rowHeight);
+
+                tableData.forEach((row, index) => {
+                    // Check if need new page
+                    if (index > 0 && index % maxRows === 0) {
+                        doc.addPage();
+                        currentY = 40;
+                        // Re-draw header on new page
+                        doc.setFontSize(10);
+                        doc.setTextColor(255);
+                        doc.setFillColor(26, 35, 126);
+                        doc.rect(margin, currentY, colWidths[0], rowHeight, 'F');
+                        doc.rect(margin + colWidths[0], currentY, colWidths[1], rowHeight, 'F');
+                        doc.rect(margin + colWidths[0] + colWidths[1], currentY, colWidths[2], rowHeight, 'F');
+                        doc.text(headers[0], margin + 8, currentY + 17);
+                        doc.text(headers[1], margin + colWidths[0] + 8, currentY + 17);
+                        doc.text(headers[2], margin + colWidths[0] + colWidths[1] + 8, currentY + 17);
+                        currentY += rowHeight;
+                    }
+
+                    const isTotal = row[0] === 'TOTAL';
+                    doc.setFontSize(10);
+                    doc.setTextColor(isTotal ? 26 : 51, isTotal ? 35 : 51, isTotal ? 126 : 51);
+                    doc.setFillColor(isTotal ? 232 : 255, isTotal ? 234 : 255, isTotal ? 246 : 255);
+
+                    doc.rect(margin, currentY, colWidths[0], rowHeight, isTotal ? 'F' : '');
+                    doc.rect(margin + colWidths[0], currentY, colWidths[1], rowHeight, isTotal ? 'F' : '');
+                    doc.rect(margin + colWidths[0] + colWidths[1], currentY, colWidths[2], rowHeight, isTotal ? 'F' : '');
+
+                    doc.text(row[0], margin + 8, currentY + 17);
+                    doc.text(row[1], margin + colWidths[0] + 8, currentY + 17);
+                    doc.text(row[2], margin + colWidths[0] + colWidths[1] + 8, currentY + 17);
+
+                    currentY += rowHeight;
+                });
+
+                // Footer
+                const totalPages = doc.internal.getNumberOfPages();
+                doc.setFontSize(9);
+                doc.setTextColor(150);
+                for (let i = 1; i <= totalPages; i++) {
+                    doc.setPage(i);
+                    doc.text(`Halaman ${i} dari ${totalPages}`, doc.internal.pageSize.width - 120, doc.internal.pageSize.height - 20);
+                    doc.text(`Generated: ${new Date().toLocaleDateString('id-ID')} ${new Date().toLocaleTimeString('id-ID')}`, 40, doc.internal.pageSize.height - 20);
+                }
+
+                doc.save(`Detail_${currentDetailItem.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
+                showToast('✅ PDF berhasil diexport!', 'success');
+
+            } catch (err) {
+                console.error('PDF Export error:', err);
+                showToast('Error export PDF: ' + err.message, 'warning');
+            }
         }
 
         // ============= UTILITY =============
