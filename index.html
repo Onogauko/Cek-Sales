@@ -574,7 +574,7 @@
         }
 
         // ============================================================
-        // LOAD FULL DATA FOR DETAIL (FIX)
+        // LOAD FULL DATA FOR DETAIL
         // ============================================================
         async function loadFullDataForDetail(period) {
             if (!isFirebaseReady || !period) return false;
@@ -616,8 +616,6 @@
                     originalData = allData;
                     salesData = [...allData];
                     console.log(`✅ Loaded ${allData.length} records for detail view`);
-                    
-                    // Update filters
                     populateFilters();
                     return true;
                 } else {
@@ -851,13 +849,12 @@
                 const totalAmount = summary.totalAmount || 0;
                 const totalQty = summary.totalQty || 0;
                 const recordCount = summary.recordCount || 0;
-                const daysCount = summary.daysCount || 'N/A';
+
                 document.getElementById('totalSales').textContent = formatRupiah(totalAmount);
                 document.getElementById('totalQty').textContent = Math.round(totalQty);
                 document.getElementById('totalItems').textContent = recordCount;
-                document.getElementById('totalDays').textContent = daysCount;
 
-                let infoText = '☁️ Summary: ' + period + ' • ' + recordCount + ' records • ' + daysCount + ' days';
+                let infoText = '☁️ Summary: ' + period + ' • ' + recordCount + ' records';
                 if (summary.uploadMode) infoText += ' • Mode: ' + summary.uploadMode;
                 if (summary.dedupRemoved) infoText += ' • 🧹 ' + summary.dedupRemoved + ' duplicates removed';
                 if (summary.updatedAt) {
@@ -883,10 +880,30 @@
                 window._lastPeriod = period;
 
                 // ============================================================
-                // LOAD FULL DATA UNTUK DETAIL (FIX)
+                // LOAD FULL DATA UNTUK DETAIL
                 // ============================================================
                 if (period) {
                     await loadFullDataForDetail(period);
+                }
+
+                // ============================================================
+                // HITUNG ULANG DAYS COUNT DARI DATA (FIX)
+                // ============================================================
+                if (originalData.length > 0) {
+                    const uniqueDays = new Set(originalData.map(d => d.dateStr));
+                    const actualDaysCount = uniqueDays.size;
+                    document.getElementById('totalDays').textContent = actualDaysCount;
+                    console.log(`📊 Actual days count: ${actualDaysCount}`);
+                    
+                    // Update info bar dengan days count
+                    const currentInfo = document.getElementById('fileInfo').textContent;
+                    if (!currentInfo.includes('days')) {
+                        document.getElementById('fileInfo').textContent = currentInfo + ` • ${actualDaysCount} days`;
+                    }
+                } else {
+                    // Fallback ke summary jika data tidak bisa di-load
+                    const daysFromSummary = summary.daysCount || 'N/A';
+                    document.getElementById('totalDays').textContent = daysFromSummary;
                 }
 
                 updateSyncStatus('synced', 'Loaded');
@@ -1095,7 +1112,12 @@
 
             let infoText = '☁️ ' + (docData.filename || 'cloud_data') + ' • ' + allData.length + ' records';
             if (docData.period) infoText += ' • Period: ' + docData.period;
-            if (docData.daysCount) infoText += ' • ' + docData.daysCount + ' days';
+            
+            // Hitung days dari data
+            const uniqueDays = new Set(allData.map(d => d.dateStr));
+            const daysCount = uniqueDays.size;
+            infoText += ` • ${daysCount} days`;
+            
             if (docData.uploadMode) infoText += ' • Mode: ' + docData.uploadMode;
             if (docData.status === 'completed') infoText += ' ✅';
             else if (docData.status === 'processing') infoText += ' ⏳';
@@ -1103,6 +1125,9 @@
             
             document.getElementById('fileInfo').textContent = infoText;
             document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Loaded from Cloud</span>';
+
+            // Update days di dashboard
+            document.getElementById('totalDays').textContent = daysCount;
 
             const validation = validateData(allData);
             if (validation.warnings.length > 0) {
@@ -1740,10 +1765,8 @@
         // DETAIL & PDF EXPORT
         // ============================================================
         function showItemDetail(itemName, department) {
-            // Pastikan data sudah di-load
             if (originalData.length === 0) {
                 showToast('📂 Memuat data detail...', 'info', 2000);
-                // Coba load ulang data
                 loadFullDataForDetail(window._lastPeriod || '2026-06').then(() => {
                     if (originalData.length > 0) {
                         showItemDetailDirect(itemName, department);
