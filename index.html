@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cek Data Sales</title>
+    <title>Sales Data Analyzer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -186,7 +186,7 @@
 <body>
 
     <div class="header">
-        <h1>📊 Cek Data Sales</h1>
+        <h1>📊 Sales Data Analyzer</h1>
         <p>Upload file Excel atau CSV untuk analisis penjualan</p>
         <div class="sync-status" id="syncStatus">
             <span class="dot offline" id="syncDot"></span>
@@ -629,7 +629,7 @@
         }
 
         // ============================================================
-        // SAVE TO FIREBASE - DENGAN AUTO-DETECT NEW PERIOD
+        // SAVE TO FIREBASE - DENGAN STATUS COMPLETED & SUMMARY UPDATE
         // ============================================================
         async function saveToFirebase(data, filename) {
             if (!isFirebaseReady) {
@@ -653,30 +653,22 @@
                 console.log(`📌 Period: ${period}`);
                 console.log(`📌 New data: ${data.length} records`);
 
-                // ============================================================
-                // AUTO-DETECT NEW PERIOD
-                // ============================================================
                 const docRef = firestore.collection(collection).doc(period);
                 const doc = await docRef.get();
                 const docExists = doc.exists;
 
-                // Jika period tidak ada di database, otomatis buat baru
-                // (tidak peduli mode apa yang dipilih user)
+                // AUTO-DETECT NEW PERIOD
                 if (!docExists) {
                     console.log(`🆕 New period detected: ${period}. Creating new document.`);
                     mode = 'new_period';
                     showToast(`🆕 Period baru (${period}). Membuat data baru.`, 'info', 2000);
                 }
 
-                // Jika period sudah ada, dan user pilih "continue" → merge
-                // Jika period sudah ada, dan user pilih "replace" → replace
-                // Jika period baru → buat baru (mode = 'new_period')
-
                 let finalData = data;
                 let isReplace = (mode === 'replace');
                 let existingRecordCount = 0;
 
-                // CONTINUE MODE - Hanya jika period sudah ada
+                // CONTINUE MODE
                 if (docExists && mode === 'continue') {
                     console.log('📂 Existing document found. Loading existing data...');
                     
@@ -699,7 +691,7 @@
                     showToast(`🔄 Continue: ${existingRecordCount} old + ${data.length} new → ${finalData.length} unique records`, 'info', 3000);
                 }
 
-                // REPLACE MODE - Hanya jika period sudah ada dan user pilih replace
+                // REPLACE MODE
                 if (docExists && isReplace) {
                     console.log('🔄 Replace mode: will overwrite existing data');
                     finalData = data;
@@ -718,7 +710,7 @@
                     showToast(`🔄 Replace: ${finalData.length} records saved (old data replaced)`, 'info', 3000);
                 }
 
-                // NEW PERIOD - Period belum ada di database
+                // NEW PERIOD
                 if (mode === 'new_period') {
                     console.log('🆕 Creating new document for period:', period);
                     finalData = data;
@@ -735,6 +727,9 @@
                 const daysCount = uniqueDays.size;
                 const chunks = splitDataForFirestore(finalData);
 
+                // ============================================================
+                // SIMPAN MAIN DATA (status: processing dulu)
+                // ============================================================
                 const mainData = {
                     filename: filename,
                     period: period,
@@ -751,11 +746,12 @@
                     dedupRemoved: docExists && mode === 'continue' ? (existingRecordCount + data.length) - finalData.length : 0
                 };
 
-                // SIMPAN MAIN DATA
                 await docRef.set(mainData);
                 currentDocId = period;
 
+                // ============================================================
                 // SIMPAN CHUNKS
+                // ============================================================
                 const batch = firestore.batch();
                 for (let i = 0; i < chunks.length; i++) {
                     const chunkRef = docRef.collection('chunks').doc('chunk_' + i);
@@ -767,10 +763,20 @@
                 }
                 await batch.commit();
 
-                // UPDATE STATUS => completed
-                await docRef.update({ status: "completed" });
+                console.log(`✅ ${chunks.length} chunks saved`);
 
-                // BUAT SUMMARY
+                // ============================================================
+                // UPDATE STATUS => completed (PASTIKAN!)
+                // ============================================================
+                await docRef.update({ 
+                    status: "completed",
+                    completedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                console.log('✅ Status updated to completed');
+
+                // ============================================================
+                // BUAT / UPDATE SUMMARY
+                // ============================================================
                 const topProducts = calculateTopProducts(finalData, 10);
                 const departmentSales = calculateDepartmentSales(finalData);
 
@@ -789,10 +795,15 @@
                     filename: filename,
                     uploadMode: mode,
                     previousRecordCount: docExists ? (mode === 'continue' ? existingRecordCount : 0) : 0,
-                    dedupRemoved: docExists && mode === 'continue' ? (existingRecordCount + data.length) - finalData.length : 0
+                    dedupRemoved: docExists && mode === 'continue' ? (existingRecordCount + data.length) - finalData.length : 0,
+                    status: "completed"
                 });
 
+                console.log('✅ Summary updated');
+
+                // ============================================================
                 // UPDATE DASHBOARD
+                // ============================================================
                 document.getElementById('totalSales').textContent = formatRupiah(totalAmount);
                 document.getElementById('totalQty').textContent = Math.round(totalQty);
                 document.getElementById('totalItems').textContent = finalData.length;
@@ -805,7 +816,7 @@
                 originalData = finalData;
                 salesData = [...finalData];
 
-                let infoText = `☁️ ${filename} • ${finalData.length} records • Period: ${period} • ${daysCount} days`;
+                let infoText = `☁️ ${filename} • ${finalData.length} records • Period: ${period} • ${daysCount} days ✅`;
                 if (mode === 'continue' && docExists) {
                     infoText += ` • Continue (${existingRecordCount}→${finalData.length})`;
                 }
@@ -828,12 +839,16 @@
             } catch (err) {
                 console.error('Save error:', err);
                 
+                // ============================================================
+                // UPDATE STATUS => failed
+                // ============================================================
                 try {
                     if (currentDocId) {
                         const collection = getCollectionName();
                         await firestore.collection(collection).doc(currentDocId).update({
                             status: "failed",
-                            error: err.message
+                            error: err.message,
+                            failedAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
                     }
                 } catch (updateErr) {
@@ -857,8 +872,9 @@
             }
 
             try {
+                // Ambil summary terbaru berdasarkan updatedAt
                 const summarySnapshot = await firestore.collection('sales_summary')
-                    .orderBy('period', 'desc')
+                    .orderBy('updatedAt', 'desc')
                     .limit(1)
                     .get();
 
@@ -872,7 +888,12 @@
                 const period = summaryDoc.id;
 
                 console.log('📊 Summary loaded for period:', period);
+                console.log('📊 Record count:', summary.recordCount);
+                console.log('📊 Status:', summary.status || 'unknown');
 
+                // ============================================================
+                // UPDATE DASHBOARD
+                // ============================================================
                 const totalAmount = summary.totalAmount || 0;
                 const totalQty = summary.totalQty || 0;
                 const recordCount = summary.recordCount || 0;
@@ -881,20 +902,26 @@
                 document.getElementById('totalQty').textContent = Math.round(totalQty);
                 document.getElementById('totalItems').textContent = recordCount;
 
-                let infoText = '☁️ Summary: ' + period + ' • ' + recordCount + ' records';
-                if (summary.uploadMode) infoText += ' • Mode: ' + summary.uploadMode;
-                if (summary.dedupRemoved) infoText += ' • 🧹 ' + summary.dedupRemoved + ' duplicates removed';
-                if (summary.updatedAt) {
-                    const updated = summary.updatedAt.toDate ? summary.updatedAt.toDate() : new Date(summary.updatedAt);
-                    infoText += ' • Updated: ' + updated.toLocaleDateString('id-ID');
+                // ============================================================
+                // LOAD FULL DATA UNTUK DETAIL
+                // ============================================================
+                if (period) {
+                    await loadFullDataForDetail(period);
                 }
-                document.getElementById('fileInfo').textContent = infoText;
-                document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Loaded from Cloud</span>';
 
-                statsGrid.style.display = 'grid';
-                tabs.style.display = 'flex';
-                infoBar.style.display = 'flex';
+                // ============================================================
+                // HITUNG DAYS COUNT
+                // ============================================================
+                if (originalData.length > 0) {
+                    const uniqueDays = new Set(originalData.map(d => d.dateStr));
+                    document.getElementById('totalDays').textContent = uniqueDays.size;
+                } else {
+                    document.getElementById('totalDays').textContent = summary.daysCount || 'N/A';
+                }
 
+                // ============================================================
+                // RENDER SUMMARY & CHART
+                // ============================================================
                 if (summary.topProducts && summary.topProducts.length > 0) {
                     renderSummaryFromData(summary.topProducts, summary.totalAmount, summary.totalQty);
                 }
@@ -903,32 +930,34 @@
                     renderDeptChartFromSummary(summary.departmentSales);
                 }
 
+                // ============================================================
+                // UPDATE INFO BAR
+                // ============================================================
+                let infoText = `☁️ ${summary.filename || 'Data'} • ${summary.recordCount || 0} records • Period: ${period}`;
+                if (summary.daysCount) infoText += ` • ${summary.daysCount} days`;
+                if (summary.status === 'completed') infoText += ' ✅';
+                else if (summary.status === 'processing') infoText += ' ⏳';
+                else if (summary.status === 'failed') infoText += ' ❌';
+                if (summary.updatedAt) {
+                    const updated = summary.updatedAt.toDate ? summary.updatedAt.toDate() : new Date(summary.updatedAt);
+                    infoText += ` • Updated: ${updated.toLocaleDateString('id-ID')} ${updated.toLocaleTimeString('id-ID')}`;
+                }
+                document.getElementById('fileInfo').textContent = infoText;
+                document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Loaded from Cloud</span>';
+
+                statsGrid.style.display = 'grid';
+                tabs.style.display = 'flex';
+                infoBar.style.display = 'flex';
+
                 window._lastSummary = summary;
                 window._lastPeriod = period;
 
-                // LOAD FULL DATA UNTUK DETAIL
-                if (period) {
-                    await loadFullDataForDetail(period);
-                }
-
-                // HITUNG ULANG DAYS COUNT DARI DATA
-                if (originalData.length > 0) {
-                    const uniqueDays = new Set(originalData.map(d => d.dateStr));
-                    const actualDaysCount = uniqueDays.size;
-                    document.getElementById('totalDays').textContent = actualDaysCount;
-                    console.log(`📊 Actual days count: ${actualDaysCount}`);
-                    
-                    const currentInfo = document.getElementById('fileInfo').textContent;
-                    if (!currentInfo.includes('days')) {
-                        document.getElementById('fileInfo').textContent = currentInfo + ` • ${actualDaysCount} days`;
-                    }
-                } else {
-                    const daysFromSummary = summary.daysCount || 'N/A';
-                    document.getElementById('totalDays').textContent = daysFromSummary;
-                }
-
                 updateSyncStatus('synced', 'Loaded');
-                showToast('✅ Loaded summary + data from cloud', 'success');
+                
+                // Tampilkan notifikasi hanya jika ada data
+                if (recordCount > 0) {
+                    showToast(`✅ Loaded ${recordCount} records from cloud`, 'success', 2000);
+                }
                 return true;
 
             } catch (err) {
@@ -1038,7 +1067,7 @@
                     return true;
                 } else {
                     const summarySnapshot = await firestore.collection('sales_summary')
-                        .orderBy('period', 'desc')
+                        .orderBy('updatedAt', 'desc')
                         .limit(1)
                         .get();
 
@@ -1138,7 +1167,6 @@
             const daysCount = uniqueDays.size;
             infoText += ` • ${daysCount} days`;
             
-            if (docData.uploadMode) infoText += ' • Mode: ' + docData.uploadMode;
             if (docData.status === 'completed') infoText += ' ✅';
             else if (docData.status === 'processing') infoText += ' ⏳';
             else if (docData.status === 'failed') infoText += ' ❌';
@@ -2032,7 +2060,7 @@
         // ============================================================
         // INIT
         // ============================================================
-        console.log('🚀 Cek Data Sales starting...');
+        console.log('🚀 Sales Data Analyzer starting...');
         updateSyncStatus('syncing', 'Connecting...');
 
         initFirebase().then(success => {
@@ -2054,7 +2082,7 @@
             }
         });
 
-        console.log('✅ Cek Data Sales loaded. Upload Excel or CSV to start.');
+        console.log('✅ Sales Data Analyzer loaded. Upload Excel or CSV to start.');
     </script>
 
 </body>
