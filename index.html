@@ -727,9 +727,7 @@
                 const daysCount = uniqueDays.size;
                 const chunks = splitDataForFirestore(finalData);
 
-                // ============================================================
                 // SIMPAN MAIN DATA (status: processing dulu)
-                // ============================================================
                 const mainData = {
                     filename: filename,
                     period: period,
@@ -749,9 +747,7 @@
                 await docRef.set(mainData);
                 currentDocId = period;
 
-                // ============================================================
                 // SIMPAN CHUNKS
-                // ============================================================
                 const batch = firestore.batch();
                 for (let i = 0; i < chunks.length; i++) {
                     const chunkRef = docRef.collection('chunks').doc('chunk_' + i);
@@ -765,18 +761,14 @@
 
                 console.log(`✅ ${chunks.length} chunks saved`);
 
-                // ============================================================
-                // UPDATE STATUS => completed (PASTIKAN!)
-                // ============================================================
+                // UPDATE STATUS => completed
                 await docRef.update({ 
                     status: "completed",
                     completedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 console.log('✅ Status updated to completed');
 
-                // ============================================================
                 // BUAT / UPDATE SUMMARY
-                // ============================================================
                 const topProducts = calculateTopProducts(finalData, 10);
                 const departmentSales = calculateDepartmentSales(finalData);
 
@@ -801,9 +793,7 @@
 
                 console.log('✅ Summary updated');
 
-                // ============================================================
                 // UPDATE DASHBOARD
-                // ============================================================
                 document.getElementById('totalSales').textContent = formatRupiah(totalAmount);
                 document.getElementById('totalQty').textContent = Math.round(totalQty);
                 document.getElementById('totalItems').textContent = finalData.length;
@@ -839,9 +829,6 @@
             } catch (err) {
                 console.error('Save error:', err);
                 
-                // ============================================================
-                // UPDATE STATUS => failed
-                // ============================================================
                 try {
                     if (currentDocId) {
                         const collection = getCollectionName();
@@ -891,9 +878,7 @@
                 console.log('📊 Record count:', summary.recordCount);
                 console.log('📊 Status:', summary.status || 'unknown');
 
-                // ============================================================
                 // UPDATE DASHBOARD
-                // ============================================================
                 const totalAmount = summary.totalAmount || 0;
                 const totalQty = summary.totalQty || 0;
                 const recordCount = summary.recordCount || 0;
@@ -902,16 +887,12 @@
                 document.getElementById('totalQty').textContent = Math.round(totalQty);
                 document.getElementById('totalItems').textContent = recordCount;
 
-                // ============================================================
                 // LOAD FULL DATA UNTUK DETAIL
-                // ============================================================
                 if (period) {
                     await loadFullDataForDetail(period);
                 }
 
-                // ============================================================
                 // HITUNG DAYS COUNT
-                // ============================================================
                 if (originalData.length > 0) {
                     const uniqueDays = new Set(originalData.map(d => d.dateStr));
                     document.getElementById('totalDays').textContent = uniqueDays.size;
@@ -919,9 +900,7 @@
                     document.getElementById('totalDays').textContent = summary.daysCount || 'N/A';
                 }
 
-                // ============================================================
                 // RENDER SUMMARY & CHART
-                // ============================================================
                 if (summary.topProducts && summary.topProducts.length > 0) {
                     renderSummaryFromData(summary.topProducts, summary.totalAmount, summary.totalQty);
                 }
@@ -930,9 +909,7 @@
                     renderDeptChartFromSummary(summary.departmentSales);
                 }
 
-                // ============================================================
                 // UPDATE INFO BAR
-                // ============================================================
                 let infoText = `☁️ ${summary.filename || 'Data'} • ${summary.recordCount || 0} records • Period: ${period}`;
                 if (summary.daysCount) infoText += ` • ${summary.daysCount} days`;
                 if (summary.status === 'completed') infoText += ' ✅';
@@ -954,7 +931,6 @@
 
                 updateSyncStatus('synced', 'Loaded');
                 
-                // Tampilkan notifikasi hanya jika ada data
                 if (recordCount > 0) {
                     showToast(`✅ Loaded ${recordCount} records from cloud`, 'success', 2000);
                 }
@@ -1440,7 +1416,7 @@
         }
 
         // ============================================================
-        // PROCESS DATA
+        // PROCESS DATA - DIPERBAIKI
         // ============================================================
         function processData(json, filename) {
             const headers = Object.keys(json[0] || {});
@@ -1534,7 +1510,14 @@
                 setTimeout(async () => {
                     const success = await saveToFirebase(newData, filename);
                     if (success) {
-                        await loadSummaryFirst();
+                        // REFRESH UI LOKAL TANPA RELOAD DARI FIREBASE
+                        updateStats();
+                        populateFilters();
+                        renderSummary();
+                        renderProducts();
+                        renderDeptSummary();
+                        renderCharts();
+                        showToast('📊 Dasbor berhasil diperbarui dengan data gabungan!', 'success');
                     }
                 }, 1000);
             } else {
