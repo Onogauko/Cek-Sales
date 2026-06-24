@@ -4,146 +4,946 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sales Data Analyzer</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js">
+    </script>
 
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif; }
-        body { background:#f0f2f5; min-height:100vh; padding:16px; padding-bottom:80px; }
-        .header { background:linear-gradient(135deg,#1a237e,#283593); color:#fff; padding:20px 16px; border-radius:16px; margin-bottom:16px; text-align:center; box-shadow:0 4px 20px rgba(26,35,126,.3); position:relative; }
-        .header h1 { font-size:20px; font-weight:700; letter-spacing:.5px; }
-        .header p { font-size:13px; opacity:.8; margin-top:4px; }
-        .header .sync-status { position:absolute; top:12px; right:16px; font-size:11px; display:flex; align-items:center; gap:4px; opacity:.8; }
-        .header .sync-status .dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
-        .header .sync-status .dot.synced { background:#4caf50; }
-        .header .sync-status .dot.syncing { background:#ff9800; animation:pulse 1s infinite; }
-        .header .sync-status .dot.error { background:#f44336; }
-        .header .sync-status .dot.offline { background:#9e9e9e; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-        .upload-area { background:#fff; border-radius:16px; padding:24px 20px; text-align:center; border:2px dashed #c5cae9; transition:all .3s; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,.06); position:relative; }
-        .upload-area.dragover { border-color:#283593; background:#e8eaf6; }
-        .upload-area .icon { font-size:48px; margin-bottom:12px; }
-        .upload-area h3 { color:#1a237e; font-size:16px; margin-bottom:4px; }
-        .upload-area p { color:#666; font-size:13px; }
-        .upload-btn { display:inline-block; background:#283593; color:#fff; padding:10px 28px; border-radius:25px; border:none; font-size:14px; font-weight:600; margin-top:12px; cursor:pointer; transition:all .3s; }
-        .upload-btn:active { transform:scale(.96); }
-        .upload-btn:disabled { opacity:.6; cursor:not-allowed; }
-        .upload-btn.secondary { background:#e8eaf6; color:#283593; margin-left:8px; }
-        #fileInput { display:none; }
-        .upload-loading { display:none; position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,.9); border-radius:16px; z-index:10; flex-direction:column; align-items:center; justify-content:center; }
-        .upload-loading.active { display:flex; }
-        .upload-loading .spinner { width:40px; height:40px; border:4px solid #e8eaf6; border-top:4px solid #283593; border-radius:50%; animation:spin 1s linear infinite; }
-        .upload-loading p { margin-top:12px; font-size:14px; color:#333; font-weight:500; }
-        .upload-loading .sub { font-size:12px; color:#888; font-weight:400; }
-        @keyframes spin { to { transform:rotate(360deg); } }
-        .stats-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:16px; }
-        .stat-card { background:#fff; border-radius:12px; padding:14px 12px; box-shadow:0 2px 8px rgba(0,0,0,.06); text-align:center; }
-        .stat-card .number { font-size:22px; font-weight:700; color:#1a237e; }
-        .stat-card .label { font-size:11px; color:#888; margin-top:2px; }
-        .tabs { display:flex; background:#fff; border-radius:12px; overflow:hidden; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
-        .tab { flex:1; padding:12px 8px; text-align:center; font-size:12px; font-weight:600; color:#888; cursor:pointer; transition:all .3s; border:none; background:transparent; position:relative; }
-        .tab.active { color:#283593; }
-        .tab.active::after { content:''; position:absolute; bottom:0; left:20%; right:20%; height:3px; background:#283593; border-radius:3px; }
-        .tab:active { background:#e8eaf6; }
-        .tab-content { display:none; animation:fadeIn .3s; }
-        .tab-content.active { display:block; }
-        @keyframes fadeIn { from { transform:translateY(10px); opacity:0; } to { transform:translateY(0); opacity:1; } }
-        .product-list { background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.06); }
-        .product-item { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid #f5f5f5; cursor:pointer; transition:background .2s; }
-        .product-item:active { background:#e8eaf6; }
-        .product-item:last-child { border-bottom:none; }
-        .product-item .name { font-size:13px; font-weight:500; color:#333; flex:1; }
-        .product-item .dept { font-size:10px; color:#888; background:#f5f5f5; padding:2px 10px; border-radius:10px; margin-right:10px; }
-        .product-item .amount { font-size:14px; font-weight:600; color:#1a237e; white-space:nowrap; }
-        .product-item .qty { font-size:11px; color:#888; margin-right:12px; }
-        .product-item .click-hint { font-size:10px; color:#bbb; margin-left:8px; }
-        .chart-container { background:#fff; border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:16px; }
-        .chart-container h4 { font-size:14px; color:#333; margin-bottom:12px; }
-        .chart-wrapper { position:relative; height:200px; }
-        .filter-section { background:#fff; border-radius:12px; padding:14px 16px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
-        .filter-section select, .filter-section input { width:100%; padding:10px 12px; border:1px solid #e0e0e0; border-radius:8px; font-size:13px; margin-bottom:8px; background:#fafafa; }
-        .filter-section select:focus, .filter-section input:focus { outline:none; border-color:#283593; }
-        .filter-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-        .dept-summary { background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:16px; }
-        .dept-row { display:flex; justify-content:space-between; padding:10px 16px; border-bottom:1px solid #f5f5f5; }
-        .dept-row:last-child { border-bottom:none; }
-        .dept-row .name { font-size:13px; font-weight:500; color:#333; }
-        .dept-row .value { font-size:13px; font-weight:600; color:#1a237e; }
-        .loading { text-align:center; padding:40px 20px; color:#888; }
-        .loading .spinner { width:40px; height:40px; border:4px solid #e8eaf6; border-top:4px solid #283593; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 12px; }
-        .empty-state { text-align:center; padding:40px 20px; color:#999; }
-        .empty-state .icon { font-size:48px; margin-bottom:12px; }
-        .info-bar { background:#fff; border-radius:12px; padding:12px 16px; font-size:11px; color:#999; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,.06); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px; }
-        .info-bar .warning { color:#e65100; }
-        .info-bar .success { color:#2e7d32; }
-        .info-bar .saved-badge { background:#4caf50; color:#fff; padding:2px 10px; border-radius:10px; font-size:10px; font-weight:600; }
-        .detail-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.5); z-index:1000; padding:16px; animation:fadeIn .3s; overflow-y:auto; }
-        .detail-overlay.active { display:flex; align-items:flex-start; justify-content:center; }
-        .detail-panel { background:#fff; border-radius:16px; max-width:500px; width:100%; margin:auto; padding:20px; max-height:90vh; overflow-y:auto; animation:slideUp .3s ease; }
-        @keyframes slideUp { from { transform:translateY(30px); opacity:0; } to { transform:translateY(0); opacity:1; } }
-        .detail-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; padding-bottom:12px; border-bottom:2px solid #e8eaf6; }
-        .detail-header h3 { font-size:16px; color:#1a237e; flex:1; }
-        .detail-header .close-btn { background:none; border:none; font-size:24px; color:#999; cursor:pointer; padding:0 4px; line-height:1; }
-        .detail-header .close-btn:active { color:#333; }
-        .detail-header .export-btn { background:#283593; color:#fff; border:none; border-radius:8px; padding:6px 14px; font-size:12px; font-weight:600; cursor:pointer; margin-right:8px; }
-        .detail-header .export-btn:active { transform:scale(.96); }
-        .detail-summary { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; background:#f5f6fa; border-radius:8px; padding:12px; }
-        .detail-summary .item { text-align:center; }
-        .detail-summary .label { font-size:10px; color:#888; }
-        .detail-summary .value { font-size:16px; font-weight:600; color:#1a237e; }
-        .detail-filter { display:flex; gap:8px; margin-bottom:12px; }
-        .detail-filter input { flex:1; padding:8px 12px; border:1px solid #e0e0e0; border-radius:8px; font-size:12px; }
-        .detail-filter input:focus { outline:none; border-color:#283593; }
-        .detail-table { width:100%; font-size:12px; border-collapse:collapse; }
-        .detail-table th { text-align:left; padding:8px 4px; border-bottom:2px solid #e8eaf6; color:#666; font-weight:600; font-size:11px; }
-        .detail-table td { padding:6px 4px; border-bottom:1px solid #f5f5f5; }
-        .detail-table tr:last-child td { border-bottom:none; }
-        .detail-table .qty-cell { text-align:right; font-weight:500; }
-        .detail-table .amount-cell { text-align:right; font-weight:600; color:#1a237e; }
-        .detail-table .date-cell { color:#666; font-size:11px; }
-        .detail-empty { text-align:center; padding:20px; color:#999; font-size:13px; }
-        .search-section { background:#fff; border-radius:12px; padding:14px 16px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
-        .search-section .search-row { display:flex; gap:8px; margin-bottom:8px; }
-        .search-section .search-row:last-child { margin-bottom:0; }
-        .search-section input { flex:1; padding:10px 12px; border:1px solid #e0e0e0; border-radius:8px; font-size:13px; background:#fafafa; }
-        .search-section input:focus { outline:none; border-color:#283593; }
-        .search-section .search-btn { padding:10px 20px; background:#283593; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; }
-        .search-section .search-btn:active { transform:scale(.96); }
-        .search-section .clear-btn { padding:10px 16px; background:#e8eaf6; color:#666; border:none; border-radius:8px; font-size:13px; cursor:pointer; }
-        .search-section .search-hint { font-size:11px; color:#999; margin-top:6px; }
-        .summary-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px; }
-        .summary-header h4 { font-size:14px; color:#333; }
-        .summary-header .search-toggle-btn { background:none; border:1px solid #e0e0e0; border-radius:20px; padding:4px 14px; font-size:12px; color:#666; cursor:pointer; display:flex; align-items:center; gap:4px; }
-        .summary-header .search-toggle-btn:active { background:#f5f5f5; }
-        .summary-header .search-toggle-btn.active { background:#e8eaf6; border-color:#283593; color:#283593; }
-        .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#323232; color:#fff; padding:12px 24px; border-radius:12px; font-size:13px; z-index:2000; opacity:0; transition:opacity .3s,transform .3s; max-width:90%; text-align:center; pointer-events:none; box-shadow:0 4px 20px rgba(0,0,0,.3); }
-        .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-        .toast.warning { background:#e65100; }
-        .toast.success { background:#2e7d32; }
-        .config-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.5); z-index:3000; padding:16px; animation:fadeIn .3s; overflow-y:auto; }
-        .config-overlay.active { display:flex; align-items:center; justify-content:center; }
-        .config-panel { background:#fff; border-radius:16px; max-width:500px; width:100%; padding:24px; animation:slideUp .3s ease; }
-        .config-panel h3 { color:#1a237e; font-size:18px; margin-bottom:4px; }
-        .config-panel p { color:#666; font-size:13px; margin-bottom:16px; }
-        .config-panel label { font-size:13px; font-weight:600; color:#333; display:block; margin-top:12px; margin-bottom:4px; }
-        .config-panel input, .config-panel textarea { width:100%; padding:10px 12px; border:1px solid #e0e0e0; border-radius:8px; font-size:13px; background:#fafafa; }
-        .config-panel textarea { min-height:80px; font-family:monospace; font-size:12px; resize:vertical; }
-        .config-panel .btn-row { display:flex; gap:8px; margin-top:16px; }
-        .config-panel .btn-row button { flex:1; padding:10px; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; }
-        .config-panel .btn-row .btn-save { background:#283593; color:#fff; }
-        .config-panel .btn-row .btn-cancel { background:#e8eaf6; color:#666; }
-        .config-panel .btn-row button:active { transform:scale(.96); }
-        .supported-formats { font-size:11px; color:#999; margin-top:4px; }
-        .upload-mode { background: #f5f6fa; border-radius: 8px; padding: 12px 16px; margin-top: 12px; text-align: left; }
-        .upload-mode label { font-size: 13px; font-weight: 500; color: #333; display: block; margin-bottom: 6px; }
-        .upload-mode .radio-group { display: flex; gap: 20px; flex-wrap: wrap; }
-        .upload-mode .radio-group label { font-weight: 400; font-size: 13px; color: #555; display: flex; align-items: center; gap: 6px; cursor: pointer; margin-bottom: 0; }
-        .upload-mode .radio-group input[type="radio"] { accent-color: #283593; width: 16px; height: 16px; cursor: pointer; }
-        .upload-mode .radio-group .desc { font-size: 11px; color: #999; margin-left: 22px; display: block; }
-        @media (max-width:480px) { body { padding:12px; } .stats-grid { grid-template-columns:repeat(2,1fr); gap:8px; } .stat-card .number { font-size:18px; } .detail-panel { padding:16px; margin:8px; } .detail-table { font-size:11px; } .detail-table th, .detail-table td { padding:4px 3px; } .search-section .search-row { flex-wrap:wrap; } .search-section .search-btn { flex:1; } .toast { font-size:12px; padding:10px 16px; bottom:12px; } .info-bar { flex-direction:column; gap:6px; } .header .sync-status { position:static; margin-top:8px; justify-content:center; } .config-panel { padding:16px; margin:8px; } .upload-mode .radio-group { flex-direction:column; gap:8px; } }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        body {
+            background: #f0f2f5;
+            min-height: 100vh;
+            padding: 16px;
+            padding-bottom: 80px;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a237e, #283593);
+            color: #fff;
+            padding: 14px 16px;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(26, 35, 126, .3);
+            position: relative;
+        }
+        .header h1 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: .5px;
+        }
+        .header p {
+            font-size: 12px;
+            opacity: .8;
+            margin-top: 2px;
+        }
+        .header .sync-status {
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            opacity: .8;
+        }
+        .header .sync-status .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .header .sync-status .dot.synced {
+            background: #4caf50;
+        }
+        .header .sync-status .dot.syncing {
+            background: #ff9800;
+            animation: pulse 1s infinite;
+        }
+        .header .sync-status .dot.error {
+            background: #f44336;
+        }
+        .header .sync-status .dot.offline {
+            background: #9e9e9e;
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 1
+            }
+            50% {
+                opacity: .3
+            }
+        }
+
+        /* ===== UPLOAD AREA YANG DIPERKECIL ===== */
+        .upload-area {
+            background: #fff;
+            border-radius: 14px;
+            padding: 14px 16px 16px;
+            text-align: center;
+            border: 2px dashed #c5cae9;
+            transition: all .3s;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+            position: relative;
+        }
+        .upload-area.dragover {
+            border-color: #283593;
+            background: #e8eaf6;
+        }
+        .upload-area .icon {
+            font-size: 30px;
+            margin-bottom: 4px;
+        }
+        .upload-area h3 {
+            color: #1a237e;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+        .upload-area p {
+            color: #666;
+            font-size: 12px;
+        }
+        .upload-btn {
+            display: inline-block;
+            background: #283593;
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 25px;
+            border: none;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 8px;
+            cursor: pointer;
+            transition: all .3s;
+        }
+        .upload-btn:active {
+            transform: scale(.96);
+        }
+        .upload-btn:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+        }
+        .upload-btn.secondary {
+            background: #e8eaf6;
+            color: #283593;
+            margin-left: 6px;
+        }
+        #fileInput {
+            display: none;
+        }
+        .upload-loading {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, .9);
+            border-radius: 14px;
+            z-index: 10;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .upload-loading.active {
+            display: flex;
+        }
+        .upload-loading .spinner {
+            width: 32px;
+            height: 32px;
+            border: 4px solid #e8eaf6;
+            border-top: 4px solid #283593;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        .upload-loading p {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #333;
+            font-weight: 500;
+        }
+        .upload-loading .sub {
+            font-size: 11px;
+            color: #888;
+            font-weight: 400;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ===== UPLOAD MODE ===== */
+        .upload-mode {
+            background: #f5f6fa;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-top: 8px;
+            text-align: left;
+        }
+        .upload-mode label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #333;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .upload-mode .radio-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .upload-mode .radio-group label {
+            font-weight: 400;
+            font-size: 12px;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            margin-bottom: 0;
+        }
+        .upload-mode .radio-group input[type="radio"] {
+            accent-color: #283593;
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+        }
+        .upload-mode .radio-group .desc {
+            font-size: 10px;
+            color: #999;
+            margin-left: 18px;
+            display: block;
+        }
+        .supported-formats {
+            font-size: 10px;
+            color: #999;
+            margin-top: 2px;
+        }
+
+        /* ===== TOMBOL ROW ===== */
+        .upload-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .upload-actions .upload-btn {
+            padding: 6px 14px;
+            font-size: 12px;
+            margin: 0;
+        }
+        .upload-actions .upload-btn.secondary {
+            padding: 6px 12px;
+            font-size: 11px;
+        }
+
+        /* ===== STATS GRID & TAB ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .stat-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 12px 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+            text-align: center;
+        }
+        .stat-card .number {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a237e;
+        }
+        .stat-card .label {
+            font-size: 10px;
+            color: #888;
+            margin-top: 2px;
+        }
+        .tabs {
+            display: flex;
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+        }
+        .tab {
+            flex: 1;
+            padding: 10px 6px;
+            text-align: center;
+            font-size: 11px;
+            font-weight: 600;
+            color: #888;
+            cursor: pointer;
+            transition: all .3s;
+            border: none;
+            background: transparent;
+            position: relative;
+        }
+        .tab.active {
+            color: #283593;
+        }
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 20%;
+            right: 20%;
+            height: 3px;
+            background: #283593;
+            border-radius: 3px;
+        }
+        .tab:active {
+            background: #e8eaf6;
+        }
+        .tab-content {
+            display: none;
+            animation: fadeIn .3s;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from {
+                transform: translateY(10px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* ===== OTHER COMPONENTS ===== */
+        .product-list {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+        }
+        .product-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            border-bottom: 1px solid #f5f5f5;
+            cursor: pointer;
+            transition: background .2s;
+        }
+        .product-item:active {
+            background: #e8eaf6;
+        }
+        .product-item:last-child {
+            border-bottom: none;
+        }
+        .product-item .name {
+            font-size: 12px;
+            font-weight: 500;
+            color: #333;
+            flex: 1;
+        }
+        .product-item .dept {
+            font-size: 9px;
+            color: #888;
+            background: #f5f5f5;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-right: 8px;
+        }
+        .product-item .amount {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a237e;
+            white-space: nowrap;
+        }
+        .product-item .qty {
+            font-size: 10px;
+            color: #888;
+            margin-right: 8px;
+        }
+        .product-item .click-hint {
+            font-size: 9px;
+            color: #bbb;
+            margin-left: 6px;
+        }
+        .chart-container {
+            background: #fff;
+            border-radius: 12px;
+            padding: 14px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+            margin-bottom: 12px;
+        }
+        .chart-container h4 {
+            font-size: 13px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .chart-wrapper {
+            position: relative;
+            height: 180px;
+        }
+        .filter-section {
+            background: #fff;
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+        }
+        .filter-section select,
+        .filter-section input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 12px;
+            margin-bottom: 6px;
+            background: #fafafa;
+        }
+        .filter-section select:focus,
+        .filter-section input:focus {
+            outline: none;
+            border-color: #283593;
+        }
+        .filter-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+        .dept-summary {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+            margin-bottom: 12px;
+        }
+        .dept-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 14px;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .dept-row:last-child {
+            border-bottom: none;
+        }
+        .dept-row .name {
+            font-size: 12px;
+            font-weight: 500;
+            color: #333;
+        }
+        .dept-row .value {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1a237e;
+        }
+        .loading {
+            text-align: center;
+            padding: 30px 20px;
+            color: #888;
+        }
+        .loading .spinner {
+            width: 32px;
+            height: 32px;
+            border: 4px solid #e8eaf6;
+            border-top: 4px solid #283593;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 30px 20px;
+            color: #999;
+        }
+        .empty-state .icon {
+            font-size: 40px;
+            margin-bottom: 8px;
+        }
+        .info-bar {
+            background: #fff;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 10px;
+            color: #999;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .info-bar .saved-badge {
+            background: #4caf50;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: 600;
+        }
+        .search-section {
+            background: #fff;
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+        }
+        .search-section .search-row {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+        .search-section .search-row:last-child {
+            margin-bottom: 0;
+        }
+        .search-section input {
+            flex: 1;
+            padding: 8px 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 12px;
+            background: #fafafa;
+        }
+        .search-section input:focus {
+            outline: none;
+            border-color: #283593;
+        }
+        .search-section .search-btn {
+            padding: 8px 14px;
+            background: #283593;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .search-section .search-btn:active {
+            transform: scale(.96);
+        }
+        .search-section .clear-btn {
+            padding: 8px 12px;
+            background: #e8eaf6;
+            color: #666;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .search-section .search-hint {
+            font-size: 10px;
+            color: #999;
+            margin-top: 4px;
+        }
+        .summary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .summary-header h4 {
+            font-size: 13px;
+            color: #333;
+        }
+        .summary-header .search-toggle-btn {
+            background: none;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px;
+            padding: 3px 12px;
+            font-size: 11px;
+            color: #666;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .summary-header .search-toggle-btn:active {
+            background: #f5f5f5;
+        }
+        .summary-header .search-toggle-btn.active {
+            background: #e8eaf6;
+            border-color: #283593;
+            color: #283593;
+        }
+
+        /* ===== OVERLAY & TOAST ===== */
+        .detail-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, .5);
+            z-index: 1000;
+            padding: 16px;
+            animation: fadeIn .3s;
+            overflow-y: auto;
+        }
+        .detail-overlay.active {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+        }
+        .detail-panel {
+            background: #fff;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 100%;
+            margin: auto;
+            padding: 16px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp .3s ease;
+        }
+        @keyframes slideUp {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e8eaf6;
+        }
+        .detail-header h3 {
+            font-size: 15px;
+            color: #1a237e;
+            flex: 1;
+        }
+        .detail-header .close-btn {
+            background: none;
+            border: none;
+            font-size: 22px;
+            color: #999;
+            cursor: pointer;
+            padding: 0 4px;
+            line-height: 1;
+        }
+        .detail-header .close-btn:active {
+            color: #333;
+        }
+        .detail-header .export-btn {
+            background: #283593;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 4px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 6px;
+        }
+        .detail-header .export-btn:active {
+            transform: scale(.96);
+        }
+        .detail-summary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 12px;
+            background: #f5f6fa;
+            border-radius: 8px;
+            padding: 10px;
+        }
+        .detail-summary .item {
+            text-align: center;
+        }
+        .detail-summary .label {
+            font-size: 9px;
+            color: #888;
+        }
+        .detail-summary .value {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1a237e;
+        }
+        .detail-filter {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .detail-filter input {
+            flex: 1;
+            padding: 6px 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 11px;
+        }
+        .detail-filter input:focus {
+            outline: none;
+            border-color: #283593;
+        }
+        .detail-table {
+            width: 100%;
+            font-size: 11px;
+            border-collapse: collapse;
+        }
+        .detail-table th {
+            text-align: left;
+            padding: 6px 4px;
+            border-bottom: 2px solid #e8eaf6;
+            color: #666;
+            font-weight: 600;
+            font-size: 10px;
+        }
+        .detail-table td {
+            padding: 5px 4px;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .detail-table tr:last-child td {
+            border-bottom: none;
+        }
+        .detail-table .qty-cell {
+            text-align: right;
+            font-weight: 500;
+        }
+        .detail-table .amount-cell {
+            text-align: right;
+            font-weight: 600;
+            color: #1a237e;
+        }
+        .detail-table .date-cell {
+            color: #666;
+            font-size: 10px;
+        }
+        .detail-empty {
+            text-align: center;
+            padding: 16px;
+            color: #999;
+            font-size: 12px;
+        }
+        .config-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, .5);
+            z-index: 3000;
+            padding: 16px;
+            animation: fadeIn .3s;
+            overflow-y: auto;
+        }
+        .config-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .config-panel {
+            background: #fff;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 100%;
+            padding: 20px;
+            animation: slideUp .3s ease;
+        }
+        .config-panel h3 {
+            color: #1a237e;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+        .config-panel p {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+        .config-panel label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #333;
+            display: block;
+            margin-top: 10px;
+            margin-bottom: 3px;
+        }
+        .config-panel input,
+        .config-panel textarea {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 12px;
+            background: #fafafa;
+        }
+        .config-panel textarea {
+            min-height: 70px;
+            font-family: monospace;
+            font-size: 11px;
+            resize: vertical;
+        }
+        .config-panel .btn-row {
+            display: flex;
+            gap: 6px;
+            margin-top: 12px;
+        }
+        .config-panel .btn-row button {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .config-panel .btn-row .btn-save {
+            background: #283593;
+            color: #fff;
+        }
+        .config-panel .btn-row .btn-cancel {
+            background: #e8eaf6;
+            color: #666;
+        }
+        .config-panel .btn-row button:active {
+            transform: scale(.96);
+        }
+        .toast {
+            position: fixed;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #323232;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 12px;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity .3s, transform .3s;
+            max-width: 90%;
+            text-align: center;
+            pointer-events: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, .3);
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast.warning {
+            background: #e65100;
+        }
+        .toast.success {
+            background: #2e7d32;
+        }
+
+        @media (max-width:480px) {
+            body {
+                padding: 10px;
+            }
+            .stats-grid {
+                gap: 8px;
+            }
+            .stat-card .number {
+                font-size: 17px;
+            }
+            .detail-panel {
+                padding: 14px;
+                margin: 6px;
+            }
+            .detail-table {
+                font-size: 10px;
+            }
+            .detail-table th,
+            .detail-table td {
+                padding: 3px 2px;
+            }
+            .search-section .search-row {
+                flex-wrap: wrap;
+            }
+            .search-section .search-btn {
+                flex: 1;
+            }
+            .toast {
+                font-size: 11px;
+                padding: 8px 14px;
+                bottom: 10px;
+            }
+            .info-bar {
+                flex-direction: column;
+                gap: 4px;
+            }
+            .header .sync-status {
+                position: static;
+                margin-top: 4px;
+                justify-content: center;
+            }
+            .config-panel {
+                padding: 14px;
+                margin: 6px;
+            }
+            .upload-mode .radio-group {
+                flex-direction: column;
+                gap: 4px;
+            }
+            /* Upload area lebih kompak di HP */
+            .upload-area {
+                padding: 10px 12px 12px;
+            }
+            .upload-area .icon {
+                font-size: 24px;
+            }
+            .upload-area h3 {
+                font-size: 13px;
+            }
+            .upload-area p {
+                font-size: 11px;
+            }
+            .upload-actions .upload-btn {
+                padding: 5px 12px;
+                font-size: 11px;
+            }
+            .upload-actions .upload-btn.secondary {
+                font-size: 10px;
+                padding: 5px 10px;
+            }
+            .upload-mode {
+                padding: 6px 10px;
+                margin-top: 6px;
+            }
+            .upload-mode label {
+                font-size: 11px;
+            }
+            .upload-mode .radio-group label {
+                font-size: 11px;
+            }
+            .upload-mode .radio-group .desc {
+                font-size: 9px;
+                margin-left: 16px;
+            }
+            .supported-formats {
+                font-size: 9px;
+            }
+            .chart-wrapper {
+                height: 150px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -157,6 +957,7 @@
         </div>
     </div>
 
+    <!-- ===== UPLOAD AREA YANG DIPERKECIL ===== -->
     <div class="upload-area" id="uploadArea">
         <div class="icon">📁</div>
         <h3>Upload File Excel atau CSV</h3>
@@ -179,10 +980,10 @@
             </div>
         </div>
 
-        <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:12px;">
-            <button class="upload-btn" id="uploadBtn">Pilih File</button>
-            <button class="upload-btn secondary" id="loadFromFirebaseBtn">☁️ Load from Cloud</button>
-            <button class="upload-btn secondary" id="configBtn">⚙️ Config</button>
+        <div class="upload-actions">
+            <button class="upload-btn" id="uploadBtn">📂 Pilih File</button>
+            <button class="upload-btn secondary" id="loadFromFirebaseBtn">☁️ Load</button>
+            <button class="upload-btn secondary" id="configBtn">⚙️</button>
         </div>
         <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
 
@@ -230,9 +1031,9 @@
         <div class="tab-content" id="tab-products">
             <div class="filter-section">
                 <select id="productFilterDept" onchange="renderProducts()"><option value="all">All Departments</option></select>
-                <div style="display:flex; gap:8px;">
+                <div style="display:flex; gap:6px;">
                     <input type="number" id="productLimit" value="20" style="flex:1;" placeholder="Limit" onchange="renderProducts()">
-                    <button class="upload-btn" style="padding:8px 16px; font-size:12px; margin:0;" onclick="renderProducts()">Apply</button>
+                    <button class="upload-btn" style="padding:6px 12px; font-size:11px; margin:0;" onclick="renderProducts()">Apply</button>
                 </div>
             </div>
             <div class="product-list" id="productList"><div class="loading"><div class="spinner"></div></div></div>
@@ -286,7 +1087,7 @@
                 <button class="btn-save" onclick="saveFirebaseConfig()">💾 Save</button>
                 <button class="btn-cancel" onclick="closeConfig()">Cancel</button>
             </div>
-            <div id="configStatus" style="margin-top:12px; font-size:12px; color:#666;"></div>
+            <div id="configStatus" style="margin-top:10px; font-size:11px; color:#666;"></div>
         </div>
     </div>
 
@@ -319,6 +1120,7 @@
         }
 
         let toastTimeout = null;
+
         function showToast(message, type = 'info', duration = 3000) {
             const toast = document.getElementById('toast');
             if (!toast) return;
@@ -341,6 +1143,15 @@
         let isSaving = false;
         let isDataLoaded = false;
         let summaryUnsubscribe = null; // Menyimpan referensi listener aktif
+        let originalData = [];
+        let salesData = [];
+        let searchQuery = '';
+        let currentDetailItem = null;
+        let detailDataCache = [];
+        let chartTrend = null;
+        let chartDept = null;
+        let uploadBtn = null;
+        let fileInput = null;
 
         function updateSyncStatus(status, text) {
             const dot = document.getElementById('syncDot');
@@ -355,7 +1166,7 @@
                 updateSyncStatus('error', 'Config Error');
                 return false;
             }
-            
+
             try {
                 if (!firebaseApp) {
                     firebaseApp = firebase.initializeApp(config);
@@ -462,7 +1273,7 @@
                     statsGrid.style.display = 'grid';
                     tabs.style.display = 'flex';
                     infoBar.style.display = 'flex';
-                    
+
                     updateSyncStatus('synced', 'Cloud Aktif');
                     showToast(`🔔 Dasbor diperbarui otomatis dari Cloud (${period})`, 'success', 2000);
                     afterDataLoaded();
@@ -471,6 +1282,58 @@
                     console.error("Listener error:", error);
                     updateSyncStatus('error', 'Sync Offline');
                 });
+        }
+
+        function renderSummaryFromData(topProducts, totalAmount, totalQty) {
+            // Fungsi ini dipanggil dari listener
+            // Kita akan re-render summary dengan data dari cloud
+            if (topProducts && topProducts.length > 0) {
+                const container = document.getElementById('summaryContent');
+                let html = `
+                    <div style="background:white; border-radius:12px; padding:14px; box-shadow:0 2px 8px rgba(0,0,0,0.06); margin-bottom:10px;">
+                        <div class="summary-header">
+                            <h4>🏆 Top 10 Products</h4>
+                            <button class="search-toggle-btn" onclick="toggleSearch()">🔍 Search</button>
+                        </div>
+                        <p style="font-size:10px; color:#999; margin-top:2px;">Klik item untuk melihat detail penjualan per tanggal</p>
+                    </div>
+                    <div class="product-list">
+                `;
+                topProducts.forEach((item, i) => {
+                    html += `
+                        <div class="product-item" onclick="showItemDetail('${escapeString(item.name)}', '${escapeString(item.department || item.dept || '')}')">
+                            <span style="font-size:11px; color:#999; margin-right:6px; min-width:20px;">#${i+1}</span>
+                            <span class="name">${item.name}</span>
+                            <span class="dept">${item.department || item.dept || ''}</span>
+                            <span style="display:flex; align-items:center; gap:4px;">
+                                <span class="qty">${Math.round(item.qty || 0)}x</span>
+                                <span class="amount">${formatRupiah(item.amount || 0)}</span>
+                                <span class="click-hint">👉</span>
+                            </span>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            }
+        }
+
+        function renderDeptChartFromSummary(departmentSales) {
+            if (departmentSales && departmentSales.length > 0) {
+                const ctx2 = document.getElementById('deptChart').getContext('2d');
+                if (chartDept) chartDept.destroy();
+                chartDept = new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: departmentSales.map(d => d.department),
+                        datasets: [{ label: 'Sales by Department', data: departmentSales.map(d => d.amount),
+                            backgroundColor: ['#283593', '#1a237e', '#3f51b5', '#5c6bc0', '#7986cb'],
+                            borderRadius: 4 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true, ticks: { callback: v => formatRupiah(v, true) } } } }
+                });
+            }
         }
 
         function getCollectionName() {
@@ -569,7 +1432,7 @@
                 const docRef = firestore.collection(collection).doc(period);
                 const doc = await docRef.get();
                 if (!doc.exists) return false;
-                
+
                 const docData = doc.data();
                 const chunkCount = docData.chunkCount || 1;
                 let allData = [];
@@ -593,15 +1456,15 @@
         async function saveToFirebase(data, filename) {
             if (!isFirebaseReady) { showToast('Firebase not connected.', 'warning'); return false; }
             if (isSaving) return false;
-            
+
             try {
                 isSaving = true; // Kunci listener realtime agar tidak interupsi di tengah jalan
                 updateSyncStatus('syncing', 'Saving to Cloud...');
-                
+
                 const collection = getCollectionName();
                 const period = getPeriod(data);
                 let mode = getUploadMode();
-                
+
                 const docRef = firestore.collection(collection).doc(period);
                 const doc = await docRef.get();
                 const docExists = doc.exists;
@@ -631,18 +1494,25 @@
                 const chunks = splitDataForFirestore(finalData);
 
                 const mainData = {
-                    filename: filename, period: period,
+                    filename: filename,
+                    period: period,
                     uploadedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    recordCount: finalData.length, totalAmount: totalAmount, totalQty: totalQty,
-                    departments: departments, daysCount: new Set(finalData.map(d => d.dateStr)).size,
-                    status: "completed", chunkCount: chunks.length, uploadMode: mode
+                    recordCount: finalData.length,
+                    totalAmount: totalAmount,
+                    totalQty: totalQty,
+                    departments: departments,
+                    daysCount: new Set(finalData.map(d => d.dateStr)).size,
+                    status: "completed",
+                    chunkCount: chunks.length,
+                    uploadMode: mode
                 };
 
                 await docRef.set(mainData);
 
                 const batch = firestore.batch();
                 for (let i = 0; i < chunks.length; i++) {
-                    batch.set(docRef.collection('chunks').doc('chunk_' + i), { index: i, data: chunks[i], count: chunks[i].length });
+                    batch.set(docRef.collection('chunks').doc('chunk_' + i), { index: i, data: chunks[i], count: chunks[i]
+                            .length });
                 }
                 await batch.commit();
 
@@ -650,10 +1520,18 @@
                 const departmentSales = calculateDepartmentSales(finalData);
 
                 await firestore.collection('sales_summary').doc(period).set({
-                    period: period, totalAmount: totalAmount, totalQty: totalQty, recordCount: finalData.length,
-                    departments: departments, daysCount: mainData.daysCount, topProducts: topProducts,
-                    departmentSales: departmentSales, updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    filename: filename, uploadMode: mode, status: "completed"
+                    period: period,
+                    totalAmount: totalAmount,
+                    totalQty: totalQty,
+                    recordCount: finalData.length,
+                    departments: departments,
+                    daysCount: mainData.daysCount,
+                    topProducts: topProducts,
+                    departmentSales: departmentSales,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    filename: filename,
+                    uploadMode: mode,
+                    status: "completed"
                 });
 
                 // REFRESH UI LOCAL
@@ -721,7 +1599,8 @@
                     if (!isNaN(parsedDate.getTime())) dateStr = parsedDate.toISOString().split('T')[0];
                 }
                 return {
-                    date: parsedDate, dateStr: dateStr,
+                    date: parsedDate,
+                    dateStr: dateStr,
                     department: colMap.dept ? String(row[colMap.dept] || '').trim().replace(/^="|"$/g, '') : 'Unknown',
                     itemName: colMap.item ? String(row[colMap.item] || '').trim().replace(/^="|"$/g, '') : 'Unknown Item',
                     itemCode: colMap.itemCode ? String(row[colMap.itemCode] || '').trim().replace(/^="|"$/g, '') : '',
@@ -751,8 +1630,14 @@
                 }, 500);
             } else {
                 originalData = salesData;
-                updateStats(); populateFilters(); renderSummary(); renderProducts(); renderDeptSummary(); renderCharts();
-                uploadLoading.classList.remove('active'); uploadBtn.disabled = false;
+                updateStats();
+                populateFilters();
+                renderSummary();
+                renderProducts();
+                renderDeptSummary();
+                renderCharts();
+                uploadLoading.classList.remove('active');
+                uploadBtn.disabled = false;
             }
         }
 
@@ -800,12 +1685,19 @@
                 if (!sel) return;
                 const current = sel.value;
                 sel.innerHTML = '<option value="all">All Departments</option>';
-                depts.forEach(d => { const opt = document.createElement('option'); opt.value = d; opt.textContent = d; sel.appendChild(opt); });
+                depts.forEach(d => { const opt = document.createElement('option');
+                    opt.value = d;
+                    opt.textContent = d;
+                    sel.appendChild(opt); });
                 if (depts.includes(current)) sel.value = current;
             });
         }
 
-        function applyFilters() { updateStats(); renderSummary(); renderProducts(); renderDeptSummary(); renderCharts(); }
+        function applyFilters() { updateStats();
+            renderSummary();
+            renderProducts();
+            renderDeptSummary();
+            renderCharts(); }
 
         function toggleSearch() {
             const section = document.getElementById('searchSection');
@@ -842,7 +1734,8 @@
 
             const productSales = {};
             data.forEach(d => {
-                if (!productSales[d.itemName]) productSales[d.itemName] = { qty: 0, amount: 0, dept: d.department, name: d.itemName, code: d.itemCode || '' };
+                if (!productSales[d.itemName]) productSales[d.itemName] = { qty: 0, amount: 0, dept: d.department,
+                    name: d.itemName, code: d.itemCode || '' };
                 productSales[d.itemName].qty += d.qty;
                 productSales[d.itemName].amount += d.amount;
             });
@@ -850,32 +1743,35 @@
             let productArray = Object.values(productSales);
             if (searchQuery) {
                 const q = searchQuery.toLowerCase();
-                productArray = productArray.filter(p => p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q));
+                productArray = productArray.filter(p => p.name.toLowerCase().includes(q) || p.code.toLowerCase()
+                .includes(q));
             }
             productArray.sort((a, b) => b.amount - a.amount);
             const topProducts = productArray.slice(0, 10);
 
             let html = `
-                <div style="background:white; border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); margin-bottom:12px;">
+                <div style="background:white; border-radius:12px; padding:14px; box-shadow:0 2px 8px rgba(0,0,0,0.06); margin-bottom:10px;">
                     <div class="summary-header">
                         <h4>🏆 Top 10 Products</h4>
                         <button class="search-toggle-btn ${searchQuery ? 'active' : ''}" onclick="toggleSearch()">
                             🔍 ${searchQuery ? 'Search Active' : 'Search'}
                         </button>
                     </div>
-                    ${searchQuery ? '<p style="font-size:11px; color:#666; margin-top:4px;">Hasil pencarian: <strong>"' + searchQuery + '"</strong> • ' + productArray.length + ' item ditemukan</p>' : ''}
-                    <p style="font-size:11px; color:#999; margin-top:2px;">Klik item untuk melihat detail penjualan per tanggal</p>
+                    ${searchQuery ? '<p style="font-size:10px; color:#666; margin-top:3px;">Hasil pencarian: <strong>"' + searchQuery + '"</strong> • ' + productArray.length + ' item ditemukan</p>' : ''}
+                    <p style="font-size:10px; color:#999; margin-top:2px;">Klik item untuk melihat detail penjualan per tanggal</p>
                 </div>
                 <div class="product-list">
             `;
 
             if (topProducts.length === 0) {
-                html += '<div class="empty-state" style="padding:20px;"><div class="icon">🔍</div><p>Tidak ada item yang cocok dengan pencarian "' + searchQuery + '"</p></div>';
+                html +=
+                    '<div class="empty-state" style="padding:16px;"><div class="icon">🔍</div><p>Tidak ada item yang cocok dengan pencarian "' +
+                    searchQuery + '"</p></div>';
             } else {
                 topProducts.forEach((item, i) => {
                     html += `
                         <div class="product-item" onclick="showItemDetail('${escapeString(item.name)}', '${escapeString(item.dept)}')">
-                            <span style="font-size:12px; color:#999; margin-right:8px; min-width:24px;">#${i+1}</span>
+                            <span style="font-size:11px; color:#999; margin-right:6px; min-width:20px;">#${i+1}</span>
                             <span class="name">${item.name} ${item.code ? '['+item.code+']' : ''}</span>
                             <span class="dept">${item.dept}</span>
                             <span style="display:flex; align-items:center; gap:4px;">
@@ -903,7 +1799,8 @@
             const productSales = {};
             filtered.forEach(d => {
                 const key = d.itemName + '|' + d.department;
-                if (!productSales[key]) productSales[key] = { qty: 0, amount: 0, dept: d.department, name: d.itemName, code: d.itemCode || '' };
+                if (!productSales[key]) productSales[key] = { qty: 0, amount: 0, dept: d.department, name: d.itemName,
+                    code: d.itemCode || '' };
                 productSales[key].qty += d.qty;
                 productSales[key].amount += d.amount;
             });
@@ -917,7 +1814,7 @@
                     <div class="product-item" onclick="showItemDetail('${escapeString(item.name)}', '${escapeString(item.dept)}')">
                         <span class="name">${item.name} ${item.code ? '['+item.code+']' : ''}</span>
                         <span class="dept">${item.dept}</span>
-                        <span style="display:flex; align-items:center; gap:8px;">
+                        <span style="display:flex; align-items:center; gap:6px;">
                             <span class="qty">${Math.round(item.qty)}x</span>
                             <span class="amount">${formatRupiah(item.amount)}</span>
                             <span class="click-hint">👉</span>
@@ -940,7 +1837,8 @@
             });
             let html = '';
             Object.entries(deptData).sort((a, b) => b[1].amount - a[1].amount).forEach(([dept, d]) => {
-                html += '<div class="dept-row"><span class="name">' + dept + '</span><span class="value">' + formatRupiah(d.amount) + ' (' + Math.round(d.qty) + ' pcs)</span></div>';
+                html += '<div class="dept-row"><span class="name">' + dept + '</span><span class="value">' +
+                    formatRupiah(d.amount) + ' (' + Math.round(d.qty) + ' pcs)</span></div>';
             });
             container.innerHTML = html;
         }
@@ -948,12 +1846,15 @@
         function renderCharts() {
             const data = getFilteredData();
             if (data.length === 0) {
-                if (chartTrend) { chartTrend.destroy(); chartTrend = null; }
-                if (chartDept) { chartDept.destroy(); chartDept = null; }
+                if (chartTrend) { chartTrend.destroy();
+                    chartTrend = null; }
+                if (chartDept) { chartDept.destroy();
+                    chartDept = null; }
                 return;
             }
             const dailyData = {};
-            data.forEach(d => { if (!dailyData[d.dateStr]) dailyData[d.dateStr] = 0; dailyData[d.dateStr] += d.amount; });
+            data.forEach(d => { if (!dailyData[d.dateStr]) dailyData[d.dateStr] = 0;
+                dailyData[d.dateStr] += d.amount; });
             const sorted = Object.keys(dailyData).sort();
             const ctx = document.getElementById('trendChart').getContext('2d');
             if (chartTrend) chartTrend.destroy();
@@ -961,13 +1862,16 @@
                 type: 'line',
                 data: {
                     labels: sorted.map(d => d.substring(5)),
-                    datasets: [{ label: 'Daily Sales (Rp)', data: sorted.map(d => dailyData[d]), borderColor: '#283593', backgroundColor: 'rgba(40,53,147,0.1)', fill: true, tension: 0.4 }]
+                    datasets: [{ label: 'Daily Sales (Rp)', data: sorted.map(d => dailyData[d]), borderColor: '#283593',
+                        backgroundColor: 'rgba(40,53,147,0.1)', fill: true, tension: 0.4 }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => formatRupiah(v, true) } } } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { callback: v => formatRupiah(v, true) } } } }
             });
 
             const deptData = {};
-            data.forEach(d => { if (!deptData[d.department]) deptData[d.department] = 0; deptData[d.department] += d.amount; });
+            data.forEach(d => { if (!deptData[d.department]) deptData[d.department] = 0;
+                deptData[d.department] += d.amount; });
             const depts = Object.entries(deptData).sort((a, b) => b[1] - a[1]);
             const ctx2 = document.getElementById('deptChart').getContext('2d');
             if (chartDept) chartDept.destroy();
@@ -975,9 +1879,11 @@
                 type: 'bar',
                 data: {
                     labels: depts.map(d => d[0]),
-                    datasets: [{ label: 'Sales by Department', data: depts.map(d => d[1]), backgroundColor: ['#283593', '#1a237e', '#3f51b5', '#5c6bc0', '#7986cb'], borderRadius: 4 }]
+                    datasets: [{ label: 'Sales by Department', data: depts.map(d => d[1]),
+                        backgroundColor: ['#283593', '#1a237e', '#3f51b5', '#5c6bc0', '#7986cb'], borderRadius: 4 }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => formatRupiah(v, true) } } } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { callback: v => formatRupiah(v, true) } } } }
             });
         }
 
@@ -1000,7 +1906,8 @@
             const from = document.getElementById('detailDateFrom').value;
             const to = document.getElementById('detailDateTo').value;
 
-            let itemData = originalData.filter(d => d.itemName === currentDetailItem.name && d.department === currentDetailItem.dept);
+            let itemData = originalData.filter(d => d.itemName === currentDetailItem.name && d.department === currentDetailItem
+                .dept);
             if (from) itemData = itemData.filter(d => d.dateStr >= from);
             if (to) itemData = itemData.filter(d => d.dateStr <= to);
             detailDataCache = itemData;
@@ -1018,13 +1925,20 @@
             document.getElementById('detailTotalQty').textContent = Math.round(totalQty);
             document.getElementById('detailTotalAmount').textContent = formatRupiah(totalAmount);
 
-            if (dates.length === 0) { container.innerHTML = '<div class="detail-empty">📭 No data for this period</div>'; return; }
+            if (dates.length === 0) { container.innerHTML = '<div class="detail-empty">📭 No data for this period</div>';
+                return; }
 
-            let html = '<table class="detail-table"><thead><tr><th>Date</th><th style="text-align:right;">Qty</th><th style="text-align:right;">Amount</th></tr></thead><tbody>';
+            let html =
+                '<table class="detail-table"><thead><tr><th>Date</th><th style="text-align:right;">Qty</th><th style="text-align:right;">Amount</th></tr></thead><tbody>';
             dates.forEach(date => {
-                html += '<tr><td class="date-cell">' + formatDate(date) + '</td><td class="qty-cell">' + Math.round(dailyData[date].qty) + '</td><td class="amount-cell">' + formatRupiah(dailyData[date].amount) + '</td></tr>';
+                html += '<tr><td class="date-cell">' + formatDate(date) + '</td><td class="qty-cell">' + Math.round(
+                    dailyData[date].qty) + '</td><td class="amount-cell">' + formatRupiah(dailyData[date]
+                    .amount) + '</td></tr>';
             });
-            html += '<tr style="border-top:2px solid #e8eaf6;font-weight:600;"><td style="color:#1a237e;">TOTAL</td><td class="qty-cell">' + Math.round(totalQty) + '</td><td class="amount-cell">' + formatRupiah(totalAmount) + '</td></tr></tbody></table>';
+            html +=
+                '<tr style="border-top:2px solid #e8eaf6;font-weight:600;"><td style="color:#1a237e;">TOTAL</td><td class="qty-cell">' +
+                Math.round(totalQty) + '</td><td class="amount-cell">' + formatRupiah(totalAmount) +
+                '</td></tr></tbody></table>';
             container.innerHTML = html;
         }
 
@@ -1033,7 +1947,9 @@
             const p = dateStr.split('-');
             return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0].substring(2) : dateStr;
         }
+
         function escapeString(str) { return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+
         function formatRupiah(num, short = false) {
             if (num === 0) return 'Rp0';
             if (short) {
@@ -1049,25 +1965,29 @@
             try {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF('p', 'pt', 'a4');
-                doc.setFontSize(14); doc.text('Detail Penjualan: ' + currentDetailItem.name, 40, 50);
-                doc.setFontSize(10); doc.text('Department: ' + currentDetailItem.dept, 40, 70);
-                
+                doc.setFontSize(14);
+                doc.text('Detail Penjualan: ' + currentDetailItem.name, 40, 50);
+                doc.setFontSize(10);
+                doc.text('Department: ' + currentDetailItem.dept, 40, 70);
+
                 let y = 100;
                 doc.text("Tanggal\t\tQty\t\tAmount", 40, y);
                 y += 20;
-                
+
                 const dailyData = {};
                 detailDataCache.forEach(d => {
                     if (!dailyData[d.dateStr]) dailyData[d.dateStr] = { qty: 0, amount: 0 };
-                    dailyData[d.dateStr].qty += d.qty; dailyData[d.dateStr].amount += d.amount;
+                    dailyData[d.dateStr].qty += d.qty;
+                    dailyData[d.dateStr].amount += d.amount;
                 });
-                
+
                 Object.keys(dailyData).sort().forEach(date => {
-                    doc.text(`${formatDate(date)}\t\t${Math.round(dailyData[date].qty)}\t\t${formatRupiah(dailyData[date].amount)}`, 40, y);
+                    doc.text(`${formatDate(date)}\t\t${Math.round(dailyData[date].qty)}\t\t${formatRupiah(dailyData[date].amount)}`,
+                        40, y);
                     y += 18;
                 });
                 doc.save('Detail_' + currentDetailItem.name.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf');
-            } catch(e) { showToast('PDF Error'); }
+            } catch (e) { showToast('PDF Error'); }
         }
 
         function openConfig() {
@@ -1076,7 +1996,9 @@
             document.getElementById('collectionNameInput').value = getCollectionName();
             document.getElementById('configOverlay').classList.add('active');
         }
+
         function closeConfig() { document.getElementById('configOverlay').classList.remove('active'); }
+
         function saveFirebaseConfig() {
             const input = document.getElementById('firebaseConfigInput');
             const collection = document.getElementById('collectionNameInput').value.trim() || 'sales_data';
@@ -1090,8 +2012,195 @@
             } catch (err) { alert('Format JSON salah'); }
         }
 
-        console.log('🚀 Sales Data Analyzer starting...');
-        initFirebase();
+        function afterDataLoaded() {
+            isDataLoaded = true;
+        }
+
+        // ============================================================
+        // EVENT LISTENERS - DIPERBAIKI
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Sales Data Analyzer starting...');
+
+            // Inisialisasi Firebase
+            initFirebase();
+
+            // Ambil referensi elemen
+            uploadBtn = document.getElementById('uploadBtn');
+            fileInput = document.getElementById('fileInput');
+            const uploadArea = document.getElementById('uploadArea');
+            const loadFromFirebaseBtn = document.getElementById('loadFromFirebaseBtn');
+            const configBtn = document.getElementById('configBtn');
+
+            // ===== UPLOAD BUTTON =====
+            if (uploadBtn) {
+                uploadBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Upload button clicked');
+                    if (fileInput) {
+                        fileInput.click();
+                    } else {
+                        console.error('File input not found');
+                    }
+                });
+            }
+
+            // ===== FILE INPUT CHANGE =====
+            if (fileInput) {
+                fileInput.addEventListener('change', function(e) {
+                    console.log('File selected:', this.files.length);
+                    if (this.files.length > 0) {
+                        handleFile(this.files[0]);
+                    }
+                    // Reset agar bisa upload file yang sama lagi
+                    this.value = '';
+                });
+            }
+
+            // ===== DRAG AND DROP =====
+            if (uploadArea) {
+                uploadArea.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    this.classList.add('dragover');
+                });
+
+                uploadArea.addEventListener('dragleave', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('dragover');
+                });
+
+                uploadArea.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('dragover');
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        handleFile(files[0]);
+                    }
+                });
+            }
+
+            // ===== LOAD FROM FIREBASE =====
+            if (loadFromFirebaseBtn) {
+                loadFromFirebaseBtn.addEventListener('click', function() {
+                    loadFromFirebase();
+                });
+            }
+
+            // ===== CONFIG BUTTON =====
+            if (configBtn) {
+                configBtn.addEventListener('click', function() {
+                    openConfig();
+                });
+            }
+
+            // ===== TAB SWITCHING =====
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    const target = this.dataset.tab;
+                    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+                    const targetContent = document.getElementById('tab-' + target);
+                    if (targetContent) targetContent.classList.add('active');
+                    if (target === 'trend' && originalData.length > 0) {
+                        setTimeout(renderCharts, 100);
+                    }
+                });
+            });
+        });
+
+        // ============================================================
+        // FUNGSI HANDLE FILE
+        // ============================================================
+        function handleFile(file) {
+            console.log('Handling file:', file.name);
+            const uploadLoading = document.getElementById('uploadLoading');
+            const uploadBtn = document.getElementById('uploadBtn');
+
+            if (!file) {
+                showToast('No file selected', 'warning');
+                return;
+            }
+
+            const validTypes = [
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.ms-excel',
+                'text/csv',
+                'application/csv',
+                'text/plain'
+            ];
+
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (!['xlsx', 'xls', 'csv'].includes(ext)) {
+                showToast('Format file tidak didukung. Gunakan .xlsx, .xls, atau .csv', 'warning');
+                return;
+            }
+
+            // Tampilkan loading
+            uploadLoading.classList.add('active');
+            uploadBtn.disabled = true;
+
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                try {
+                    let data = null;
+                    if (ext === 'csv') {
+                        const text = e.target.result;
+                        const lines = text.split('\n').filter(line => line.trim());
+                        if (lines.length === 0) throw new Error('CSV kosong');
+
+                        const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+                        data = [];
+                        for (let i = 1; i < lines.length; i++) {
+                            const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+                            const row = {};
+                            headers.forEach((h, idx) => { row[h] = values[idx] || ''; });
+                            data.push(row);
+                        }
+                    } else {
+                        const workbook = XLSX.read(e.target.result, { type: 'array' });
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        data = XLSX.utils.sheet_to_json(firstSheet);
+                    }
+
+                    if (!data || data.length === 0) {
+                        throw new Error('Tidak ada data dalam file');
+                    }
+
+                    console.log('Data parsed, rows:', data.length);
+                    document.getElementById('uploadProgress').textContent = `📊 ${data.length} baris data ditemukan`;
+                    processData(data, file.name);
+
+                } catch (err) {
+                    console.error('Error processing file:', err);
+                    uploadLoading.classList.remove('active');
+                    uploadBtn.disabled = false;
+                    showToast('Error: ' + err.message, 'warning');
+                }
+            };
+
+            reader.onerror = function() {
+                uploadLoading.classList.remove('active');
+                uploadBtn.disabled = false;
+                showToast('Gagal membaca file', 'warning');
+            };
+
+            // Baca file
+            if (ext === 'csv') {
+                reader.readAsText(file);
+            } else {
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        function restoreData(docData, docId) {
+            // Fungsi untuk restore data dari Firebase
+            console.log('Restoring data from:', docId);
+        }
+
+        console.log('🚀 Sales Data Analyzer ready!');
     </script>
 </body>
 </html>
