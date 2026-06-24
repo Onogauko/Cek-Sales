@@ -574,6 +574,63 @@
         }
 
         // ============================================================
+        // LOAD FULL DATA FOR DETAIL (FIX)
+        // ============================================================
+        async function loadFullDataForDetail(period) {
+            if (!isFirebaseReady || !period) return false;
+            
+            try {
+                console.log('📂 Loading full data for period:', period);
+                const collection = getCollectionName();
+                const docRef = firestore.collection(collection).doc(period);
+                const doc = await docRef.get();
+                
+                if (!doc.exists) {
+                    console.warn('Document not found for period:', period);
+                    return false;
+                }
+                
+                const docData = doc.data();
+                const chunkCount = docData.chunkCount || 1;
+                let allData = [];
+                
+                for (let i = 0; i < chunkCount; i++) {
+                    try {
+                        const chunkRef = docRef.collection('chunks').doc('chunk_' + i);
+                        const chunkSnap = await chunkRef.get();
+                        if (chunkSnap.exists) {
+                            const chunkData = chunkSnap.data();
+                            if (chunkData && chunkData.data) {
+                                allData = allData.concat(chunkData.data);
+                                console.log(`✅ Chunk ${i} loaded: ${chunkData.data.length} records`);
+                            }
+                        } else {
+                            console.warn(`⚠️ Chunk ${i} not found`);
+                        }
+                    } catch (e) {
+                        console.warn('Error loading chunk ' + i + ':', e);
+                    }
+                }
+                
+                if (allData.length > 0) {
+                    originalData = allData;
+                    salesData = [...allData];
+                    console.log(`✅ Loaded ${allData.length} records for detail view`);
+                    
+                    // Update filters
+                    populateFilters();
+                    return true;
+                } else {
+                    console.warn('No data loaded from chunks');
+                    return false;
+                }
+            } catch (err) {
+                console.warn('Could not load full data:', err);
+                return false;
+            }
+        }
+
+        // ============================================================
         // SAVE TO FIREBASE
         // ============================================================
         async function saveToFirebase(data, filename) {
@@ -767,7 +824,7 @@
         }
 
         // ============================================================
-        // LOAD SUMMARY FIRST
+        // LOAD SUMMARY FIRST (dengan load data lengkap)
         // ============================================================
         async function loadSummaryFirst() {
             if (!isFirebaseReady) {
@@ -826,8 +883,15 @@
                 window._lastSummary = summary;
                 window._lastPeriod = period;
 
+                // ============================================================
+                // LOAD FULL DATA UNTUK DETAIL (FIX)
+                // ============================================================
+                if (period) {
+                    await loadFullDataForDetail(period);
+                }
+
                 updateSyncStatus('synced', 'Loaded');
-                showToast('✅ Loaded summary from cloud', 'success');
+                showToast('✅ Loaded summary + data from cloud', 'success');
                 return true;
 
             } catch (err) {
@@ -1677,6 +1741,23 @@
         // DETAIL & PDF EXPORT
         // ============================================================
         function showItemDetail(itemName, department) {
+            // Pastikan data sudah di-load
+            if (originalData.length === 0) {
+                showToast('📂 Memuat data detail...', 'info', 2000);
+                // Coba load ulang data
+                loadFullDataForDetail(window._lastPeriod || '2026-06').then(() => {
+                    if (originalData.length > 0) {
+                        showItemDetailDirect(itemName, department);
+                    } else {
+                        showToast('❌ Gagal memuat data detail', 'warning');
+                    }
+                });
+                return;
+            }
+            showItemDetailDirect(itemName, department);
+        }
+
+        function showItemDetailDirect(itemName, department) {
             currentDetailItem = { name: itemName, dept: department };
             document.getElementById('detailTitle').textContent = '📦 ' + itemName;
             document.getElementById('detailDateFrom').value = '';
