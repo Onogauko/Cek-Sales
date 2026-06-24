@@ -851,8 +851,7 @@
                 const totalAmount = summary.totalAmount || 0;
                 const totalQty = summary.totalQty || 0;
                 const recordCount = summary.recordCount || 0;
-                const daysCount = summary.daysCount || summary.recordCount || 'N/A';
-
+                const daysCount = summary.daysCount || 'N/A';
                 document.getElementById('totalSales').textContent = formatRupiah(totalAmount);
                 document.getElementById('totalQty').textContent = Math.round(totalQty);
                 document.getElementById('totalItems').textContent = recordCount;
