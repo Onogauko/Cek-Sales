@@ -138,7 +138,6 @@
         .config-panel .btn-row button:active { transform:scale(.96); }
         .supported-formats { font-size:11px; color:#999; margin-top:4px; }
 
-        /* Upload Mode Radio */
         .upload-mode {
             background: #f5f6fa;
             border-radius: 8px;
@@ -201,7 +200,6 @@
         <p>Drag & drop atau klik untuk upload</p>
         <div class="supported-formats">Support: .xlsx, .xls, .csv</div>
 
-        <!-- UPLOAD MODE -->
         <div class="upload-mode">
             <label>📌 Mode Upload</label>
             <div class="radio-group">
@@ -465,10 +463,9 @@
         }
 
         // ============================================================
-        // DEDUPLIKASI - GENERATE UNIQUE KEY
+        // DEDUPLIKASI
         // ============================================================
         function generateUniqueKey(row) {
-            // Department + Date + Item Name + Qty + Amount
             return `${row.department}|${row.dateStr}|${row.itemName}|${row.qty}|${row.amount}`;
         }
 
@@ -495,7 +492,7 @@
         }
 
         // ============================================================
-        // LOAD ALL DATA FROM CHUNKS (untuk merge)
+        // LOAD ALL DATA FROM CHUNKS
         // ============================================================
         async function loadAllDataFromChunks(docId, chunkCount) {
             let allData = [];
@@ -577,7 +574,7 @@
         }
 
         // ============================================================
-        // SAVE TO FIREBASE - DENGAN CONTINUE / REPLACE
+        // SAVE TO FIREBASE
         // ============================================================
         async function saveToFirebase(data, filename) {
             if (!isFirebaseReady) {
@@ -601,7 +598,6 @@
                 console.log(`📌 Period: ${period}`);
                 console.log(`📌 New data: ${data.length} records`);
 
-                // Cek apakah document sudah ada
                 const docRef = firestore.collection(collection).doc(period);
                 const doc = await docRef.get();
                 const docExists = doc.exists;
@@ -610,9 +606,7 @@
                 let isReplace = (mode === 'replace');
                 let existingRecordCount = 0;
 
-                // ============================================================
-                // CONTINUE MODE - Load existing data, merge, dedup
-                // ============================================================
+                // CONTINUE MODE
                 if (docExists && mode === 'continue') {
                     console.log('📂 Existing document found. Loading existing data...');
                     
@@ -620,33 +614,26 @@
                     const chunkCount = existingDoc.chunkCount || 1;
                     existingRecordCount = existingDoc.recordCount || 0;
                     
-                    // Load all existing data from chunks
                     const existingData = await loadAllDataFromChunks(period, chunkCount);
                     console.log(`📂 Existing data: ${existingData.length} records`);
                     
-                    // Merge new data with existing data
                     const mergedData = existingData.concat(data);
                     console.log(`📊 Merged data: ${mergedData.length} records (before dedup)`);
                     
-                    // Deduplicate
                     finalData = removeDuplicates(mergedData);
                     console.log(`📊 Final data: ${finalData.length} records (after dedup)`);
                     
-                    // Update info bar
                     document.getElementById('fileInfo').textContent = 
                         `📄 ${filename} • Continue • Old: ${existingRecordCount} • New: ${data.length} • Final: ${finalData.length} • Dedup: ${(existingRecordCount + data.length) - finalData.length} removed`;
                     
                     showToast(`🔄 Continue: ${existingRecordCount} old + ${data.length} new → ${finalData.length} unique records`, 'info', 3000);
                 }
-                
-                // ============================================================
-                // REPLACE MODE - Hapus data lama (atau overwrite)
-                // ============================================================
+
+                // REPLACE MODE
                 if (isReplace) {
                     console.log('🔄 Replace mode: will overwrite existing data');
                     finalData = data;
                     if (docExists) {
-                        // Hapus semua chunks lama
                         const existingDoc = doc.data();
                         const chunkCount = existingDoc.chunkCount || 0;
                         for (let i = 0; i < chunkCount; i++) {
@@ -661,12 +648,12 @@
                     showToast(`🔄 Replace: ${finalData.length} records saved (old data replaced)`, 'info', 3000);
                 }
 
-                // ============================================================
                 // HITUNG ULANG METADATA
-                // ============================================================
                 const totalAmount = finalData.reduce((sum, d) => sum + d.amount, 0);
                 const totalQty = finalData.reduce((sum, d) => sum + d.qty, 0);
                 const departments = [...new Set(finalData.map(d => d.department))];
+                const uniqueDays = new Set(finalData.map(d => d.dateStr));
+                const daysCount = uniqueDays.size;
                 const chunks = splitDataForFirestore(finalData);
 
                 const mainData = {
@@ -677,6 +664,7 @@
                     totalAmount: totalAmount,
                     totalQty: totalQty,
                     departments: departments,
+                    daysCount: daysCount,
                     status: "processing",
                     chunkCount: chunks.length,
                     uploadMode: mode,
@@ -684,15 +672,11 @@
                     dedupRemoved: docExists && mode === 'continue' ? (existingRecordCount + data.length) - finalData.length : 0
                 };
 
-                // ============================================================
                 // SIMPAN MAIN DATA
-                // ============================================================
                 await docRef.set(mainData);
                 currentDocId = period;
 
-                // ============================================================
                 // SIMPAN CHUNKS
-                // ============================================================
                 const batch = firestore.batch();
                 for (let i = 0; i < chunks.length; i++) {
                     const chunkRef = docRef.collection('chunks').doc('chunk_' + i);
@@ -704,14 +688,10 @@
                 }
                 await batch.commit();
 
-                // ============================================================
                 // UPDATE STATUS => completed
-                // ============================================================
                 await docRef.update({ status: "completed" });
 
-                // ============================================================
-                // BUAT SUMMARY DENGAN TOP PRODUCTS & DEPARTMENT SALES
-                // ============================================================
+                // BUAT SUMMARY
                 const topProducts = calculateTopProducts(finalData, 10);
                 const departmentSales = calculateDepartmentSales(finalData);
 
@@ -722,6 +702,7 @@
                     totalQty: totalQty,
                     recordCount: finalData.length,
                     departmentCount: departments.length,
+                    daysCount: daysCount,
                     departments: departments,
                     topProducts: topProducts,
                     departmentSales: departmentSales,
@@ -732,13 +713,11 @@
                     dedupRemoved: docExists && mode === 'continue' ? (existingRecordCount + data.length) - finalData.length : 0
                 });
 
-                // ============================================================
                 // UPDATE DASHBOARD
-                // ============================================================
                 document.getElementById('totalSales').textContent = formatRupiah(totalAmount);
                 document.getElementById('totalQty').textContent = Math.round(totalQty);
                 document.getElementById('totalItems').textContent = finalData.length;
-                document.getElementById('totalDays').textContent = departments.length || 'N/A';
+                document.getElementById('totalDays').textContent = daysCount;
 
                 renderSummaryFromData(topProducts, totalAmount, totalQty);
                 renderDeptChartFromSummary(departmentSales);
@@ -747,21 +726,20 @@
                 originalData = finalData;
                 salesData = [...finalData];
 
-                let infoText = `☁️ ${filename} • ${finalData.length} records • Period: ${period}`;
+                let infoText = `☁️ ${filename} • ${finalData.length} records • Period: ${period} • ${daysCount} days`;
                 if (mode === 'continue' && docExists) {
                     infoText += ` • Continue (${existingRecordCount}→${finalData.length})`;
                 }
                 document.getElementById('fileInfo').textContent = infoText;
                 document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Saved to Cloud</span>';
 
-                // Populate filters dengan data baru
                 populateFilters();
                 renderProducts();
                 renderDeptSummary();
                 renderCharts();
 
                 const dedupMsg = docExists && mode === 'continue' ? `, ${(existingRecordCount + data.length) - finalData.length} duplicates removed` : '';
-                showToast(`✅ ${finalData.length} records saved${dedupMsg}`, 'success');
+                showToast(`✅ ${finalData.length} records saved (${daysCount} days)${dedupMsg}`, 'success');
                 updateSyncStatus('synced', 'Saved');
                 return true;
 
@@ -816,14 +794,14 @@
                 const totalAmount = summary.totalAmount || 0;
                 const totalQty = summary.totalQty || 0;
                 const recordCount = summary.recordCount || 0;
-                const departmentCount = summary.departmentCount || 0;
+                const daysCount = summary.daysCount || summary.recordCount || 'N/A';
 
                 document.getElementById('totalSales').textContent = formatRupiah(totalAmount);
                 document.getElementById('totalQty').textContent = Math.round(totalQty);
                 document.getElementById('totalItems').textContent = recordCount;
-                document.getElementById('totalDays').textContent = departmentCount || 'N/A';
+                document.getElementById('totalDays').textContent = daysCount;
 
-                let infoText = '☁️ Summary: ' + period + ' • ' + recordCount + ' records';
+                let infoText = '☁️ Summary: ' + period + ' • ' + recordCount + ' records • ' + daysCount + ' days';
                 if (summary.uploadMode) infoText += ' • Mode: ' + summary.uploadMode;
                 if (summary.dedupRemoved) infoText += ' • 🧹 ' + summary.dedupRemoved + ' duplicates removed';
                 if (summary.updatedAt) {
@@ -936,7 +914,7 @@
         }
 
         // ============================================================
-        // LOAD FROM FIREBASE (untuk detail)
+        // LOAD FROM FIREBASE
         // ============================================================
         async function loadFromFirebase(docId = null) {
             if (!isFirebaseReady) {
@@ -1054,6 +1032,7 @@
 
             let infoText = '☁️ ' + (docData.filename || 'cloud_data') + ' • ' + allData.length + ' records';
             if (docData.period) infoText += ' • Period: ' + docData.period;
+            if (docData.daysCount) infoText += ' • ' + docData.daysCount + ' days';
             if (docData.uploadMode) infoText += ' • Mode: ' + docData.uploadMode;
             if (docData.status === 'completed') infoText += ' ✅';
             else if (docData.status === 'processing') infoText += ' ⏳';
@@ -1177,7 +1156,7 @@
         }
 
         // ============================================================
-        // MAIN APPLICATION CODE (SAMA SEPERTI SEBELUMNYA)
+        // MAIN APPLICATION CODE
         // ============================================================
         let salesData = [];
         let originalData = [];
@@ -1197,7 +1176,6 @@
         const infoBar = document.getElementById('infoBar');
         const fileInfo = document.getElementById('fileInfo');
 
-        // Tab switching
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', function() {
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -1211,7 +1189,6 @@
             });
         });
 
-        // Upload handlers
         uploadBtn.addEventListener('click', () => fileInput.click());
 
         uploadArea.addEventListener('dragover', (e) => {
@@ -1240,7 +1217,7 @@
         });
 
         // ============================================================
-        // FILE HANDLER - SUPPORT CSV, XLSX, XLS
+        // FILE HANDLER
         // ============================================================
         function handleFile(file) {
             const isCSV = file.name.match(/\.csv$/i);
@@ -1400,10 +1377,8 @@
                 return;
             }
 
-            // Simpan data sementara untuk upload (belum di-merge dengan existing)
             const newData = [...salesData];
 
-            // Tampilkan UI dulu
             showUI(filename);
             updateStats();
             populateFilters();
@@ -1420,17 +1395,14 @@
 
             afterDataLoaded();
 
-            // Save to Firebase (dengan mode upload)
             if (isFirebaseReady && newData.length > 0) {
                 setTimeout(async () => {
                     const success = await saveToFirebase(newData, filename);
                     if (success) {
-                        // Reload summary untuk update dashboard
                         await loadSummaryFirst();
                     }
                 }, 1000);
             } else {
-                // Jika Firebase tidak siap, tetap tampilkan data offline
                 originalData = salesData;
                 let infoText2 = '📄 ' + filename + ' • ' + salesData.length + ' records (offline mode)';
                 fileInfo.textContent = infoText2;
@@ -1473,7 +1445,8 @@
             document.getElementById('totalSales').textContent = formatRupiah(data.reduce((s, d) => s + d.amount, 0));
             document.getElementById('totalQty').textContent = Math.round(data.reduce((s, d) => s + d.qty, 0));
             document.getElementById('totalItems').textContent = new Set(data.map(d => d.itemName + '|' + d.department)).size;
-            document.getElementById('totalDays').textContent = new Set(data.map(d => d.dateStr)).size || 'N/A';
+            const days = new Set(data.map(d => d.dateStr));
+            document.getElementById('totalDays').textContent = days.size || 'N/A';
         }
 
         function populateFilters() {
@@ -1779,7 +1752,7 @@
         }
 
         // ============================================================
-        // PDF EXPORT - FIXED
+        // PDF EXPORT
         // ============================================================
         function exportDetailPDF() {
             if (!currentDetailItem || detailDataCache.length === 0) {
