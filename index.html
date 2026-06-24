@@ -1211,12 +1211,12 @@
                     document.getElementById('totalItems').textContent = recordCount;
 
                     window._lastPeriod = period;
+                    await loadFullDataForDetail(period);
 
-// TEMP DISABLE
-// await loadFullDataForDetail(period);
-
-document.getElementById('totalDays').textContent =
-    summary.daysCount || 0;
+                    if (originalData.length > 0) {
+                        const uniqueDays = new Set(originalData.map(d => d.dateStr));
+                        document.getElementById('totalDays').textContent = uniqueDays.size;
+                    } else {
                         document.getElementById('totalDays').textContent = summary.daysCount || 'N/A';
                     }
 
