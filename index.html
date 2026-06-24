@@ -1117,7 +1117,7 @@
         let currentDocId = null;
         let isSaving = false;
         let isDataLoaded = false;
-        let summaryUnsubscribe = null; // Menyimpan referensi listener aktif
+        let summaryUnsubscribe = null;
         let originalData = [];
         let salesData = [];
         let searchQuery = '';
@@ -1152,7 +1152,6 @@
                 updateSyncStatus('synced', 'Connected');
                 console.log('✅ Firebase connected');
 
-                // AKTIFKAN LOGIKA REAL-TIME LISTENER SEPERTI RECEIVING LOG
                 initRealtimeSummaryListener();
                 return true;
             } catch (err) {
@@ -1163,16 +1162,13 @@
             }
         }
 
-        // FUNGSI UTAMA REAL-TIME LISTENER (KUNCI AUTO-UPDATE UTK FIRESTORE)
         function initRealtimeSummaryListener() {
             if (!isFirebaseReady) return;
 
-            // Bersihkan listener lama jika ada konfigurasi ulang
             if (summaryUnsubscribe) summaryUnsubscribe();
 
             updateSyncStatus('syncing', 'Listening to Cloud...');
 
-            // Ambil summary terbaru dan dengarkan perubahannya secara real-time (.onSnapshot)
             summaryUnsubscribe = firestore.collection('sales_summary')
                 .orderBy('updatedAt', 'desc')
                 .limit(1)
@@ -1193,7 +1189,6 @@
                         return;
                     }
 
-                    // Deteksi jika perubahan dipicu oleh proses saving internal agar tidak bentrok
                     if (isSaving) {
                         console.log('⏳ Perubahan cloud dideteksi tapi dilewati karena aplikasi sedang menulis data lokal.');
                         return;
@@ -1205,7 +1200,6 @@
 
                     console.log('🔔 Cloud Update Diterima Real-time untuk periode:', period);
 
-                    // UPDATE TAMPILAN ANGKA UTAMA DASBORsecara Instan
                     const totalAmount = summary.totalAmount || 0;
                     const totalQty = summary.totalQty || 0;
                     const recordCount = summary.recordCount || 0;
@@ -1214,11 +1208,9 @@
                     document.getElementById('totalQty').textContent = Math.round(totalQty);
                     document.getElementById('totalItems').textContent = recordCount;
 
-                    // MUAT DATA CHUNKS SECARA OTOMATIS JIKA PERIODE BERUBAH ATAU DATA DIPERBARUI
                     window._lastPeriod = period;
                     await loadFullDataForDetail(period);
 
-                    // HITUNG HARI MASUK DATA
                     if (originalData.length > 0) {
                         const uniqueDays = new Set(originalData.map(d => d.dateStr));
                         document.getElementById('totalDays').textContent = uniqueDays.size;
@@ -1226,7 +1218,6 @@
                         document.getElementById('totalDays').textContent = summary.daysCount || 'N/A';
                     }
 
-                    // RE-RENDER SELURUH TAMPILAN UI SECARA INSTAN
                     if (summary.topProducts && summary.topProducts.length > 0) {
                         renderSummaryFromData(summary.topProducts, summary.totalAmount, summary.totalQty);
                     }
@@ -1260,8 +1251,6 @@
         }
 
         function renderSummaryFromData(topProducts, totalAmount, totalQty) {
-            // Fungsi ini dipanggil dari listener
-            // Kita akan re-render summary dengan data dari cloud
             if (topProducts && topProducts.length > 0) {
                 const container = document.getElementById('summaryContent');
                 let html = `
@@ -1425,15 +1414,12 @@
             } catch (err) { return false; }
         }
 
-        // ============================================================
-        // LOGIKA PENYIMPANAN YANG SUDAH TIDAK BENTROK DENGAN LISTENER
-        // ============================================================
         async function saveToFirebase(data, filename) {
             if (!isFirebaseReady) { showToast('Firebase not connected.', 'warning'); return false; }
             if (isSaving) return false;
 
             try {
-                isSaving = true; // Kunci listener realtime agar tidak interupsi di tengah jalan
+                isSaving = true;
                 updateSyncStatus('syncing', 'Saving to Cloud...');
 
                 const collection = getCollectionName();
@@ -1509,7 +1495,6 @@
                     status: "completed"
                 });
 
-                // REFRESH UI LOCAL
                 originalData = finalData;
                 salesData = [...finalData];
                 updateStats();
@@ -1528,7 +1513,7 @@
                 updateSyncStatus('error', 'Save failed');
                 return false;
             } finally {
-                isSaving = false; // Buka kembali kunci listener
+                isSaving = false;
             }
         }
 
@@ -1936,7 +1921,7 @@
         }
 
         // ============================================================
-        // FUNGSI EXPORT PDF - DIPERBAIKI
+        // FUNGSI EXPORT PDF - DIPERBAIKI SEPERTI CONTOH
         // ============================================================
         function exportDetailPDF() {
             if (!currentDetailItem || detailDataCache.length === 0) {
@@ -1946,107 +1931,104 @@
             try {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF('p', 'pt', 'a4');
-                
-                // Header
-                doc.setFontSize(16);
-                doc.setTextColor(26, 35, 126);
-                doc.text('📦 Detail Penjualan: ' + currentDetailItem.name, 40, 50);
-                
-                doc.setFontSize(11);
-                doc.setTextColor(80);
-                doc.text('Department: ' + currentDetailItem.dept, 40, 70);
-                
-                // Periode
-                const firstDate = detailDataCache[0]?.dateStr || '';
-                const lastDate = detailDataCache[detailDataCache.length - 1]?.dateStr || '';
-                doc.text('Periode: ' + formatDate(firstDate) + ' - ' + formatDate(lastDate), 40, 85);
-                
-                // Garis pemisah
-                doc.setDrawColor(200);
-                doc.line(40, 95, 550, 95);
-                
-                // Header tabel
-                let y = 110;
-                doc.setFontSize(10);
-                doc.setTextColor(80);
-                doc.setFont(undefined, 'bold');
-                doc.text('Tanggal', 40, y);
-                doc.text('Qty', 280, y);
-                doc.text('Amount', 400, y);
-                
-                // Garis bawah header
-                y += 5;
-                doc.line(40, y, 550, y);
-                y += 10;
-                
-                // Data
-                doc.setFont(undefined, 'normal');
-                doc.setTextColor(50);
-                
+
+                // Hitung total
                 const dailyData = {};
                 detailDataCache.forEach(d => {
                     if (!dailyData[d.dateStr]) dailyData[d.dateStr] = { qty: 0, amount: 0 };
                     dailyData[d.dateStr].qty += d.qty;
                     dailyData[d.dateStr].amount += d.amount;
                 });
-                
+
                 const dates = Object.keys(dailyData).sort();
                 let totalQty = 0;
                 let totalAmount = 0;
-                
+                dates.forEach(date => {
+                    totalQty += Math.round(dailyData[date].qty);
+                    totalAmount += dailyData[date].amount;
+                });
+
+                // === HEADER ===
+                doc.setFontSize(14);
+                doc.setTextColor(0, 0, 0);
+                doc.setFont(undefined, 'bold');
+                doc.text('Detail Penjualan: ' + currentDetailItem.name, 40, 40);
+
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
+                doc.text('Department: ' + currentDetailItem.dept, 40, 58);
+                doc.text('Periode: Semua Tanggal', 40, 70);
+
+                // === TOTAL ===
+                doc.setFont(undefined, 'bold');
+                doc.text('Total Qty: ' + totalQty, 40, 88);
+                doc.text('Total Amount: ' + formatRupiah(totalAmount), 40, 100);
+
+                // === GARIS ===
+                doc.setDrawColor(200);
+                doc.line(40, 108, 550, 108);
+
+                // === HEADER TABEL ===
+                let y = 118;
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'bold');
+                doc.text('Tanggal', 40, y);
+                doc.text('Qty', 200, y);
+                doc.text('Amount', 320, y);
+
+                // Garis bawah header
+                y += 4;
+                doc.line(40, y, 550, y);
+                y += 10;
+
+                // === DATA ===
+                doc.setFont(undefined, 'normal');
+                doc.setTextColor(50);
+
                 dates.forEach((date) => {
                     const qty = Math.round(dailyData[date].qty);
                     const amount = dailyData[date].amount;
-                    totalQty += qty;
-                    totalAmount += amount;
-                    
-                    // Jika halaman penuh, buat halaman baru
-                    if (y > 700) {
+
+                    // Jika halaman penuh
+                    if (y > 720) {
                         doc.addPage();
                         y = 40;
                         // Header tabel di halaman baru
                         doc.setFontSize(10);
-                        doc.setTextColor(80);
                         doc.setFont(undefined, 'bold');
                         doc.text('Tanggal', 40, y);
-                        doc.text('Qty', 280, y);
-                        doc.text('Amount', 400, y);
-                        y += 5;
+                        doc.text('Qty', 200, y);
+                        doc.text('Amount', 320, y);
+                        y += 4;
                         doc.line(40, y, 550, y);
                         y += 10;
                         doc.setFont(undefined, 'normal');
                         doc.setTextColor(50);
                     }
-                    
+
                     doc.text(formatDate(date), 40, y);
-                    doc.text(qty.toString(), 280, y);
-                    doc.text(formatRupiah(amount), 400, y);
-                    y += 18;
+                    doc.text(qty.toString(), 200, y);
+                    doc.text(formatRupiah(amount), 320, y);
+                    y += 16;
                 });
-                
-                // Garis total
-                y += 5;
+
+                // === GARIS TOTAL ===
+                y += 4;
                 doc.line(40, y, 550, y);
                 y += 10;
-                
-                // Total
+
+                // === TOTAL ===
                 doc.setFont(undefined, 'bold');
-                doc.setTextColor(26, 35, 126);
+                doc.setTextColor(0, 0, 0);
                 doc.text('TOTAL', 40, y);
-                doc.text(totalQty.toString(), 280, y);
-                doc.text(formatRupiah(totalAmount), 400, y);
-                
-                // Footer
-                doc.setFontSize(8);
-                doc.setTextColor(150);
-                doc.text('Generated by Sales Data Analyzer', 40, 800);
-                doc.text('Page ' + doc.internal.getNumberOfPages(), 500, 800);
-                
+                doc.text(totalQty.toString(), 200, y);
+                doc.text(formatRupiah(totalAmount), 320, y);
+
                 doc.save('Detail_' + currentDetailItem.name.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf');
                 showToast('✅ PDF berhasil diexport!', 'success');
-            } catch(e) { 
+            } catch (e) {
                 console.error('PDF Error:', e);
-                showToast('Gagal export PDF: ' + e.message, 'warning'); 
+                showToast('Gagal export PDF: ' + e.message, 'warning');
             }
         }
 
@@ -2082,17 +2064,14 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Sales Data Analyzer starting...');
 
-            // Inisialisasi Firebase
             initFirebase();
 
-            // Ambil referensi elemen
             uploadBtn = document.getElementById('uploadBtn');
             fileInput = document.getElementById('fileInput');
             const uploadArea = document.getElementById('uploadArea');
             const loadFromFirebaseBtn = document.getElementById('loadFromFirebaseBtn');
             const configBtn = document.getElementById('configBtn');
 
-            // ===== UPLOAD BUTTON =====
             if (uploadBtn) {
                 uploadBtn.addEventListener('click', function(e) {
                     e.preventDefault();
@@ -2106,19 +2085,16 @@
                 });
             }
 
-            // ===== FILE INPUT CHANGE =====
             if (fileInput) {
                 fileInput.addEventListener('change', function(e) {
                     console.log('File selected:', this.files.length);
                     if (this.files.length > 0) {
                         handleFile(this.files[0]);
                     }
-                    // Reset agar bisa upload file yang sama lagi
                     this.value = '';
                 });
             }
 
-            // ===== DRAG AND DROP =====
             if (uploadArea) {
                 uploadArea.addEventListener('dragover', function(e) {
                     e.preventDefault();
@@ -2140,21 +2116,18 @@
                 });
             }
 
-            // ===== LOAD FROM FIREBASE =====
             if (loadFromFirebaseBtn) {
                 loadFromFirebaseBtn.addEventListener('click', function() {
                     loadFromFirebase();
                 });
             }
 
-            // ===== CONFIG BUTTON =====
             if (configBtn) {
                 configBtn.addEventListener('click', function() {
                     openConfig();
                 });
             }
 
-            // ===== TAB SWITCHING =====
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.addEventListener('click', function() {
                     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -2189,7 +2162,6 @@
                 return;
             }
 
-            // Tampilkan loading
             uploadLoading.classList.add('active');
             uploadBtn.disabled = true;
 
@@ -2239,7 +2211,6 @@
                 showToast('Gagal membaca file', 'warning');
             };
 
-            // Baca file
             if (ext === 'csv') {
                 reader.readAsText(file);
             } else {
