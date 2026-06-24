@@ -629,7 +629,7 @@
         }
 
         // ============================================================
-        // SAVE TO FIREBASE
+        // SAVE TO FIREBASE - DENGAN AUTO-DETECT NEW PERIOD
         // ============================================================
         async function saveToFirebase(data, filename) {
             if (!isFirebaseReady) {
@@ -647,21 +647,36 @@
                 
                 const collection = getCollectionName();
                 const period = getPeriod(data);
-                const mode = getUploadMode();
+                let mode = getUploadMode();
                 
                 console.log(`📌 Upload Mode: ${mode}`);
                 console.log(`📌 Period: ${period}`);
                 console.log(`📌 New data: ${data.length} records`);
 
+                // ============================================================
+                // AUTO-DETECT NEW PERIOD
+                // ============================================================
                 const docRef = firestore.collection(collection).doc(period);
                 const doc = await docRef.get();
                 const docExists = doc.exists;
+
+                // Jika period tidak ada di database, otomatis buat baru
+                // (tidak peduli mode apa yang dipilih user)
+                if (!docExists) {
+                    console.log(`🆕 New period detected: ${period}. Creating new document.`);
+                    mode = 'new_period';
+                    showToast(`🆕 Period baru (${period}). Membuat data baru.`, 'info', 2000);
+                }
+
+                // Jika period sudah ada, dan user pilih "continue" → merge
+                // Jika period sudah ada, dan user pilih "replace" → replace
+                // Jika period baru → buat baru (mode = 'new_period')
 
                 let finalData = data;
                 let isReplace = (mode === 'replace');
                 let existingRecordCount = 0;
 
-                // CONTINUE MODE
+                // CONTINUE MODE - Hanya jika period sudah ada
                 if (docExists && mode === 'continue') {
                     console.log('📂 Existing document found. Loading existing data...');
                     
@@ -684,8 +699,8 @@
                     showToast(`🔄 Continue: ${existingRecordCount} old + ${data.length} new → ${finalData.length} unique records`, 'info', 3000);
                 }
 
-                // REPLACE MODE
-                if (isReplace) {
+                // REPLACE MODE - Hanya jika period sudah ada dan user pilih replace
+                if (docExists && isReplace) {
                     console.log('🔄 Replace mode: will overwrite existing data');
                     finalData = data;
                     if (docExists) {
@@ -701,6 +716,15 @@
                     document.getElementById('fileInfo').textContent = 
                         `📄 ${filename} • Replace • ${finalData.length} records`;
                     showToast(`🔄 Replace: ${finalData.length} records saved (old data replaced)`, 'info', 3000);
+                }
+
+                // NEW PERIOD - Period belum ada di database
+                if (mode === 'new_period') {
+                    console.log('🆕 Creating new document for period:', period);
+                    finalData = data;
+                    document.getElementById('fileInfo').textContent = 
+                        `📄 ${filename} • New Period (${period}) • ${finalData.length} records`;
+                    showToast(`🆕 New period ${period}: ${finalData.length} records saved`, 'info', 2000);
                 }
 
                 // HITUNG ULANG METADATA
@@ -785,6 +809,9 @@
                 if (mode === 'continue' && docExists) {
                     infoText += ` • Continue (${existingRecordCount}→${finalData.length})`;
                 }
+                if (mode === 'new_period') {
+                    infoText += ` • 🆕 New Period`;
+                }
                 document.getElementById('fileInfo').textContent = infoText;
                 document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Saved to Cloud</span>';
 
@@ -822,7 +849,7 @@
         }
 
         // ============================================================
-        // LOAD SUMMARY FIRST (dengan load data lengkap)
+        // LOAD SUMMARY FIRST
         // ============================================================
         async function loadSummaryFirst() {
             if (!isFirebaseReady) {
@@ -879,29 +906,23 @@
                 window._lastSummary = summary;
                 window._lastPeriod = period;
 
-                // ============================================================
                 // LOAD FULL DATA UNTUK DETAIL
-                // ============================================================
                 if (period) {
                     await loadFullDataForDetail(period);
                 }
 
-                // ============================================================
-                // HITUNG ULANG DAYS COUNT DARI DATA (FIX)
-                // ============================================================
+                // HITUNG ULANG DAYS COUNT DARI DATA
                 if (originalData.length > 0) {
                     const uniqueDays = new Set(originalData.map(d => d.dateStr));
                     const actualDaysCount = uniqueDays.size;
                     document.getElementById('totalDays').textContent = actualDaysCount;
                     console.log(`📊 Actual days count: ${actualDaysCount}`);
                     
-                    // Update info bar dengan days count
                     const currentInfo = document.getElementById('fileInfo').textContent;
                     if (!currentInfo.includes('days')) {
                         document.getElementById('fileInfo').textContent = currentInfo + ` • ${actualDaysCount} days`;
                     }
                 } else {
-                    // Fallback ke summary jika data tidak bisa di-load
                     const daysFromSummary = summary.daysCount || 'N/A';
                     document.getElementById('totalDays').textContent = daysFromSummary;
                 }
@@ -1113,7 +1134,6 @@
             let infoText = '☁️ ' + (docData.filename || 'cloud_data') + ' • ' + allData.length + ' records';
             if (docData.period) infoText += ' • Period: ' + docData.period;
             
-            // Hitung days dari data
             const uniqueDays = new Set(allData.map(d => d.dateStr));
             const daysCount = uniqueDays.size;
             infoText += ` • ${daysCount} days`;
@@ -1126,7 +1146,6 @@
             document.getElementById('fileInfo').textContent = infoText;
             document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Loaded from Cloud</span>';
 
-            // Update days di dashboard
             document.getElementById('totalDays').textContent = daysCount;
 
             const validation = validateData(allData);
