@@ -25,42 +25,41 @@
         body {
             background: #f0f2f5;
             min-height: 100vh;
-            padding: 16px;
+            padding: 12px;
             padding-bottom: 80px;
         }
         .header {
             background: linear-gradient(135deg, #1a237e, #283593);
             color: #fff;
-            padding: 14px 16px;
-            border-radius: 16px;
-            margin-bottom: 12px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            margin-bottom: 10px;
             text-align: center;
             box-shadow: 0 4px 20px rgba(26, 35, 126, .3);
             position: relative;
         }
         .header h1 {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 700;
-            letter-spacing: .5px;
         }
         .header p {
-            font-size: 12px;
+            font-size: 11px;
             opacity: .8;
             margin-top: 2px;
         }
         .header .sync-status {
             position: absolute;
-            top: 8px;
-            right: 12px;
-            font-size: 10px;
+            top: 6px;
+            right: 10px;
+            font-size: 9px;
             display: flex;
             align-items: center;
             gap: 4px;
             opacity: .8;
         }
         .header .sync-status .dot {
-            width: 7px;
-            height: 7px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             display: inline-block;
         }
@@ -87,15 +86,15 @@
             }
         }
 
-        /* ===== UPLOAD AREA YANG DIPERKECIL ===== */
+        /* ===== UPLOAD AREA YANG SANGAT DIPERKECIL ===== */
         .upload-area {
             background: #fff;
-            border-radius: 14px;
-            padding: 14px 16px 16px;
+            border-radius: 12px;
+            padding: 10px 14px 12px;
             text-align: center;
             border: 2px dashed #c5cae9;
             transition: all .3s;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
             position: relative;
         }
@@ -104,43 +103,110 @@
             background: #e8eaf6;
         }
         .upload-area .icon {
-            font-size: 30px;
-            margin-bottom: 4px;
+            font-size: 22px;
+            display: inline-block;
+            margin-right: 6px;
         }
-        .upload-area h3 {
-            color: #1a237e;
-            font-size: 14px;
+        .upload-area .title-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            flex-wrap: wrap;
             margin-bottom: 2px;
         }
-        .upload-area p {
-            color: #666;
-            font-size: 12px;
-        }
-        .upload-btn {
-            display: inline-block;
-            background: #283593;
-            color: #fff;
-            padding: 8px 20px;
-            border-radius: 25px;
-            border: none;
+        .upload-area .title-row h3 {
+            color: #1a237e;
             font-size: 13px;
             font-weight: 600;
-            margin-top: 8px;
+        }
+        .upload-area .title-row .format {
+            font-size: 10px;
+            color: #999;
+        }
+        .upload-area .sub-text {
+            color: #888;
+            font-size: 10px;
+            margin-bottom: 6px;
+        }
+
+        /* ===== BARIS UTAMA: MODE + TOMBOL ===== */
+        .upload-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            flex-wrap: nowrap;
+            background: #f5f6fa;
+            border-radius: 8px;
+            padding: 4px 8px 4px 12px;
+        }
+        .upload-controls .mode-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 0;
+        }
+        .upload-controls .mode-group .mode-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #333;
+            white-space: nowrap;
+        }
+        .upload-controls .mode-group label {
+            font-size: 11px;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 3px;
             cursor: pointer;
-            transition: all .3s;
+            white-space: nowrap;
         }
-        .upload-btn:active {
-            transform: scale(.96);
+        .upload-controls .mode-group input[type="radio"] {
+            accent-color: #283593;
+            width: 13px;
+            height: 13px;
+            cursor: pointer;
+            margin: 0;
         }
-        .upload-btn:disabled {
-            opacity: .6;
-            cursor: not-allowed;
+        .upload-controls .btn-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
         }
-        .upload-btn.secondary {
+        .upload-controls .btn-group .upload-btn {
+            padding: 4px 10px;
+            font-size: 11px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s;
+            background: #283593;
+            color: #fff;
+            white-space: nowrap;
+        }
+        .upload-controls .btn-group .upload-btn:active {
+            transform: scale(.95);
+        }
+        .upload-controls .btn-group .upload-btn.secondary {
             background: #e8eaf6;
             color: #283593;
-            margin-left: 6px;
+            padding: 4px 8px;
+            font-size: 10px;
         }
+        .upload-controls .btn-group .upload-btn.icon-btn {
+            padding: 4px 6px;
+            font-size: 14px;
+            background: transparent;
+            color: #666;
+        }
+        .upload-controls .btn-group .upload-btn.icon-btn:active {
+            background: #e8eaf6;
+        }
+
         #fileInput {
             display: none;
         }
@@ -151,8 +217,8 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(255, 255, 255, .9);
-            border-radius: 14px;
+            background: rgba(255, 255, 255, .92);
+            border-radius: 12px;
             z-index: 10;
             flex-direction: column;
             align-items: center;
@@ -162,21 +228,21 @@
             display: flex;
         }
         .upload-loading .spinner {
-            width: 32px;
-            height: 32px;
-            border: 4px solid #e8eaf6;
-            border-top: 4px solid #283593;
+            width: 28px;
+            height: 28px;
+            border: 3px solid #e8eaf6;
+            border-top: 3px solid #283593;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
         .upload-loading p {
-            margin-top: 8px;
-            font-size: 13px;
+            margin-top: 6px;
+            font-size: 12px;
             color: #333;
             font-weight: 500;
         }
         .upload-loading .sub {
-            font-size: 11px;
+            font-size: 10px;
             color: #888;
             font-weight: 400;
         }
@@ -186,109 +252,43 @@
             }
         }
 
-        /* ===== UPLOAD MODE ===== */
-        .upload-mode {
-            background: #f5f6fa;
-            border-radius: 8px;
-            padding: 8px 12px;
-            margin-top: 8px;
-            text-align: left;
-        }
-        .upload-mode label {
-            font-size: 12px;
-            font-weight: 500;
-            color: #333;
-            display: block;
-            margin-bottom: 4px;
-        }
-        .upload-mode .radio-group {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .upload-mode .radio-group label {
-            font-weight: 400;
-            font-size: 12px;
-            color: #555;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            cursor: pointer;
-            margin-bottom: 0;
-        }
-        .upload-mode .radio-group input[type="radio"] {
-            accent-color: #283593;
-            width: 14px;
-            height: 14px;
-            cursor: pointer;
-        }
-        .upload-mode .radio-group .desc {
-            font-size: 10px;
-            color: #999;
-            margin-left: 18px;
-            display: block;
-        }
-        .supported-formats {
-            font-size: 10px;
-            color: #999;
-            margin-top: 2px;
-        }
-
-        /* ===== TOMBOL ROW ===== */
-        .upload-actions {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 6px;
-            margin-top: 8px;
-        }
-        .upload-actions .upload-btn {
-            padding: 6px 14px;
-            font-size: 12px;
-            margin: 0;
-        }
-        .upload-actions .upload-btn.secondary {
-            padding: 6px 12px;
-            font-size: 11px;
-        }
-
         /* ===== STATS GRID & TAB ===== */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 12px;
+            gap: 8px;
+            margin-bottom: 10px;
         }
         .stat-card {
             background: #fff;
-            border-radius: 12px;
-            padding: 12px 10px;
+            border-radius: 10px;
+            padding: 10px 8px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
             text-align: center;
         }
         .stat-card .number {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 700;
             color: #1a237e;
         }
         .stat-card .label {
-            font-size: 10px;
+            font-size: 9px;
             color: #888;
-            margin-top: 2px;
+            margin-top: 1px;
         }
         .tabs {
             display: flex;
             background: #fff;
-            border-radius: 12px;
+            border-radius: 10px;
             overflow: hidden;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
         }
         .tab {
             flex: 1;
-            padding: 10px 6px;
+            padding: 8px 4px;
             text-align: center;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
             color: #888;
             cursor: pointer;
@@ -334,7 +334,7 @@
         /* ===== OTHER COMPONENTS ===== */
         .product-list {
             background: #fff;
-            border-radius: 12px;
+            border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
         }
@@ -342,7 +342,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 14px;
+            padding: 8px 12px;
             border-bottom: 1px solid #f5f5f5;
             cursor: pointer;
             transition: background .2s;
@@ -354,66 +354,66 @@
             border-bottom: none;
         }
         .product-item .name {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 500;
             color: #333;
             flex: 1;
         }
         .product-item .dept {
-            font-size: 9px;
+            font-size: 8px;
             color: #888;
             background: #f5f5f5;
-            padding: 2px 8px;
-            border-radius: 10px;
-            margin-right: 8px;
+            padding: 1px 6px;
+            border-radius: 8px;
+            margin-right: 6px;
         }
         .product-item .amount {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             color: #1a237e;
             white-space: nowrap;
         }
         .product-item .qty {
-            font-size: 10px;
+            font-size: 9px;
             color: #888;
-            margin-right: 8px;
+            margin-right: 6px;
         }
         .product-item .click-hint {
-            font-size: 9px;
+            font-size: 8px;
             color: #bbb;
-            margin-left: 6px;
+            margin-left: 4px;
         }
         .chart-container {
             background: #fff;
-            border-radius: 12px;
-            padding: 14px;
+            border-radius: 10px;
+            padding: 12px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
         .chart-container h4 {
-            font-size: 13px;
+            font-size: 12px;
             color: #333;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         .chart-wrapper {
             position: relative;
-            height: 180px;
+            height: 160px;
         }
         .filter-section {
             background: #fff;
-            border-radius: 12px;
-            padding: 10px 14px;
-            margin-bottom: 12px;
+            border-radius: 10px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
         }
         .filter-section select,
         .filter-section input {
             width: 100%;
-            padding: 8px 10px;
+            padding: 6px 8px;
             border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 12px;
-            margin-bottom: 6px;
+            border-radius: 6px;
+            font-size: 11px;
+            margin-bottom: 4px;
             background: #fafafa;
         }
         .filter-section select:focus,
@@ -424,62 +424,62 @@
         .filter-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 6px;
+            gap: 4px;
         }
         .dept-summary {
             background: #fff;
-            border-radius: 12px;
+            border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
         .dept-row {
             display: flex;
             justify-content: space-between;
-            padding: 8px 14px;
+            padding: 6px 12px;
             border-bottom: 1px solid #f5f5f5;
         }
         .dept-row:last-child {
             border-bottom: none;
         }
         .dept-row .name {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 500;
             color: #333;
         }
         .dept-row .value {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             color: #1a237e;
         }
         .loading {
             text-align: center;
-            padding: 30px 20px;
+            padding: 20px 16px;
             color: #888;
         }
         .loading .spinner {
-            width: 32px;
-            height: 32px;
-            border: 4px solid #e8eaf6;
-            border-top: 4px solid #283593;
+            width: 28px;
+            height: 28px;
+            border: 3px solid #e8eaf6;
+            border-top: 3px solid #283593;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
+            margin: 0 auto 8px;
         }
         .empty-state {
             text-align: center;
-            padding: 30px 20px;
+            padding: 20px 16px;
             color: #999;
         }
         .empty-state .icon {
-            font-size: 40px;
-            margin-bottom: 8px;
+            font-size: 32px;
+            margin-bottom: 6px;
         }
         .info-bar {
             background: #fff;
-            border-radius: 12px;
-            padding: 10px 14px;
-            font-size: 10px;
+            border-radius: 10px;
+            padding: 6px 12px;
+            font-size: 9px;
             color: #999;
             text-align: center;
             box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
@@ -492,32 +492,32 @@
         .info-bar .saved-badge {
             background: #4caf50;
             color: #fff;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 9px;
+            padding: 1px 6px;
+            border-radius: 8px;
+            font-size: 8px;
             font-weight: 600;
         }
         .search-section {
             background: #fff;
-            border-radius: 12px;
-            padding: 10px 14px;
-            margin-bottom: 12px;
+            border-radius: 10px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
         }
         .search-section .search-row {
             display: flex;
-            gap: 6px;
-            margin-bottom: 6px;
+            gap: 4px;
+            margin-bottom: 4px;
         }
         .search-section .search-row:last-child {
             margin-bottom: 0;
         }
         .search-section input {
             flex: 1;
-            padding: 8px 10px;
+            padding: 6px 8px;
             border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 12px;
+            border-radius: 6px;
+            font-size: 11px;
             background: #fafafa;
         }
         .search-section input:focus {
@@ -525,56 +525,56 @@
             border-color: #283593;
         }
         .search-section .search-btn {
-            padding: 8px 14px;
+            padding: 6px 10px;
             background: #283593;
             color: #fff;
             border: none;
-            border-radius: 8px;
-            font-size: 12px;
+            border-radius: 6px;
+            font-size: 11px;
             font-weight: 600;
             cursor: pointer;
             white-space: nowrap;
         }
         .search-section .search-btn:active {
-            transform: scale(.96);
+            transform: scale(.95);
         }
         .search-section .clear-btn {
-            padding: 8px 12px;
+            padding: 6px 8px;
             background: #e8eaf6;
             color: #666;
             border: none;
-            border-radius: 8px;
-            font-size: 12px;
+            border-radius: 6px;
+            font-size: 11px;
             cursor: pointer;
         }
         .search-section .search-hint {
-            font-size: 10px;
+            font-size: 9px;
             color: #999;
-            margin-top: 4px;
+            margin-top: 2px;
         }
         .summary-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             flex-wrap: wrap;
-            gap: 6px;
+            gap: 4px;
         }
         .summary-header h4 {
-            font-size: 13px;
+            font-size: 12px;
             color: #333;
         }
         .summary-header .search-toggle-btn {
             background: none;
             border: 1px solid #e0e0e0;
-            border-radius: 20px;
-            padding: 3px 12px;
-            font-size: 11px;
+            border-radius: 16px;
+            padding: 2px 10px;
+            font-size: 10px;
             color: #666;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 3px;
         }
         .summary-header .search-toggle-btn:active {
             background: #f5f5f5;
@@ -595,7 +595,7 @@
             bottom: 0;
             background: rgba(0, 0, 0, .5);
             z-index: 1000;
-            padding: 16px;
+            padding: 12px;
             animation: fadeIn .3s;
             overflow-y: auto;
         }
@@ -606,11 +606,11 @@
         }
         .detail-panel {
             background: #fff;
-            border-radius: 16px;
+            border-radius: 14px;
             max-width: 500px;
             width: 100%;
             margin: auto;
-            padding: 16px;
+            padding: 14px;
             max-height: 90vh;
             overflow-y: auto;
             animation: slideUp .3s ease;
@@ -629,19 +629,19 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 12px;
-            padding-bottom: 10px;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
             border-bottom: 2px solid #e8eaf6;
         }
         .detail-header h3 {
-            font-size: 15px;
+            font-size: 14px;
             color: #1a237e;
             flex: 1;
         }
         .detail-header .close-btn {
             background: none;
             border: none;
-            font-size: 22px;
+            font-size: 20px;
             color: #999;
             cursor: pointer;
             padding: 0 4px;
@@ -654,48 +654,48 @@
             background: #283593;
             color: #fff;
             border: none;
-            border-radius: 6px;
-            padding: 4px 12px;
-            font-size: 11px;
+            border-radius: 4px;
+            padding: 3px 10px;
+            font-size: 10px;
             font-weight: 600;
             cursor: pointer;
-            margin-right: 6px;
+            margin-right: 4px;
         }
         .detail-header .export-btn:active {
-            transform: scale(.96);
+            transform: scale(.95);
         }
         .detail-summary {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 6px;
-            margin-bottom: 12px;
+            gap: 4px;
+            margin-bottom: 10px;
             background: #f5f6fa;
-            border-radius: 8px;
-            padding: 10px;
+            border-radius: 6px;
+            padding: 8px;
         }
         .detail-summary .item {
             text-align: center;
         }
         .detail-summary .label {
-            font-size: 9px;
+            font-size: 8px;
             color: #888;
         }
         .detail-summary .value {
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 600;
             color: #1a237e;
         }
         .detail-filter {
             display: flex;
-            gap: 6px;
-            margin-bottom: 10px;
+            gap: 4px;
+            margin-bottom: 8px;
         }
         .detail-filter input {
             flex: 1;
-            padding: 6px 10px;
+            padding: 4px 8px;
             border: 1px solid #e0e0e0;
-            border-radius: 6px;
-            font-size: 11px;
+            border-radius: 4px;
+            font-size: 10px;
         }
         .detail-filter input:focus {
             outline: none;
@@ -703,19 +703,19 @@
         }
         .detail-table {
             width: 100%;
-            font-size: 11px;
+            font-size: 10px;
             border-collapse: collapse;
         }
         .detail-table th {
             text-align: left;
-            padding: 6px 4px;
+            padding: 4px 3px;
             border-bottom: 2px solid #e8eaf6;
             color: #666;
             font-weight: 600;
-            font-size: 10px;
+            font-size: 9px;
         }
         .detail-table td {
-            padding: 5px 4px;
+            padding: 4px 3px;
             border-bottom: 1px solid #f5f5f5;
         }
         .detail-table tr:last-child td {
@@ -732,13 +732,13 @@
         }
         .detail-table .date-cell {
             color: #666;
-            font-size: 10px;
+            font-size: 9px;
         }
         .detail-empty {
             text-align: center;
-            padding: 16px;
+            padding: 12px;
             color: #999;
-            font-size: 12px;
+            font-size: 11px;
         }
         .config-overlay {
             display: none;
@@ -749,7 +749,7 @@
             bottom: 0;
             background: rgba(0, 0, 0, .5);
             z-index: 3000;
-            padding: 16px;
+            padding: 12px;
             animation: fadeIn .3s;
             overflow-y: auto;
         }
@@ -760,56 +760,56 @@
         }
         .config-panel {
             background: #fff;
-            border-radius: 16px;
+            border-radius: 14px;
             max-width: 500px;
             width: 100%;
-            padding: 20px;
+            padding: 16px;
             animation: slideUp .3s ease;
         }
         .config-panel h3 {
             color: #1a237e;
-            font-size: 16px;
+            font-size: 15px;
             margin-bottom: 4px;
         }
         .config-panel p {
             color: #666;
-            font-size: 12px;
-            margin-bottom: 12px;
+            font-size: 11px;
+            margin-bottom: 10px;
         }
         .config-panel label {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             color: #333;
             display: block;
-            margin-top: 10px;
-            margin-bottom: 3px;
+            margin-top: 8px;
+            margin-bottom: 2px;
         }
         .config-panel input,
         .config-panel textarea {
             width: 100%;
-            padding: 8px 10px;
+            padding: 6px 8px;
             border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 12px;
+            border-radius: 6px;
+            font-size: 11px;
             background: #fafafa;
         }
         .config-panel textarea {
-            min-height: 70px;
+            min-height: 60px;
             font-family: monospace;
-            font-size: 11px;
+            font-size: 10px;
             resize: vertical;
         }
         .config-panel .btn-row {
             display: flex;
-            gap: 6px;
-            margin-top: 12px;
+            gap: 4px;
+            margin-top: 10px;
         }
         .config-panel .btn-row button {
             flex: 1;
-            padding: 8px;
+            padding: 6px;
             border: none;
-            border-radius: 8px;
-            font-size: 13px;
+            border-radius: 6px;
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
         }
@@ -822,18 +822,18 @@
             color: #666;
         }
         .config-panel .btn-row button:active {
-            transform: scale(.96);
+            transform: scale(.95);
         }
         .toast {
             position: fixed;
-            bottom: 16px;
+            bottom: 12px;
             left: 50%;
             transform: translateX(-50%);
             background: #323232;
             color: #fff;
-            padding: 10px 20px;
-            border-radius: 10px;
-            font-size: 12px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 11px;
             z-index: 2000;
             opacity: 0;
             transition: opacity .3s, transform .3s;
@@ -855,93 +855,67 @@
 
         @media (max-width:480px) {
             body {
-                padding: 10px;
+                padding: 8px;
             }
-            .stats-grid {
-                gap: 8px;
+            .header {
+                padding: 8px 10px;
             }
-            .stat-card .number {
-                font-size: 17px;
+            .header h1 {
+                font-size: 14px;
             }
-            .detail-panel {
-                padding: 14px;
-                margin: 6px;
-            }
-            .detail-table {
+            .header p {
                 font-size: 10px;
             }
-            .detail-table th,
-            .detail-table td {
-                padding: 3px 2px;
+            .upload-area {
+                padding: 8px 10px 10px;
             }
-            .search-section .search-row {
+            .upload-area .icon {
+                font-size: 18px;
+            }
+            .upload-area .title-row h3 {
+                font-size: 12px;
+            }
+            .upload-controls {
                 flex-wrap: wrap;
+                padding: 4px 6px;
             }
-            .search-section .search-btn {
-                flex: 1;
+            .upload-controls .mode-group {
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+            .upload-controls .mode-group label {
+                font-size: 10px;
+            }
+            .upload-controls .btn-group .upload-btn {
+                font-size: 10px;
+                padding: 3px 8px;
+            }
+            .stats-grid {
+                gap: 6px;
+            }
+            .stat-card .number {
+                font-size: 15px;
+            }
+            .detail-panel {
+                padding: 10px;
+                margin: 4px;
             }
             .toast {
-                font-size: 11px;
-                padding: 8px 14px;
-                bottom: 10px;
+                font-size: 10px;
+                padding: 6px 12px;
+                bottom: 8px;
             }
             .info-bar {
-                flex-direction: column;
-                gap: 4px;
+                font-size: 8px;
+                padding: 4px 8px;
             }
             .header .sync-status {
                 position: static;
-                margin-top: 4px;
+                margin-top: 2px;
                 justify-content: center;
             }
-            .config-panel {
-                padding: 14px;
-                margin: 6px;
-            }
-            .upload-mode .radio-group {
-                flex-direction: column;
-                gap: 4px;
-            }
-            /* Upload area lebih kompak di HP */
-            .upload-area {
-                padding: 10px 12px 12px;
-            }
-            .upload-area .icon {
-                font-size: 24px;
-            }
-            .upload-area h3 {
-                font-size: 13px;
-            }
-            .upload-area p {
-                font-size: 11px;
-            }
-            .upload-actions .upload-btn {
-                padding: 5px 12px;
-                font-size: 11px;
-            }
-            .upload-actions .upload-btn.secondary {
-                font-size: 10px;
-                padding: 5px 10px;
-            }
-            .upload-mode {
-                padding: 6px 10px;
-                margin-top: 6px;
-            }
-            .upload-mode label {
-                font-size: 11px;
-            }
-            .upload-mode .radio-group label {
-                font-size: 11px;
-            }
-            .upload-mode .radio-group .desc {
-                font-size: 9px;
-                margin-left: 16px;
-            }
-            .supported-formats {
-                font-size: 9px;
-            }
             .chart-wrapper {
-                height: 150px;
+                height: 130px;
             }
         }
     </style>
@@ -950,41 +924,42 @@
 
     <div class="header">
         <h1>📊 Sales Data Analyzer</h1>
-        <p>Upload file Excel atau CSV untuk analisis penjualan</p>
+        <p>Upload Excel/CSV untuk analisis penjualan</p>
         <div class="sync-status" id="syncStatus">
             <span class="dot offline" id="syncDot"></span>
             <span id="syncText">Offline</span>
         </div>
     </div>
 
-    <!-- ===== UPLOAD AREA YANG DIPERKECIL ===== -->
+    <!-- ===== UPLOAD AREA YANG SANGAT DIPERKECIL ===== -->
     <div class="upload-area" id="uploadArea">
-        <div class="icon">📁</div>
-        <h3>Upload File Excel atau CSV</h3>
-        <p>Drag & drop atau klik untuk upload</p>
-        <div class="supported-formats">Support: .xlsx, .xls, .csv</div>
+        <div class="title-row">
+            <span class="icon">📁</span>
+            <h3>Upload File</h3>
+            <span class="format">.xlsx .xls .csv</span>
+        </div>
+        <div class="sub-text">Drag & drop atau klik tombol</div>
 
-        <div class="upload-mode">
-            <label>📌 Mode Upload</label>
-            <div class="radio-group">
+        <!-- BARIS UTAMA: MODE + TOMBOL -->
+        <div class="upload-controls">
+            <div class="mode-group">
+                <span class="mode-label">📌 Mode:</span>
                 <label>
                     <input type="radio" name="uploadMode" value="continue" checked>
-                    ➕ Continue Upload
-                    <span class="desc">Gabung dengan data existing (deduplikasi otomatis)</span>
+                    Continue
                 </label>
                 <label>
                     <input type="radio" name="uploadMode" value="replace">
-                    🔄 Replace Period
-                    <span class="desc">Hapus data lama, simpan data baru</span>
+                    Replace
                 </label>
+            </div>
+            <div class="btn-group">
+                <button class="upload-btn" id="uploadBtn">📂 Pilih</button>
+                <button class="upload-btn secondary" id="loadFromFirebaseBtn">☁️</button>
+                <button class="upload-btn icon-btn" id="configBtn">⚙️</button>
             </div>
         </div>
 
-        <div class="upload-actions">
-            <button class="upload-btn" id="uploadBtn">📂 Pilih File</button>
-            <button class="upload-btn secondary" id="loadFromFirebaseBtn">☁️ Load</button>
-            <button class="upload-btn secondary" id="configBtn">⚙️</button>
-        </div>
         <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
 
         <div class="upload-loading" id="uploadLoading">
@@ -1031,9 +1006,9 @@
         <div class="tab-content" id="tab-products">
             <div class="filter-section">
                 <select id="productFilterDept" onchange="renderProducts()"><option value="all">All Departments</option></select>
-                <div style="display:flex; gap:6px;">
+                <div style="display:flex; gap:4px;">
                     <input type="number" id="productLimit" value="20" style="flex:1;" placeholder="Limit" onchange="renderProducts()">
-                    <button class="upload-btn" style="padding:6px 12px; font-size:11px; margin:0;" onclick="renderProducts()">Apply</button>
+                    <button class="upload-btn" style="padding:4px 10px; font-size:10px; margin:0; background:#283593; color:#fff; border:none; border-radius:6px; cursor:pointer;" onclick="renderProducts()">Apply</button>
                 </div>
             </div>
             <div class="product-list" id="productList"><div class="loading"><div class="spinner"></div></div></div>
@@ -1087,7 +1062,7 @@
                 <button class="btn-save" onclick="saveFirebaseConfig()">💾 Save</button>
                 <button class="btn-cancel" onclick="closeConfig()">Cancel</button>
             </div>
-            <div id="configStatus" style="margin-top:10px; font-size:11px; color:#666;"></div>
+            <div id="configStatus" style="margin-top:8px; font-size:10px; color:#666;"></div>
         </div>
     </div>
 
@@ -1208,10 +1183,10 @@
                         const summaryContent = document.getElementById('summaryContent');
                         if (summaryContent && !originalData.length) {
                             summaryContent.innerHTML = `
-                                <div class="empty-state" style="padding:30px;">
+                                <div class="empty-state" style="padding:20px;">
                                     <div class="icon">☁️</div>
-                                    <p style="font-weight:500; color:#333;">Belum Ada Data di Cloud</p>
-                                    <p style="font-size:13px; color:#888; margin-top:4px;">Upload file Excel/CSV untuk memulai</p>
+                                    <p style="font-weight:500; color:#333; font-size:12px;">Belum Ada Data di Cloud</p>
+                                    <p style="font-size:11px; color:#888; margin-top:2px;">Upload file Excel/CSV untuk memulai</p>
                                 </div>
                             `;
                         }
@@ -1268,7 +1243,7 @@
                         infoText += ` • Updated: ${updated.toLocaleDateString('id-ID')} ${updated.toLocaleTimeString('id-ID')}`;
                     }
                     document.getElementById('fileInfo').textContent = infoText;
-                    document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Auto-Synced Cloud</span>';
+                    document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Auto-Synced</span>';
 
                     statsGrid.style.display = 'grid';
                     tabs.style.display = 'flex';
@@ -1290,22 +1265,22 @@
             if (topProducts && topProducts.length > 0) {
                 const container = document.getElementById('summaryContent');
                 let html = `
-                    <div style="background:white; border-radius:12px; padding:14px; box-shadow:0 2px 8px rgba(0,0,0,0.06); margin-bottom:10px;">
+                    <div style="background:white; border-radius:10px; padding:10px 12px; box-shadow:0 2px 8px rgba(0,0,0,0.06); margin-bottom:8px;">
                         <div class="summary-header">
                             <h4>🏆 Top 10 Products</h4>
                             <button class="search-toggle-btn" onclick="toggleSearch()">🔍 Search</button>
                         </div>
-                        <p style="font-size:10px; color:#999; margin-top:2px;">Klik item untuk melihat detail penjualan per tanggal</p>
+                        <p style="font-size:9px; color:#999; margin-top:2px;">Klik item untuk melihat detail penjualan per tanggal</p>
                     </div>
                     <div class="product-list">
                 `;
                 topProducts.forEach((item, i) => {
                     html += `
                         <div class="product-item" onclick="showItemDetail('${escapeString(item.name)}', '${escapeString(item.department || item.dept || '')}')">
-                            <span style="font-size:11px; color:#999; margin-right:6px; min-width:20px;">#${i+1}</span>
+                            <span style="font-size:10px; color:#999; margin-right:4px; min-width:18px;">#${i+1}</span>
                             <span class="name">${item.name}</span>
                             <span class="dept">${item.department || item.dept || ''}</span>
-                            <span style="display:flex; align-items:center; gap:4px;">
+                            <span style="display:flex; align-items:center; gap:3px;">
                                 <span class="qty">${Math.round(item.qty || 0)}x</span>
                                 <span class="amount">${formatRupiah(item.amount || 0)}</span>
                                 <span class="click-hint">👉</span>
@@ -1728,7 +1703,7 @@
             const data = getFilteredData();
             const container = document.getElementById('summaryContent');
             if (data.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>No data matching filters</p></div>';
+                container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p style="font-size:12px;">No data matching filters</p></div>';
                 return;
             }
 
@@ -1750,31 +1725,31 @@
             const topProducts = productArray.slice(0, 10);
 
             let html = `
-                <div style="background:white; border-radius:12px; padding:14px; box-shadow:0 2px 8px rgba(0,0,0,0.06); margin-bottom:10px;">
+                <div style="background:white; border-radius:10px; padding:10px 12px; box-shadow:0 2px 8px rgba(0,0,0,0.06); margin-bottom:8px;">
                     <div class="summary-header">
                         <h4>🏆 Top 10 Products</h4>
                         <button class="search-toggle-btn ${searchQuery ? 'active' : ''}" onclick="toggleSearch()">
                             🔍 ${searchQuery ? 'Search Active' : 'Search'}
                         </button>
                     </div>
-                    ${searchQuery ? '<p style="font-size:10px; color:#666; margin-top:3px;">Hasil pencarian: <strong>"' + searchQuery + '"</strong> • ' + productArray.length + ' item ditemukan</p>' : ''}
-                    <p style="font-size:10px; color:#999; margin-top:2px;">Klik item untuk melihat detail penjualan per tanggal</p>
+                    ${searchQuery ? '<p style="font-size:9px; color:#666; margin-top:2px;">Hasil pencarian: <strong>"' + searchQuery + '"</strong> • ' + productArray.length + ' item ditemukan</p>' : ''}
+                    <p style="font-size:9px; color:#999; margin-top:1px;">Klik item untuk melihat detail penjualan per tanggal</p>
                 </div>
                 <div class="product-list">
             `;
 
             if (topProducts.length === 0) {
                 html +=
-                    '<div class="empty-state" style="padding:16px;"><div class="icon">🔍</div><p>Tidak ada item yang cocok dengan pencarian "' +
+                    '<div class="empty-state" style="padding:12px;"><div class="icon">🔍</div><p style="font-size:12px;">Tidak ada item yang cocok dengan pencarian "' +
                     searchQuery + '"</p></div>';
             } else {
                 topProducts.forEach((item, i) => {
                     html += `
                         <div class="product-item" onclick="showItemDetail('${escapeString(item.name)}', '${escapeString(item.dept)}')">
-                            <span style="font-size:11px; color:#999; margin-right:6px; min-width:20px;">#${i+1}</span>
+                            <span style="font-size:10px; color:#999; margin-right:4px; min-width:18px;">#${i+1}</span>
                             <span class="name">${item.name} ${item.code ? '['+item.code+']' : ''}</span>
                             <span class="dept">${item.dept}</span>
-                            <span style="display:flex; align-items:center; gap:4px;">
+                            <span style="display:flex; align-items:center; gap:3px;">
                                 <span class="qty">${Math.round(item.qty)}x</span>
                                 <span class="amount">${formatRupiah(item.amount)}</span>
                                 <span class="click-hint">👉</span>
@@ -1790,7 +1765,7 @@
         function renderProducts() {
             const data = getFilteredData();
             const container = document.getElementById('productList');
-            if (data.length === 0) { container.innerHTML = '<div class="empty-state"><p>No data</p></div>'; return; }
+            if (data.length === 0) { container.innerHTML = '<div class="empty-state"><p style="font-size:12px;">No data</p></div>'; return; }
 
             const deptFilter = document.getElementById('productFilterDept').value;
             let filtered = data;
@@ -1814,7 +1789,7 @@
                     <div class="product-item" onclick="showItemDetail('${escapeString(item.name)}', '${escapeString(item.dept)}')">
                         <span class="name">${item.name} ${item.code ? '['+item.code+']' : ''}</span>
                         <span class="dept">${item.dept}</span>
-                        <span style="display:flex; align-items:center; gap:6px;">
+                        <span style="display:flex; align-items:center; gap:4px;">
                             <span class="qty">${Math.round(item.qty)}x</span>
                             <span class="amount">${formatRupiah(item.amount)}</span>
                             <span class="click-hint">👉</span>
@@ -1822,13 +1797,13 @@
                     </div>
                 `;
             });
-            container.innerHTML = html || '<div class="empty-state"><p>No products found</p></div>';
+            container.innerHTML = html || '<div class="empty-state"><p style="font-size:12px;">No products found</p></div>';
         }
 
         function renderDeptSummary() {
             const data = getFilteredData();
             const container = document.getElementById('deptSummary');
-            if (data.length === 0) { container.innerHTML = '<div class="empty-state"><p>No data</p></div>'; return; }
+            if (data.length === 0) { container.innerHTML = '<div class="empty-state"><p style="font-size:12px;">No data</p></div>'; return; }
             const deptData = {};
             data.forEach(d => {
                 if (!deptData[d.department]) deptData[d.department] = { amount: 0, qty: 0 };
