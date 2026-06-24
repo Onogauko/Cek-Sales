@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cek Data Sales</title>
+    <title>Sales Data Analyzer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -614,8 +614,8 @@
 <body>
 
     <div class="header">
-        <h1>📊 Cek Data Sales</h1>
-        <p>Upload file Excel atau CSV untuk cek data penjualan</p>
+        <h1>📊 Sales Data Analyzer</h1>
+        <p>Upload file Excel atau CSV untuk analisis penjualan</p>
         <div class="sync-status" id="syncStatus">
             <span class="dot offline" id="syncDot"></span>
             <span id="syncText">Offline</span>
@@ -749,6 +749,7 @@
         let isFirebaseReady = false;
         let currentDocId = null;
         let isSaving = false;
+        let isDataLoaded = false;
 
         function getFirebaseConfig() {
             try {
@@ -762,64 +763,109 @@
             return localStorage.getItem('firebaseCollection') || 'sales_data';
         }
 
-        // ============================================================
-// FIREBASE INIT - WITH AUTO LOAD
-// ============================================================
-async function initFirebase() {
-    const config = getFirebaseConfig();
-    if (!config) {
-        updateSyncStatus('offline', 'Not Configured');
-        // Tampilkan pesan di area utama
-        const summaryContent = document.getElementById('summaryContent');
-        if (summaryContent) {
-            summaryContent.innerHTML = `
-                <div class="empty-state" style="padding:30px;">
-                    <div class="icon">⚙️</div>
-                    <p style="font-weight:500; color:#333;">Firebase Belum Dikonfigurasi</p>
-                    <p style="font-size:13px; color:#888; margin-top:4px;">
-                        Klik tombol <strong>Config</strong> untuk mengatur koneksi Firebase<br>
-                        atau <strong>Upload</strong> file Excel/CSV untuk analisis offline
-                    </p>
-                </div>
-            `;
+        function updateSyncStatus(status, text) {
+            const dot = document.getElementById('syncDot');
+            const label = document.getElementById('syncText');
+            if (dot) dot.className = 'dot ' + status;
+            if (label) label.textContent = text || status;
         }
-        return false;
-    }
-    try {
-        firebaseApp = firebase.initializeApp(config);
-        firestore = firebase.firestore();
-        await firestore.collection(getCollectionName()).limit(1).get();
-        isFirebaseReady = true;
-        updateSyncStatus('synced', 'Connected');
-        console.log('✅ Firebase connected');
 
-        // ========== AUTO LOAD DATA ==========
-        // Coba muat data terakhir dari Firebase
-        const hasData = await loadFromFirebase();
-        if (!hasData) {
-            // Jika tidak ada data, tampilkan pesan
-            const summaryContent = document.getElementById('summaryContent');
-            if (summaryContent && !originalData.length) {
-                summaryContent.innerHTML = `
-                    <div class="empty-state" style="padding:30px;">
-                        <div class="icon">☁️</div>
-                        <p style="font-weight:500; color:#333;">Belum Ada Data di Cloud</p>
-                        <p style="font-size:13px; color:#888; margin-top:4px;">
-                            Upload file Excel/CSV untuk memulai,<br>
-                            atau klik <strong>Load from Cloud</strong> untuk memuat data tersimpan
-                        </p>
-                    </div>
-                `;
+        // ============================================================
+        // TOAST
+        // ============================================================
+        let toastTimeout = null;
+
+        function showToast(message, type = 'info', duration = 3000) {
+            const toast = document.getElementById('toast');
+            if (!toast) return;
+            toast.textContent = message;
+            toast.className = 'toast';
+            if (type === 'warning') toast.classList.add('warning');
+            if (type === 'success') toast.classList.add('success');
+            toast.classList.add('show');
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, duration);
+        }
+
+        // ============================================================
+        // SAVE STATE TO SESSION STORAGE
+        // ============================================================
+        function saveStateToSession() {
+            if (originalData && originalData.length > 0) {
+                try {
+                    const metadata = {
+                        recordCount: originalData.length,
+                        totalAmount: originalData.reduce((s, d) => s + d.amount, 0),
+                        totalQty: originalData.reduce((s, d) => s + d.qty, 0),
+                        filename: document.getElementById('fileInfo')?.textContent || 'Unknown',
+                        timestamp: Date.now()
+                    };
+                    sessionStorage.setItem('salesDataMetadata', JSON.stringify(metadata));
+                } catch (e) { /* ignore */ }
             }
         }
-        return true;
-    } catch (err) {
-        console.error('Firebase init error:', err);
-        updateSyncStatus('error', 'Error: ' + err.message);
-        isFirebaseReady = false;
-        return false;
-    }
-}
+
+        function afterDataLoaded() {
+            isDataLoaded = true;
+            saveStateToSession();
+        }
+
+        // ============================================================
+        // FIREBASE INIT - WITH AUTO LOAD
+        // ============================================================
+        async function initFirebase() {
+            const config = getFirebaseConfig();
+            if (!config) {
+                updateSyncStatus('offline', 'Not Configured');
+                const summaryContent = document.getElementById('summaryContent');
+                if (summaryContent && !originalData.length) {
+                    summaryContent.innerHTML = `
+                        <div class="empty-state" style="padding:30px;">
+                            <div class="icon">⚙️</div>
+                            <p style="font-weight:500; color:#333;">Firebase Belum Dikonfigurasi</p>
+                            <p style="font-size:13px; color:#888; margin-top:4px;">
+                                Klik tombol <strong>Config</strong> untuk mengatur koneksi Firebase<br>
+                                atau <strong>Upload</strong> file Excel/CSV untuk analisis offline
+                            </p>
+                        </div>
+                    `;
+                }
+                return false;
+            }
+            try {
+                firebaseApp = firebase.initializeApp(config);
+                firestore = firebase.firestore();
+                await firestore.collection(getCollectionName()).limit(1).get();
+                isFirebaseReady = true;
+                updateSyncStatus('synced', 'Connected');
+                console.log('✅ Firebase connected');
+
+                // AUTO LOAD DATA
+                const hasData = await loadFromFirebase();
+                if (!hasData) {
+                    const summaryContent = document.getElementById('summaryContent');
+                    if (summaryContent && !originalData.length) {
+                        summaryContent.innerHTML = `
+                            <div class="empty-state" style="padding:30px;">
+                                <div class="icon">☁️</div>
+                                <p style="font-weight:500; color:#333;">Belum Ada Data di Cloud</p>
+                                <p style="font-size:13px; color:#888; margin-top:4px;">
+                                    Upload file Excel/CSV untuk memulai,<br>
+                                    atau klik <strong>Load from Cloud</strong> untuk memuat data tersimpan
+                                </p>
+                            </div>
+                        `;
+                    }
+                }
+                return true;
+            } catch (err) {
+                console.error('Firebase init error:', err);
+                updateSyncStatus('error', 'Error: ' + err.message);
+                isFirebaseReady = false;
+                return false;
+            }
+        }
+
         // ============================================================
         // SAVE TO FIREBASE - FIXED FOR 1MB LIMIT
         // ============================================================
@@ -866,7 +912,6 @@ async function initFirebase() {
                     currentDocId = docRef.id;
                 }
 
-                // Save chunks as sub-collection
                 const batch = firestore.batch();
                 for (let i = 0; i < chunks.length; i++) {
                     const chunkRef = docRef.collection('chunks').doc('chunk_' + i);
@@ -893,12 +938,10 @@ async function initFirebase() {
         // ============================================================
         async function loadFromFirebase(docId = null) {
             if (!isFirebaseReady) {
-                showToast('Firebase not configured.', 'warning');
                 return false;
             }
             try {
                 updateSyncStatus('syncing', 'Loading...');
-                showToast('Loading data from cloud...', 'info', 2000);
                 const collection = getCollectionName();
                 let query = firestore.collection(collection);
 
@@ -916,7 +959,6 @@ async function initFirebase() {
                 } else {
                     const snapshot = await query.orderBy('uploadedAt', 'desc').limit(1).get();
                     if (snapshot.empty) {
-                        showToast('No saved data found', 'info', 2000);
                         updateSyncStatus('synced', 'No data');
                         return false;
                     }
@@ -936,7 +978,6 @@ async function initFirebase() {
 
         async function restoreData(docData, docId) {
             if (!docData || !docData.recordCount) {
-                showToast('No data in document', 'warning');
                 return;
             }
 
@@ -981,7 +1022,7 @@ async function initFirebase() {
             renderCharts();
 
             let infoText = '☁️ ' + (docData.filename || 'cloud_data') + ' • ' + allData.length + ' records';
-            fileInfo.textContent = infoText;
+            document.getElementById('fileInfo').textContent = infoText;
             document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Loaded from Cloud</span>';
 
             const validation = validateData(allData);
@@ -993,70 +1034,8 @@ async function initFirebase() {
 
             updateSyncStatus('synced', 'Loaded');
             showToast('✅ Loaded ' + allData.length + ' records from cloud', 'success');
+            afterDataLoaded();
         }
-
-        // ============================================================
-        // MAIN APPLICATION CODE
-        // ============================================================
-        let salesData = [];
-        let originalData = [];
-        let chartTrend = null;
-        let chartDept = null;
-        let currentDetailItem = null;
-        let searchQuery = '';
-        let detailDataCache = [];
-
-        const fileInput = document.getElementById('fileInput');
-        const uploadBtn = document.getElementById('uploadBtn');
-        const uploadArea = document.getElementById('uploadArea');
-        const uploadLoading = document.getElementById('uploadLoading');
-        const uploadProgress = document.getElementById('uploadProgress');
-        const statsGrid = document.getElementById('statsGrid');
-        const tabs = document.getElementById('tabs');
-        const infoBar = document.getElementById('infoBar');
-        const fileInfo = document.getElementById('fileInfo');
-
-        // Tab switching
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', function() {
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                document.getElementById('tab-' + this.dataset.tab).classList.add('active');
-                if (this.dataset.tab === 'trend') renderCharts();
-                if (this.dataset.tab === 'products') renderProducts();
-                if (this.dataset.tab === 'dept') renderDeptSummary();
-                if (this.dataset.tab === 'summary') renderSummary();
-            });
-        });
-
-        // Upload handlers
-        uploadBtn.addEventListener('click', () => fileInput.click());
-
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
-        });
-        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length) handleFile(e.target.files[0]);
-        });
-
-        document.getElementById('configBtn').addEventListener('click', openConfig);
-        document.getElementById('loadFromFirebaseBtn').addEventListener('click', async () => {
-            if (!isFirebaseReady) {
-                showToast('Firebase not configured. Please set up config first.', 'warning');
-                openConfig();
-                return;
-            }
-            await showDocumentList();
-        });
 
         // ============================================================
         // CONFIG FUNCTIONS
@@ -1136,20 +1115,67 @@ async function initFirebase() {
         }
 
         // ============================================================
-        // TOAST
+        // MAIN APPLICATION CODE
         // ============================================================
-        let toastTimeout = null;
+        let salesData = [];
+        let originalData = [];
+        let chartTrend = null;
+        let chartDept = null;
+        let currentDetailItem = null;
+        let searchQuery = '';
+        let detailDataCache = [];
 
-        function showToast(message, type = 'info', duration = 3000) {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.className = 'toast';
-            if (type === 'warning') toast.classList.add('warning');
-            if (type === 'success') toast.classList.add('success');
-            toast.classList.add('show');
-            if (toastTimeout) clearTimeout(toastTimeout);
-            toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, duration);
-        }
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const uploadArea = document.getElementById('uploadArea');
+        const uploadLoading = document.getElementById('uploadLoading');
+        const uploadProgress = document.getElementById('uploadProgress');
+        const statsGrid = document.getElementById('statsGrid');
+        const tabs = document.getElementById('tabs');
+        const infoBar = document.getElementById('infoBar');
+        const fileInfo = document.getElementById('fileInfo');
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById('tab-' + this.dataset.tab).classList.add('active');
+                if (this.dataset.tab === 'trend') renderCharts();
+                if (this.dataset.tab === 'products') renderProducts();
+                if (this.dataset.tab === 'dept') renderDeptSummary();
+                if (this.dataset.tab === 'summary') renderSummary();
+            });
+        });
+
+        // Upload handlers
+        uploadBtn.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        });
+
+        document.getElementById('configBtn').addEventListener('click', openConfig);
+        document.getElementById('loadFromFirebaseBtn').addEventListener('click', async () => {
+            if (!isFirebaseReady) {
+                showToast('Firebase not configured. Please set up config first.', 'warning');
+                openConfig();
+                return;
+            }
+            await showDocumentList();
+        });
 
         // ============================================================
         // FILE HANDLER - SUPPORT CSV, XLSX, XLS
@@ -1336,6 +1362,8 @@ async function initFirebase() {
             if (validation.duplicates > 0) infoText += ' • ⚠️ ' + validation.duplicates + ' duplicates';
             if (validation.dateErrors > 0) infoText += ' • ⚠️ ' + validation.dateErrors + ' invalid dates';
             fileInfo.textContent = infoText;
+
+            afterDataLoaded();
 
             if (isFirebaseReady && originalData.length > 0) {
                 setTimeout(async () => await saveToFirebase(originalData, filename), 1000);
@@ -1607,175 +1635,250 @@ async function initFirebase() {
         // ============================================================
         // DETAIL & PDF EXPORT
         // ============================================================
-        // ============================================================
-// PDF EXPORT - FIXED
-// ============================================================
-function exportDetailPDF() {
-    if (!currentDetailItem || detailDataCache.length === 0) {
-        showToast('Tidak ada data untuk diexport', 'warning');
-        return;
-    }
-
-    try {
-        const { jsPDF } = window.jspdf;
-        if (!jsPDF) {
-            showToast('Library PDF tidak tersedia. Coba refresh halaman.', 'warning');
-            return;
+        function showItemDetail(itemName, department) {
+            currentDetailItem = { name: itemName, dept: department };
+            document.getElementById('detailTitle').textContent = '📦 ' + itemName;
+            document.getElementById('detailDateFrom').value = '';
+            document.getElementById('detailDateTo').value = '';
+            document.getElementById('detailOverlay').classList.add('active');
+            renderDetailTable();
         }
 
-        const doc = new jsPDF('p', 'pt', 'a4');
-        const pageWidth = doc.internal.pageSize.width;
-        const margin = 40;
-        let y = 50;
+        function closeDetail(e) {
+            if (e && e.target !== e.currentTarget) return;
+            document.getElementById('detailOverlay').classList.remove('active');
+            currentDetailItem = null;
+            detailDataCache = [];
+        }
 
-        // Title
-        doc.setFontSize(18);
-        doc.setTextColor(26, 35, 126);
-        doc.text('Detail Penjualan: ' + currentDetailItem.name, margin, y);
-        y += 25;
+        function renderDetailTable() {
+            if (!currentDetailItem) return;
+            const container = document.getElementById('detailTableContainer');
+            const from = document.getElementById('detailDateFrom').value;
+            const to = document.getElementById('detailDateTo').value;
 
-        // Subtitle
-        doc.setFontSize(11);
-        doc.setTextColor(100);
-        doc.text('Department: ' + currentDetailItem.dept, margin, y);
-        y += 20;
+            let itemData = originalData.filter(d => d.itemName === currentDetailItem.name && d.department === currentDetailItem.dept);
+            if (from) itemData = itemData.filter(d => d.dateStr >= from);
+            if (to) itemData = itemData.filter(d => d.dateStr <= to);
+            detailDataCache = itemData;
 
-        // Date range
-        const from = document.getElementById('detailDateFrom').value;
-        const to = document.getElementById('detailDateTo').value;
-        let range = 'Semua Tanggal';
-        if (from && to) range = formatDate(from) + ' - ' + formatDate(to);
-        else if (from) range = 'Dari ' + formatDate(from);
-        else if (to) range = 'Sampai ' + formatDate(to);
-        doc.text('Periode: ' + range, margin, y);
-        y += 30;
+            const dailyData = {};
+            itemData.forEach(d => {
+                if (!dailyData[d.dateStr]) dailyData[d.dateStr] = { qty: 0, amount: 0 };
+                dailyData[d.dateStr].qty += d.qty;
+                dailyData[d.dateStr].amount += d.amount;
+            });
 
-        // Summary
-        const totalQty = detailDataCache.reduce((s, d) => s + d.qty, 0);
-        const totalAmount = detailDataCache.reduce((s, d) => s + d.amount, 0);
-        doc.setFontSize(12);
-        doc.setTextColor(26, 35, 126);
-        doc.text('Total Qty: ' + Math.round(totalQty), margin, y);
-        y += 20;
-        doc.text('Total Amount: ' + formatRupiah(totalAmount), margin, y);
-        y += 30;
+            const dates = Object.keys(dailyData).sort();
+            const totalQty = dates.reduce((s, d) => s + dailyData[d].qty, 0);
+            const totalAmount = dates.reduce((s, d) => s + dailyData[d].amount, 0);
+            document.getElementById('detailTotalQty').textContent = Math.round(totalQty);
+            document.getElementById('detailTotalAmount').textContent = formatRupiah(totalAmount);
 
-        // Prepare table data
-        const dailyData = {};
-        detailDataCache.forEach(d => {
-            if (!dailyData[d.dateStr]) dailyData[d.dateStr] = { qty: 0, amount: 0 };
-            dailyData[d.dateStr].qty += d.qty;
-            dailyData[d.dateStr].amount += d.amount;
-        });
+            if (dates.length === 0) {
+                container.innerHTML = '<div class="detail-empty">📭 No data for this period</div>';
+                return;
+            }
 
-        const dates = Object.keys(dailyData).sort();
-        const tableData = dates.map(date => [
-            formatDate(date),
-            Math.round(dailyData[date].qty).toString(),
-            formatRupiah(dailyData[date].amount)
-        ]);
-        tableData.push(['TOTAL', Math.round(totalQty).toString(), formatRupiah(totalAmount)]);
+            let html = '<table class="detail-table"><thead><tr><th>Date</th><th style="text-align:right;">Qty</th><th style="text-align:right;">Amount</th></tr></thead><tbody>';
+            dates.forEach(date => {
+                const d = dailyData[date];
+                html += '<tr><td class="date-cell">' + formatDate(date) + '</td><td class="qty-cell">' + Math.round(d.qty) + '</td><td class="amount-cell">' + formatRupiah(d.amount) + '</td></tr>';
+            });
+            html += '<tr style="border-top:2px solid #e8eaf6;font-weight:600;"><td style="color:#1a237e;">TOTAL</td><td class="qty-cell">' + Math.round(totalQty) + '</td><td class="amount-cell">' + formatRupiah(totalAmount) + '</td></tr>';
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
 
-        const colWidths = [150, 80, 200];
-        const rowHeight = 25;
-        const startY = y;
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const p = dateStr.split('-');
+            return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0].substring(2) : dateStr;
+        }
 
-        // Draw table using simple rectangles (FIXED)
-        let currentY = startY;
+        function escapeString(str) {
+            return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
 
-        // Table header
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(255);
-        doc.setFillColor(26, 35, 126);
+        function formatRupiah(num, short = false) {
+            if (num === 0) return short ? 'Rp0' : 'Rp0';
+            if (short) {
+                if (num >= 1e6) return 'Rp' + (num / 1e6).toFixed(1) + 'M';
+                if (num >= 1e3) return 'Rp' + (num / 1e3).toFixed(0) + 'K';
+                return 'Rp' + Math.round(num);
+            }
+            return 'Rp ' + Math.round(num).toLocaleString('id-ID');
+        }
 
-        // Header background
-        doc.rect(margin, currentY, colWidths[0], rowHeight, 'F');
-        doc.rect(margin + colWidths[0], currentY, colWidths[1], rowHeight, 'F');
-        doc.rect(margin + colWidths[0] + colWidths[1], currentY, colWidths[2], rowHeight, 'F');
+        // ============================================================
+        // PDF EXPORT - FIXED
+        // ============================================================
+        function exportDetailPDF() {
+            if (!currentDetailItem || detailDataCache.length === 0) {
+                showToast('Tidak ada data untuk diexport', 'warning');
+                return;
+            }
 
-        // Header text
-        doc.text('Tanggal', margin + 8, currentY + 17);
-        doc.text('Qty', margin + colWidths[0] + 8, currentY + 17);
-        doc.text('Amount', margin + colWidths[0] + colWidths[1] + 8, currentY + 17);
+            try {
+                const { jsPDF } = window.jspdf;
+                if (!jsPDF) {
+                    showToast('Library PDF tidak tersedia. Coba refresh halaman.', 'warning');
+                    return;
+                }
 
-        currentY += rowHeight;
-        doc.setFont('helvetica', 'normal');
+                const doc = new jsPDF('p', 'pt', 'a4');
+                const pageWidth = doc.internal.pageSize.width;
+                const margin = 40;
+                let y = 50;
 
-        const maxRows = Math.floor((doc.internal.pageSize.height - currentY - 40) / rowHeight);
+                // Title
+                doc.setFontSize(18);
+                doc.setTextColor(26, 35, 126);
+                doc.text('Detail Penjualan: ' + currentDetailItem.name, margin, y);
+                y += 25;
 
-        tableData.forEach((row, idx) => {
-            // Check if need new page
-            if (idx > 0 && idx % maxRows === 0) {
-                doc.addPage();
-                currentY = 40;
+                // Subtitle
+                doc.setFontSize(11);
+                doc.setTextColor(100);
+                doc.text('Department: ' + currentDetailItem.dept, margin, y);
+                y += 20;
 
-                // Re-draw header on new page
+                // Date range
+                const from = document.getElementById('detailDateFrom').value;
+                const to = document.getElementById('detailDateTo').value;
+                let range = 'Semua Tanggal';
+                if (from && to) range = formatDate(from) + ' - ' + formatDate(to);
+                else if (from) range = 'Dari ' + formatDate(from);
+                else if (to) range = 'Sampai ' + formatDate(to);
+                doc.text('Periode: ' + range, margin, y);
+                y += 30;
+
+                // Summary
+                const totalQty = detailDataCache.reduce((s, d) => s + d.qty, 0);
+                const totalAmount = detailDataCache.reduce((s, d) => s + d.amount, 0);
+                doc.setFontSize(12);
+                doc.setTextColor(26, 35, 126);
+                doc.text('Total Qty: ' + Math.round(totalQty), margin, y);
+                y += 20;
+                doc.text('Total Amount: ' + formatRupiah(totalAmount), margin, y);
+                y += 30;
+
+                // Prepare table data
+                const dailyData = {};
+                detailDataCache.forEach(d => {
+                    if (!dailyData[d.dateStr]) dailyData[d.dateStr] = { qty: 0, amount: 0 };
+                    dailyData[d.dateStr].qty += d.qty;
+                    dailyData[d.dateStr].amount += d.amount;
+                });
+
+                const dates = Object.keys(dailyData).sort();
+                const tableData = dates.map(date => [
+                    formatDate(date),
+                    Math.round(dailyData[date].qty).toString(),
+                    formatRupiah(dailyData[date].amount)
+                ]);
+                tableData.push(['TOTAL', Math.round(totalQty).toString(), formatRupiah(totalAmount)]);
+
+                const colWidths = [150, 80, 200];
+                const rowHeight = 25;
+                const startY = y;
+
+                // Draw table
+                let currentY = startY;
+
+                // Table header
                 doc.setFontSize(10);
                 doc.setFont('helvetica', 'bold');
                 doc.setTextColor(255);
                 doc.setFillColor(26, 35, 126);
 
+                // Header background
                 doc.rect(margin, currentY, colWidths[0], rowHeight, 'F');
                 doc.rect(margin + colWidths[0], currentY, colWidths[1], rowHeight, 'F');
                 doc.rect(margin + colWidths[0] + colWidths[1], currentY, colWidths[2], rowHeight, 'F');
 
+                // Header text
                 doc.text('Tanggal', margin + 8, currentY + 17);
                 doc.text('Qty', margin + colWidths[0] + 8, currentY + 17);
                 doc.text('Amount', margin + colWidths[0] + colWidths[1] + 8, currentY + 17);
 
                 currentY += rowHeight;
                 doc.setFont('helvetica', 'normal');
+
+                const maxRows = Math.floor((doc.internal.pageSize.height - currentY - 40) / rowHeight);
+
+                tableData.forEach((row, idx) => {
+                    // Check if need new page
+                    if (idx > 0 && idx % maxRows === 0) {
+                        doc.addPage();
+                        currentY = 40;
+
+                        // Re-draw header on new page
+                        doc.setFontSize(10);
+                        doc.setFont('helvetica', 'bold');
+                        doc.setTextColor(255);
+                        doc.setFillColor(26, 35, 126);
+
+                        doc.rect(margin, currentY, colWidths[0], rowHeight, 'F');
+                        doc.rect(margin + colWidths[0], currentY, colWidths[1], rowHeight, 'F');
+                        doc.rect(margin + colWidths[0] + colWidths[1], currentY, colWidths[2], rowHeight, 'F');
+
+                        doc.text('Tanggal', margin + 8, currentY + 17);
+                        doc.text('Qty', margin + colWidths[0] + 8, currentY + 17);
+                        doc.text('Amount', margin + colWidths[0] + colWidths[1] + 8, currentY + 17);
+
+                        currentY += rowHeight;
+                        doc.setFont('helvetica', 'normal');
+                    }
+
+                    const isTotal = row[0] === 'TOTAL';
+
+                    // Set style for row
+                    doc.setFontSize(10);
+                    doc.setTextColor(isTotal ? 26 : 51, isTotal ? 35 : 51, isTotal ? 126 : 51);
+                    doc.setFillColor(isTotal ? 240 : 255, isTotal ? 242 : 255, isTotal ? 250 : 255);
+
+                    // Draw row background
+                    doc.rect(margin, currentY, colWidths[0], rowHeight, isTotal ? 'F' : '');
+                    doc.rect(margin + colWidths[0], currentY, colWidths[1], rowHeight, isTotal ? 'F' : '');
+                    doc.rect(margin + colWidths[0] + colWidths[1], currentY, colWidths[2], rowHeight, isTotal ? 'F' : '');
+
+                    // Draw text
+                    doc.text(row[0], margin + 8, currentY + 17);
+                    doc.text(row[1], margin + colWidths[0] + 8, currentY + 17);
+                    doc.text(row[2], margin + colWidths[0] + colWidths[1] + 8, currentY + 17);
+
+                    currentY += rowHeight;
+                });
+
+                // Footer
+                const totalPages = doc.internal.getNumberOfPages();
+                doc.setFontSize(9);
+                doc.setTextColor(150);
+                for (let i = 1; i <= totalPages; i++) {
+                    doc.setPage(i);
+                    doc.text(
+                        'Halaman ' + i + ' dari ' + totalPages,
+                        pageWidth - 120,
+                        doc.internal.pageSize.height - 20
+                    );
+                    doc.text(
+                        'Generated: ' + new Date().toLocaleDateString('id-ID') + ' ' + new Date().toLocaleTimeString('id-ID'),
+                        margin,
+                        doc.internal.pageSize.height - 20
+                    );
+                }
+
+                // Save PDF
+                const filename = 'Detail_' + currentDetailItem.name.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf';
+                doc.save(filename);
+                showToast('✅ PDF berhasil diexport!', 'success');
+
+            } catch (err) {
+                console.error('PDF Export error:', err);
+                showToast('Error export PDF: ' + err.message, 'warning');
             }
-
-            const isTotal = row[0] === 'TOTAL';
-
-            // Set style for row
-            doc.setFontSize(10);
-            doc.setTextColor(isTotal ? 26 : 51, isTotal ? 35 : 51, isTotal ? 126 : 51);
-            doc.setFillColor(isTotal ? 240 : 255, isTotal ? 242 : 255, isTotal ? 250 : 255);
-
-            // Draw row background
-            doc.rect(margin, currentY, colWidths[0], rowHeight, isTotal ? 'F' : '');
-            doc.rect(margin + colWidths[0], currentY, colWidths[1], rowHeight, isTotal ? 'F' : '');
-            doc.rect(margin + colWidths[0] + colWidths[1], currentY, colWidths[2], rowHeight, isTotal ? 'F' : '');
-
-            // Draw text
-            doc.text(row[0], margin + 8, currentY + 17);
-            doc.text(row[1], margin + colWidths[0] + 8, currentY + 17);
-            doc.text(row[2], margin + colWidths[0] + colWidths[1] + 8, currentY + 17);
-
-            currentY += rowHeight;
-        });
-
-        // Footer
-        const totalPages = doc.internal.getNumberOfPages();
-        doc.setFontSize(9);
-        doc.setTextColor(150);
-        for (let i = 1; i <= totalPages; i++) {
-            doc.setPage(i);
-            doc.text(
-                'Halaman ' + i + ' dari ' + totalPages,
-                pageWidth - 120,
-                doc.internal.pageSize.height - 20
-            );
-            doc.text(
-                'Generated: ' + new Date().toLocaleDateString('id-ID') + ' ' + new Date().toLocaleTimeString('id-ID'),
-                margin,
-                doc.internal.pageSize.height - 20
-            );
         }
-
-        // Save PDF
-        const filename = 'Detail_' + currentDetailItem.name.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf';
-        doc.save(filename);
-        showToast('✅ PDF berhasil diexport!', 'success');
-
-    } catch (err) {
-        console.error('PDF Export error:', err);
-        showToast('Error export PDF: ' + err.message, 'warning');
-    }
-}
 
         // ============================================================
         // AUTO FILTERS
@@ -1791,9 +1894,9 @@ function exportDetailPDF() {
         // ============================================================
         // INIT
         // ============================================================
-        console.log('🚀 Cek Data Sales starting...');
+        console.log('🚀 Sales Data Analyzer starting...');
         initFirebase();
-        console.log('✅ Cek Data Sales loaded. Upload Excel or CSV to start.');
+        console.log('✅ Sales Data Analyzer loaded. Upload Excel or CSV to start.');
     </script>
 
 </body>
