@@ -1711,7 +1711,7 @@
         }
 
         // ============================================================
-        // PDF EXPORT - FIXED
+        // PDF EXPORT - FINAL FIX
         // ============================================================
         function exportDetailPDF() {
             if (!currentDetailItem || detailDataCache.length === 0) {
@@ -1728,16 +1728,16 @@
 
                 const doc = new jsPDF('p', 'pt', 'a4');
                 const pageWidth = doc.internal.pageSize.width;
+                const pageHeight = doc.internal.pageSize.height;
                 const margin = 40;
                 let y = 50;
 
-                // Title
+                // ----- HEADER -----
                 doc.setFontSize(18);
                 doc.setTextColor(26, 35, 126);
                 doc.text('Detail Penjualan: ' + currentDetailItem.name, margin, y);
                 y += 25;
 
-                // Subtitle
                 doc.setFontSize(11);
                 doc.setTextColor(100);
                 doc.text('Department: ' + currentDetailItem.dept, margin, y);
@@ -1763,7 +1763,7 @@
                 doc.text('Total Amount: ' + formatRupiah(totalAmount), margin, y);
                 y += 30;
 
-                // Prepare table data
+                // ----- TABLE DATA -----
                 const dailyData = {};
                 detailDataCache.forEach(d => {
                     if (!dailyData[d.dateStr]) dailyData[d.dateStr] = { qty: 0, amount: 0 };
@@ -1781,77 +1781,90 @@
 
                 const colWidths = [150, 80, 200];
                 const rowHeight = 25;
-                const startY = y;
+                let currentY = y;
 
-                // Draw table
-                let currentY = startY;
+                // ----- FUNCTION: Draw Table Cell -----
+                function drawTableCell(x, y, w, h, text, align = 'left', textColor = null, fillColor = null) {
+                    // Draw background
+                    if (fillColor) {
+                        doc.setFillColor(fillColor[0], fillColor[1], fillColor[2]);
+                        doc.rect(x, y, w, h, 'F');
+                    }
+                    
+                    // Draw border
+                    doc.setDrawColor(200, 200, 200);
+                    doc.setLineWidth(0.5);
+                    doc.rect(x, y, w, h, 'D');
+                    
+                    // Draw text
+                    if (textColor) {
+                        doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+                    } else {
+                        doc.setTextColor(51, 51, 51);
+                    }
+                    
+                    const textX = align === 'right' ? x + w - 8 : x + 8;
+                    const textAlign = align === 'right' ? 'right' : 'left';
+                    doc.text(text, textX, y + 17, { align: textAlign });
+                }
 
-                // Table header
+                // ----- TABLE HEADER -----
+                const headerColor = [26, 35, 126];
+                const headerTextColor = [255, 255, 255];
+                
                 doc.setFontSize(10);
                 doc.setFont('helvetica', 'bold');
-                doc.setTextColor(255);
-                doc.setFillColor(26, 35, 126);
-
-                // Header background
-                doc.rect(margin, currentY, colWidths[0], rowHeight, 'F');
-                doc.rect(margin + colWidths[0], currentY, colWidths[1], rowHeight, 'F');
-                doc.rect(margin + colWidths[0] + colWidths[1], currentY, colWidths[2], rowHeight, 'F');
-
-                // Header text
-                doc.text('Tanggal', margin + 8, currentY + 17);
-                doc.text('Qty', margin + colWidths[0] + 8, currentY + 17);
-                doc.text('Amount', margin + colWidths[0] + colWidths[1] + 8, currentY + 17);
-
+                
+                drawTableCell(margin, currentY, colWidths[0], rowHeight, 'Tanggal', 'left', headerTextColor, headerColor);
+                drawTableCell(margin + colWidths[0], currentY, colWidths[1], rowHeight, 'Qty', 'right', headerTextColor, headerColor);
+                drawTableCell(margin + colWidths[0] + colWidths[1], currentY, colWidths[2], rowHeight, 'Amount', 'right', headerTextColor, headerColor);
+                
                 currentY += rowHeight;
-                doc.setFont('helvetica', 'normal');
 
-                const maxRows = Math.floor((doc.internal.pageSize.height - currentY - 40) / rowHeight);
+                // ----- TABLE ROWS -----
+                const maxRows = Math.floor((pageHeight - currentY - 40) / rowHeight);
 
                 tableData.forEach((row, idx) => {
                     // Check if need new page
                     if (idx > 0 && idx % maxRows === 0) {
                         doc.addPage();
                         currentY = 40;
-
-                        // Re-draw header on new page
+                        
+                        // Redraw header on new page
                         doc.setFontSize(10);
                         doc.setFont('helvetica', 'bold');
                         doc.setTextColor(255);
                         doc.setFillColor(26, 35, 126);
-
-                        doc.rect(margin, currentY, colWidths[0], rowHeight, 'F');
-                        doc.rect(margin + colWidths[0], currentY, colWidths[1], rowHeight, 'F');
-                        doc.rect(margin + colWidths[0] + colWidths[1], currentY, colWidths[2], rowHeight, 'F');
-
-                        doc.text('Tanggal', margin + 8, currentY + 17);
-                        doc.text('Qty', margin + colWidths[0] + 8, currentY + 17);
-                        doc.text('Amount', margin + colWidths[0] + colWidths[1] + 8, currentY + 17);
-
+                        
+                        drawTableCell(margin, currentY, colWidths[0], rowHeight, 'Tanggal', 'left', headerTextColor, headerColor);
+                        drawTableCell(margin + colWidths[0], currentY, colWidths[1], rowHeight, 'Qty', 'right', headerTextColor, headerColor);
+                        drawTableCell(margin + colWidths[0] + colWidths[1], currentY, colWidths[2], rowHeight, 'Amount', 'right', headerTextColor, headerColor);
+                        
                         currentY += rowHeight;
-                        doc.setFont('helvetica', 'normal');
                     }
 
                     const isTotal = row[0] === 'TOTAL';
-
-                    // Set style for row
-                    doc.setFontSize(10);
-                    doc.setTextColor(isTotal ? 26 : 51, isTotal ? 35 : 51, isTotal ? 126 : 51);
-                    doc.setFillColor(isTotal ? 240 : 255, isTotal ? 242 : 255, isTotal ? 250 : 255);
-
-                    // Draw row background
-                    doc.rect(margin, currentY, colWidths[0], rowHeight, isTotal ? 'F' : '');
-                    doc.rect(margin + colWidths[0], currentY, colWidths[1], rowHeight, isTotal ? 'F' : '');
-                    doc.rect(margin + colWidths[0] + colWidths[1], currentY, colWidths[2], rowHeight, isTotal ? 'F' : '');
-
-                    // Draw text
-                    doc.text(row[0], margin + 8, currentY + 17);
-                    doc.text(row[1], margin + colWidths[0] + 8, currentY + 17);
-                    doc.text(row[2], margin + colWidths[0] + colWidths[1] + 8, currentY + 17);
-
+                    const fillColor = isTotal ? [240, 242, 250] : null;
+                    const textColor = isTotal ? [26, 35, 126] : [51, 51, 51];
+                    
+                    // Bold for total row
+                    if (isTotal) {
+                        doc.setFont('helvetica', 'bold');
+                    } else {
+                        doc.setFont('helvetica', 'normal');
+                    }
+                    
+                    drawTableCell(margin, currentY, colWidths[0], rowHeight, row[0], 'left', textColor, fillColor);
+                    drawTableCell(margin + colWidths[0], currentY, colWidths[1], rowHeight, row[1], 'right', textColor, fillColor);
+                    drawTableCell(margin + colWidths[0] + colWidths[1], currentY, colWidths[2], rowHeight, row[2], 'right', textColor, fillColor);
+                    
                     currentY += rowHeight;
                 });
 
-                // Footer
+                // Reset font
+                doc.setFont('helvetica', 'normal');
+
+                // ----- FOOTER -----
                 const totalPages = doc.internal.getNumberOfPages();
                 doc.setFontSize(9);
                 doc.setTextColor(150);
@@ -1860,16 +1873,16 @@
                     doc.text(
                         'Halaman ' + i + ' dari ' + totalPages,
                         pageWidth - 120,
-                        doc.internal.pageSize.height - 20
+                        pageHeight - 20
                     );
                     doc.text(
                         'Generated: ' + new Date().toLocaleDateString('id-ID') + ' ' + new Date().toLocaleTimeString('id-ID'),
                         margin,
-                        doc.internal.pageSize.height - 20
+                        pageHeight - 20
                     );
                 }
 
-                // Save PDF
+                // ----- SAVE -----
                 const filename = 'Detail_' + currentDetailItem.name.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf';
                 doc.save(filename);
                 showToast('✅ PDF berhasil diexport!', 'success');
