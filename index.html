@@ -10,6 +10,8 @@
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js">
+    </script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js">
     </script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js">
@@ -1921,114 +1923,184 @@
         }
 
         // ============================================================
-        // FUNGSI EXPORT PDF - DIPERBAIKI SEPERTI CONTOH
+        // FUNGSI EXPORT PDF - DENGAN AUTOTABLE
         // ============================================================
         function exportDetailPDF() {
             if (!currentDetailItem || detailDataCache.length === 0) {
                 showToast('Tidak ada data untuk diexport', 'warning');
                 return;
             }
+
             try {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF('p', 'pt', 'a4');
 
-                // Hitung total
                 const dailyData = {};
+
                 detailDataCache.forEach(d => {
-                    if (!dailyData[d.dateStr]) dailyData[d.dateStr] = { qty: 0, amount: 0 };
+                    if (!dailyData[d.dateStr]) {
+                        dailyData[d.dateStr] = {
+                            qty: 0,
+                            amount: 0
+                        };
+                    }
+
                     dailyData[d.dateStr].qty += d.qty;
                     dailyData[d.dateStr].amount += d.amount;
                 });
 
                 const dates = Object.keys(dailyData).sort();
+
                 let totalQty = 0;
                 let totalAmount = 0;
-                dates.forEach(date => {
-                    totalQty += Math.round(dailyData[date].qty);
-                    totalAmount += dailyData[date].amount;
-                });
 
-                // === HEADER ===
-                doc.setFontSize(14);
-                doc.setTextColor(0, 0, 0);
-                doc.setFont(undefined, 'bold');
-                doc.text('Detail Penjualan: ' + currentDetailItem.name, 40, 40);
-
-                doc.setFontSize(10);
-                doc.setFont(undefined, 'normal');
-                doc.text('Department: ' + currentDetailItem.dept, 40, 58);
-                doc.text('Periode: Semua Tanggal', 40, 70);
-
-                // === TOTAL ===
-                doc.setFont(undefined, 'bold');
-                doc.text('Total Qty: ' + totalQty, 40, 88);
-                doc.text('Total Amount: ' + formatRupiah(totalAmount), 40, 100);
-
-                // === GARIS ===
-                doc.setDrawColor(200);
-                doc.line(40, 108, 550, 108);
-
-                // === HEADER TABEL ===
-                let y = 118;
-                doc.setFontSize(10);
-                doc.setFont(undefined, 'bold');
-                doc.text('Tanggal', 40, y);
-                doc.text('Qty', 200, y);
-                doc.text('Amount', 320, y);
-
-                // Garis bawah header
-                y += 4;
-                doc.line(40, y, 550, y);
-                y += 10;
-
-                // === DATA ===
-                doc.setFont(undefined, 'normal');
-                doc.setTextColor(50);
-
-                dates.forEach((date) => {
+                const rows = dates.map(date => {
                     const qty = Math.round(dailyData[date].qty);
                     const amount = dailyData[date].amount;
 
-                    // Jika halaman penuh
-                    if (y > 720) {
-                        doc.addPage();
-                        y = 40;
-                        // Header tabel di halaman baru
-                        doc.setFontSize(10);
-                        doc.setFont(undefined, 'bold');
-                        doc.text('Tanggal', 40, y);
-                        doc.text('Qty', 200, y);
-                        doc.text('Amount', 320, y);
-                        y += 4;
-                        doc.line(40, y, 550, y);
-                        y += 10;
-                        doc.setFont(undefined, 'normal');
-                        doc.setTextColor(50);
-                    }
+                    totalQty += qty;
+                    totalAmount += amount;
 
-                    doc.text(formatDate(date), 40, y);
-                    doc.text(qty.toString(), 200, y);
-                    doc.text(formatRupiah(amount), 320, y);
-                    y += 16;
+                    return [
+                        formatDate(date),
+                        qty.toString(),
+                        formatRupiah(amount)
+                    ];
                 });
 
-                // === GARIS TOTAL ===
-                y += 4;
-                doc.line(40, y, 550, y);
-                y += 10;
+                // HEADER
+                doc.setFontSize(24);
+                doc.setTextColor(33, 45, 120);
+                doc.text(
+                    'Detail Penjualan: ' + currentDetailItem.name,
+                    20,
+                    35
+                );
 
-                // === TOTAL ===
-                doc.setFont(undefined, 'bold');
-                doc.setTextColor(0, 0, 0);
-                doc.text('TOTAL', 40, y);
-                doc.text(totalQty.toString(), 200, y);
-                doc.text(formatRupiah(totalAmount), 320, y);
+                doc.setFontSize(11);
+                doc.setTextColor(80);
 
-                doc.save('Detail_' + currentDetailItem.name.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf');
-                showToast('✅ PDF berhasil diexport!', 'success');
+                doc.text(
+                    'Department: ' + currentDetailItem.dept,
+                    20,
+                    70
+                );
+
+                doc.text(
+                    'Periode: Semua Tanggal',
+                    20,
+                    95
+                );
+
+                doc.setFontSize(13);
+                doc.setTextColor(33, 45, 120);
+
+                doc.text(
+                    'Total Qty: ' + totalQty,
+                    20,
+                    135
+                );
+
+                doc.text(
+                    'Total Amount: ' + formatRupiah(totalAmount),
+                    20,
+                    165
+                );
+
+                // TABEL
+                doc.autoTable({
+                    startY: 205,
+
+                    head: [
+                        ['Tanggal', 'Qty', 'Amount']
+                    ],
+
+                    body: rows,
+
+                    foot: [[
+                        'TOTAL',
+                        totalQty.toString(),
+                        formatRupiah(totalAmount)
+                    ]],
+
+                    theme: 'grid',
+
+                    styles: {
+                        fontSize: 10,
+                        cellPadding: 8,
+                        lineWidth: 0.5
+                    },
+
+                    headStyles: {
+                        fillColor: [33, 45, 120],
+                        textColor: 255,
+                        fontStyle: 'bold'
+                    },
+
+                    footStyles: {
+                        fillColor: [235, 239, 248],
+                        textColor: [33, 45, 120],
+                        fontStyle: 'bold'
+                    },
+
+                    columnStyles: {
+                        0: {
+                            halign: 'left',
+                            cellWidth: 180
+                        },
+                        1: {
+                            halign: 'right',
+                            cellWidth: 100
+                        },
+                        2: {
+                            halign: 'right',
+                            cellWidth: 240
+                        }
+                    },
+
+                    didDrawPage: function(data) {
+
+                        const pageCount = doc.internal.getNumberOfPages();
+                        const pageSize = doc.internal.pageSize;
+
+                        doc.setFontSize(9);
+                        doc.setTextColor(120);
+
+                        doc.text(
+                            'Generated: ' +
+                            new Date().toLocaleString('id-ID'),
+                            20,
+                            pageSize.height - 20
+                        );
+
+                        doc.text(
+                            'Halaman ' +
+                            data.pageNumber +
+                            ' dari ' +
+                            pageCount,
+                            pageSize.width - 100,
+                            pageSize.height - 20
+                        );
+                    }
+                });
+
+                doc.save(
+                    'Detail_' +
+                    currentDetailItem.name.replace(/[^a-zA-Z0-9]/g, '_') +
+                    '.pdf'
+                );
+
+                showToast(
+                    '✅ PDF berhasil diexport!',
+                    'success'
+                );
+
             } catch (e) {
-                console.error('PDF Error:', e);
-                showToast('Gagal export PDF: ' + e.message, 'warning');
+                console.error(e);
+                showToast(
+                    'Gagal export PDF: ' + e.message,
+                    'warning'
+                );
             }
         }
 
