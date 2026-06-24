@@ -11,604 +11,133 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-        }
-
-        body {
-            background: #f0f2f5;
-            min-height: 100vh;
-            padding: 16px;
-            padding-bottom: 80px;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #1a237e, #283593);
-            color: white;
-            padding: 20px 16px;
-            border-radius: 16px;
-            margin-bottom: 16px;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(26, 35, 126, 0.3);
-            position: relative;
-        }
-
-        .header h1 {
-            font-size: 20px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-
-        .header p {
-            font-size: 13px;
-            opacity: 0.8;
-            margin-top: 4px;
-        }
-
-        .header .sync-status {
-            position: absolute;
-            top: 12px;
-            right: 16px;
-            font-size: 11px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            opacity: 0.8;
-        }
-
-        .header .sync-status .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-
-        .header .sync-status .dot.synced { background: #4caf50; }
-        .header .sync-status .dot.syncing { background: #ff9800; animation: pulse 1s infinite; }
-        .header .sync-status .dot.error { background: #f44336; }
-        .header .sync-status .dot.offline { background: #9e9e9e; }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-
-        .upload-area {
-            background: white;
-            border-radius: 16px;
-            padding: 24px 20px;
-            text-align: center;
-            border: 2px dashed #c5cae9;
-            transition: all 0.3s;
-            margin-bottom: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            position: relative;
-        }
-
-        .upload-area.dragover {
-            border-color: #283593;
-            background: #e8eaf6;
-        }
-
-        .upload-area .icon { font-size: 48px; margin-bottom: 12px; }
-        .upload-area h3 { color: #1a237e; font-size: 16px; margin-bottom: 4px; }
-        .upload-area p { color: #666; font-size: 13px; }
-
-        .upload-btn {
-            display: inline-block;
-            background: #283593;
-            color: white;
-            padding: 10px 28px;
-            border-radius: 25px;
-            border: none;
-            font-size: 14px;
-            font-weight: 600;
-            margin-top: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .upload-btn:active { transform: scale(0.96); }
-        .upload-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .upload-btn.secondary { background: #e8eaf6; color: #283593; margin-left: 8px; }
-
-        #fileInput { display: none; }
-
-        .upload-loading {
-            display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255,255,255,0.9);
-            border-radius: 16px;
-            z-index: 10;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .upload-loading.active { display: flex; }
-
-        .upload-loading .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #e8eaf6;
-            border-top: 4px solid #283593;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        .upload-loading p { margin-top: 12px; font-size: 14px; color: #333; font-weight: 500; }
-        .upload-loading .sub { font-size: 12px; color: #888; font-weight: 400; }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 16px;
-        }
-
-        .stat-card {
-            background: white;
-            border-radius: 12px;
-            padding: 14px 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            text-align: center;
-        }
-
-        .stat-card .number { font-size: 22px; font-weight: 700; color: #1a237e; }
-        .stat-card .label { font-size: 11px; color: #888; margin-top: 2px; }
-
-        .tabs {
-            display: flex;
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            margin-bottom: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        }
-
-        .tab {
-            flex: 1;
-            padding: 12px 8px;
-            text-align: center;
-            font-size: 12px;
-            font-weight: 600;
-            color: #888;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: none;
-            background: transparent;
-            position: relative;
-        }
-
-        .tab.active { color: #283593; }
-        .tab.active::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 20%;
-            right: 20%;
-            height: 3px;
-            background: #283593;
-            border-radius: 3px;
-        }
-        .tab:active { background: #e8eaf6; }
-
-        .tab-content { display: none; animation: fadeIn 0.3s; }
-        .tab-content.active { display: block; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .product-list {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        }
-
-        .product-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 16px;
-            border-bottom: 1px solid #f5f5f5;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .product-item:active { background: #e8eaf6; }
-        .product-item:last-child { border-bottom: none; }
-
-        .product-item .name { font-size: 13px; font-weight: 500; color: #333; flex: 1; }
-        .product-item .dept {
-            font-size: 10px;
-            color: #888;
-            background: #f5f5f5;
-            padding: 2px 10px;
-            border-radius: 10px;
-            margin-right: 10px;
-        }
-        .product-item .amount { font-size: 14px; font-weight: 600; color: #1a237e; white-space: nowrap; }
-        .product-item .qty { font-size: 11px; color: #888; margin-right: 12px; }
-        .product-item .click-hint { font-size: 10px; color: #bbb; margin-left: 8px; }
-
-        .chart-container {
-            background: white;
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            margin-bottom: 16px;
-        }
-
-        .chart-container h4 { font-size: 14px; color: #333; margin-bottom: 12px; }
-        .chart-wrapper { position: relative; height: 200px; }
-
-        .filter-section {
-            background: white;
-            border-radius: 12px;
-            padding: 14px 16px;
-            margin-bottom: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        }
-
-        .filter-section select,
-        .filter-section input {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 13px;
-            margin-bottom: 8px;
-            background: #fafafa;
-        }
-
-        .filter-section select:focus,
-        .filter-section input:focus {
-            outline: none;
-            border-color: #283593;
-        }
-
-        .filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-
-        .dept-summary {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            margin-bottom: 16px;
-        }
-
-        .dept-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 16px;
-            border-bottom: 1px solid #f5f5f5;
-        }
-
-        .dept-row:last-child { border-bottom: none; }
-        .dept-row .name { font-size: 13px; font-weight: 500; color: #333; }
-        .dept-row .value { font-size: 13px; font-weight: 600; color: #1a237e; }
-
-        .loading {
-            text-align: center;
-            padding: 40px 20px;
-            color: #888;
-        }
-
-        .loading .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #e8eaf6;
-            border-top: 4px solid #283593;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 12px;
-        }
-
-        .empty-state { text-align: center; padding: 40px 20px; color: #999; }
-        .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
-
-        .info-bar {
-            background: white;
-            border-radius: 12px;
-            padding: 12px 16px;
-            font-size: 11px;
-            color: #999;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 4px;
-        }
-
-        .info-bar .warning { color: #e65100; }
-        .info-bar .success { color: #2e7d32; }
-        .info-bar .saved-badge {
-            background: #4caf50;
-            color: white;
-            padding: 2px 10px;
-            border-radius: 10px;
-            font-size: 10px;
-            font-weight: 600;
-        }
-
-        .detail-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            padding: 16px;
-            animation: fadeIn 0.3s;
-            overflow-y: auto;
-        }
-
-        .detail-overlay.active { display: flex; align-items: flex-start; justify-content: center; }
-
-        .detail-panel {
-            background: white;
-            border-radius: 16px;
-            max-width: 500px;
-            width: 100%;
-            margin: auto;
-            padding: 20px;
-            max-height: 90vh;
-            overflow-y: auto;
-            animation: slideUp 0.3s ease;
-        }
-
-        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        .detail-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #e8eaf6;
-        }
-
-        .detail-header h3 { font-size: 16px; color: #1a237e; flex: 1; }
-
-        .detail-header .close-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: #999;
-            cursor: pointer;
-            padding: 0 4px;
-            line-height: 1;
-        }
-        .detail-header .close-btn:active { color: #333; }
-
-        .detail-header .export-btn {
-            background: #283593;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 6px 14px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-right: 8px;
-        }
-        .detail-header .export-btn:active { transform: scale(0.96); }
-
-        .detail-summary {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 16px;
-            background: #f5f6fa;
-            border-radius: 8px;
-            padding: 12px;
-        }
-
-        .detail-summary .item { text-align: center; }
-        .detail-summary .label { font-size: 10px; color: #888; }
-        .detail-summary .value { font-size: 16px; font-weight: 600; color: #1a237e; }
-
-        .detail-filter { display: flex; gap: 8px; margin-bottom: 12px; }
-        .detail-filter input {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 12px;
-        }
-        .detail-filter input:focus { outline: none; border-color: #283593; }
-
-        .detail-table { width: 100%; font-size: 12px; border-collapse: collapse; }
-        .detail-table th {
-            text-align: left;
-            padding: 8px 4px;
-            border-bottom: 2px solid #e8eaf6;
-            color: #666;
-            font-weight: 600;
-            font-size: 11px;
-        }
-        .detail-table td { padding: 6px 4px; border-bottom: 1px solid #f5f5f5; }
-        .detail-table tr:last-child td { border-bottom: none; }
-        .detail-table .qty-cell { text-align: right; font-weight: 500; }
-        .detail-table .amount-cell { text-align: right; font-weight: 600; color: #1a237e; }
-        .detail-table .date-cell { color: #666; font-size: 11px; }
-        .detail-empty { text-align: center; padding: 20px; color: #999; font-size: 13px; }
-
-        .search-section {
-            background: white;
-            border-radius: 12px;
-            padding: 14px 16px;
-            margin-bottom: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        }
-
-        .search-section .search-row { display: flex; gap: 8px; margin-bottom: 8px; }
-        .search-section .search-row:last-child { margin-bottom: 0; }
-
-        .search-section input {
-            flex: 1;
-            padding: 10px 12px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 13px;
-            background: #fafafa;
-        }
-        .search-section input:focus { outline: none; border-color: #283593; }
-
-        .search-section .search-btn {
-            padding: 10px 20px;
-            background: #283593;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        .search-section .search-btn:active { transform: scale(0.96); }
-
-        .search-section .clear-btn {
-            padding: 10px 16px;
-            background: #e8eaf6;
-            color: #666;
-            border: none;
-            border-radius: 8px;
-            font-size: 13px;
-            cursor: pointer;
-        }
-        .search-section .search-hint { font-size: 11px; color: #999; margin-top: 6px; }
-
-        .summary-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .summary-header h4 { font-size: 14px; color: #333; }
-
-        .summary-header .search-toggle-btn {
-            background: none;
-            border: 1px solid #e0e0e0;
-            border-radius: 20px;
-            padding: 4px 14px;
-            font-size: 12px;
-            color: #666;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .summary-header .search-toggle-btn:active { background: #f5f5f5; }
-        .summary-header .search-toggle-btn.active {
-            background: #e8eaf6;
-            border-color: #283593;
-            color: #283593;
-        }
-
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #323232;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 12px;
-            font-size: 13px;
-            z-index: 2000;
-            opacity: 0;
-            transition: opacity 0.3s, transform 0.3s;
-            max-width: 90%;
-            text-align: center;
-            pointer-events: none;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-
-        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-        .toast.warning { background: #e65100; }
-        .toast.success { background: #2e7d32; }
-
-        .config-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 3000;
-            padding: 16px;
-            animation: fadeIn 0.3s;
-            overflow-y: auto;
-        }
-        .config-overlay.active { display: flex; align-items: center; justify-content: center; }
-
-        .config-panel {
-            background: white;
-            border-radius: 16px;
-            max-width: 500px;
-            width: 100%;
-            padding: 24px;
-            animation: slideUp 0.3s ease;
-        }
-
-        .config-panel h3 { color: #1a237e; font-size: 18px; margin-bottom: 4px; }
-        .config-panel p { color: #666; font-size: 13px; margin-bottom: 16px; }
-        .config-panel label { font-size: 13px; font-weight: 600; color: #333; display: block; margin-top: 12px; margin-bottom: 4px; }
-
-        .config-panel input,
-        .config-panel textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 13px;
-            background: #fafafa;
-        }
-        .config-panel textarea { min-height: 80px; font-family: monospace; font-size: 12px; resize: vertical; }
-
-        .config-panel .btn-row { display: flex; gap: 8px; margin-top: 16px; }
-        .config-panel .btn-row button { flex: 1; padding: 10px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
-        .config-panel .btn-row .btn-save { background: #283593; color: white; }
-        .config-panel .btn-row .btn-cancel { background: #e8eaf6; color: #666; }
-        .config-panel .btn-row button:active { transform: scale(0.96); }
-
-        .supported-formats {
-            font-size: 11px;
-            color: #999;
-            margin-top: 4px;
-        }
-
-        @media (max-width: 480px) {
-            body { padding: 12px; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-            .stat-card .number { font-size: 18px; }
-            .detail-panel { padding: 16px; margin: 8px; }
-            .detail-table { font-size: 11px; }
-            .detail-table th, .detail-table td { padding: 4px 3px; }
-            .search-section .search-row { flex-wrap: wrap; }
-            .search-section .search-btn { flex: 1; }
-            .toast { font-size: 12px; padding: 10px 16px; bottom: 12px; }
-            .info-bar { flex-direction: column; gap: 6px; }
-            .header .sync-status { position: static; margin-top: 8px; justify-content: center; }
-            .config-panel { padding: 16px; margin: 8px; }
-        }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif; }
+        body { background:#f0f2f5; min-height:100vh; padding:16px; padding-bottom:80px; }
+        .header { background:linear-gradient(135deg,#1a237e,#283593); color:#fff; padding:20px 16px; border-radius:16px; margin-bottom:16px; text-align:center; box-shadow:0 4px 20px rgba(26,35,126,.3); position:relative; }
+        .header h1 { font-size:20px; font-weight:700; letter-spacing:.5px; }
+        .header p { font-size:13px; opacity:.8; margin-top:4px; }
+        .header .sync-status { position:absolute; top:12px; right:16px; font-size:11px; display:flex; align-items:center; gap:4px; opacity:.8; }
+        .header .sync-status .dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+        .header .sync-status .dot.synced { background:#4caf50; }
+        .header .sync-status .dot.syncing { background:#ff9800; animation:pulse 1s infinite; }
+        .header .sync-status .dot.error { background:#f44336; }
+        .header .sync-status .dot.offline { background:#9e9e9e; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+        .upload-area { background:#fff; border-radius:16px; padding:24px 20px; text-align:center; border:2px dashed #c5cae9; transition:all .3s; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,.06); position:relative; }
+        .upload-area.dragover { border-color:#283593; background:#e8eaf6; }
+        .upload-area .icon { font-size:48px; margin-bottom:12px; }
+        .upload-area h3 { color:#1a237e; font-size:16px; margin-bottom:4px; }
+        .upload-area p { color:#666; font-size:13px; }
+        .upload-btn { display:inline-block; background:#283593; color:#fff; padding:10px 28px; border-radius:25px; border:none; font-size:14px; font-weight:600; margin-top:12px; cursor:pointer; transition:all .3s; }
+        .upload-btn:active { transform:scale(.96); }
+        .upload-btn:disabled { opacity:.6; cursor:not-allowed; }
+        .upload-btn.secondary { background:#e8eaf6; color:#283593; margin-left:8px; }
+        #fileInput { display:none; }
+        .upload-loading { display:none; position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,.9); border-radius:16px; z-index:10; flex-direction:column; align-items:center; justify-content:center; }
+        .upload-loading.active { display:flex; }
+        .upload-loading .spinner { width:40px; height:40px; border:4px solid #e8eaf6; border-top:4px solid #283593; border-radius:50%; animation:spin 1s linear infinite; }
+        .upload-loading p { margin-top:12px; font-size:14px; color:#333; font-weight:500; }
+        .upload-loading .sub { font-size:12px; color:#888; font-weight:400; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .stats-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:16px; }
+        .stat-card { background:#fff; border-radius:12px; padding:14px 12px; box-shadow:0 2px 8px rgba(0,0,0,.06); text-align:center; }
+        .stat-card .number { font-size:22px; font-weight:700; color:#1a237e; }
+        .stat-card .label { font-size:11px; color:#888; margin-top:2px; }
+        .tabs { display:flex; background:#fff; border-radius:12px; overflow:hidden; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+        .tab { flex:1; padding:12px 8px; text-align:center; font-size:12px; font-weight:600; color:#888; cursor:pointer; transition:all .3s; border:none; background:transparent; position:relative; }
+        .tab.active { color:#283593; }
+        .tab.active::after { content:''; position:absolute; bottom:0; left:20%; right:20%; height:3px; background:#283593; border-radius:3px; }
+        .tab:active { background:#e8eaf6; }
+        .tab-content { display:none; animation:fadeIn .3s; }
+        .tab-content.active { display:block; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        .product-list { background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+        .product-item { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid #f5f5f5; cursor:pointer; transition:background .2s; }
+        .product-item:active { background:#e8eaf6; }
+        .product-item:last-child { border-bottom:none; }
+        .product-item .name { font-size:13px; font-weight:500; color:#333; flex:1; }
+        .product-item .dept { font-size:10px; color:#888; background:#f5f5f5; padding:2px 10px; border-radius:10px; margin-right:10px; }
+        .product-item .amount { font-size:14px; font-weight:600; color:#1a237e; white-space:nowrap; }
+        .product-item .qty { font-size:11px; color:#888; margin-right:12px; }
+        .product-item .click-hint { font-size:10px; color:#bbb; margin-left:8px; }
+        .chart-container { background:#fff; border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:16px; }
+        .chart-container h4 { font-size:14px; color:#333; margin-bottom:12px; }
+        .chart-wrapper { position:relative; height:200px; }
+        .filter-section { background:#fff; border-radius:12px; padding:14px 16px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+        .filter-section select, .filter-section input { width:100%; padding:10px 12px; border:1px solid #e0e0e0; border-radius:8px; font-size:13px; margin-bottom:8px; background:#fafafa; }
+        .filter-section select:focus, .filter-section input:focus { outline:none; border-color:#283593; }
+        .filter-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+        .dept-summary { background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:16px; }
+        .dept-row { display:flex; justify-content:space-between; padding:10px 16px; border-bottom:1px solid #f5f5f5; }
+        .dept-row:last-child { border-bottom:none; }
+        .dept-row .name { font-size:13px; font-weight:500; color:#333; }
+        .dept-row .value { font-size:13px; font-weight:600; color:#1a237e; }
+        .loading { text-align:center; padding:40px 20px; color:#888; }
+        .loading .spinner { width:40px; height:40px; border:4px solid #e8eaf6; border-top:4px solid #283593; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 12px; }
+        .empty-state { text-align:center; padding:40px 20px; color:#999; }
+        .empty-state .icon { font-size:48px; margin-bottom:12px; }
+        .info-bar { background:#fff; border-radius:12px; padding:12px 16px; font-size:11px; color:#999; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,.06); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px; }
+        .info-bar .warning { color:#e65100; }
+        .info-bar .success { color:#2e7d32; }
+        .info-bar .saved-badge { background:#4caf50; color:#fff; padding:2px 10px; border-radius:10px; font-size:10px; font-weight:600; }
+        .detail-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.5); z-index:1000; padding:16px; animation:fadeIn .3s; overflow-y:auto; }
+        .detail-overlay.active { display:flex; align-items:flex-start; justify-content:center; }
+        .detail-panel { background:#fff; border-radius:16px; max-width:500px; width:100%; margin:auto; padding:20px; max-height:90vh; overflow-y:auto; animation:slideUp .3s ease; }
+        @keyframes slideUp { from { transform:translateY(30px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+        .detail-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; padding-bottom:12px; border-bottom:2px solid #e8eaf6; }
+        .detail-header h3 { font-size:16px; color:#1a237e; flex:1; }
+        .detail-header .close-btn { background:none; border:none; font-size:24px; color:#999; cursor:pointer; padding:0 4px; line-height:1; }
+        .detail-header .close-btn:active { color:#333; }
+        .detail-header .export-btn { background:#283593; color:#fff; border:none; border-radius:8px; padding:6px 14px; font-size:12px; font-weight:600; cursor:pointer; margin-right:8px; }
+        .detail-header .export-btn:active { transform:scale(.96); }
+        .detail-summary { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; background:#f5f6fa; border-radius:8px; padding:12px; }
+        .detail-summary .item { text-align:center; }
+        .detail-summary .label { font-size:10px; color:#888; }
+        .detail-summary .value { font-size:16px; font-weight:600; color:#1a237e; }
+        .detail-filter { display:flex; gap:8px; margin-bottom:12px; }
+        .detail-filter input { flex:1; padding:8px 12px; border:1px solid #e0e0e0; border-radius:8px; font-size:12px; }
+        .detail-filter input:focus { outline:none; border-color:#283593; }
+        .detail-table { width:100%; font-size:12px; border-collapse:collapse; }
+        .detail-table th { text-align:left; padding:8px 4px; border-bottom:2px solid #e8eaf6; color:#666; font-weight:600; font-size:11px; }
+        .detail-table td { padding:6px 4px; border-bottom:1px solid #f5f5f5; }
+        .detail-table tr:last-child td { border-bottom:none; }
+        .detail-table .qty-cell { text-align:right; font-weight:500; }
+        .detail-table .amount-cell { text-align:right; font-weight:600; color:#1a237e; }
+        .detail-table .date-cell { color:#666; font-size:11px; }
+        .detail-empty { text-align:center; padding:20px; color:#999; font-size:13px; }
+        .search-section { background:#fff; border-radius:12px; padding:14px 16px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+        .search-section .search-row { display:flex; gap:8px; margin-bottom:8px; }
+        .search-section .search-row:last-child { margin-bottom:0; }
+        .search-section input { flex:1; padding:10px 12px; border:1px solid #e0e0e0; border-radius:8px; font-size:13px; background:#fafafa; }
+        .search-section input:focus { outline:none; border-color:#283593; }
+        .search-section .search-btn { padding:10px 20px; background:#283593; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; }
+        .search-section .search-btn:active { transform:scale(.96); }
+        .search-section .clear-btn { padding:10px 16px; background:#e8eaf6; color:#666; border:none; border-radius:8px; font-size:13px; cursor:pointer; }
+        .search-section .search-hint { font-size:11px; color:#999; margin-top:6px; }
+        .summary-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px; }
+        .summary-header h4 { font-size:14px; color:#333; }
+        .summary-header .search-toggle-btn { background:none; border:1px solid #e0e0e0; border-radius:20px; padding:4px 14px; font-size:12px; color:#666; cursor:pointer; display:flex; align-items:center; gap:4px; }
+        .summary-header .search-toggle-btn:active { background:#f5f5f5; }
+        .summary-header .search-toggle-btn.active { background:#e8eaf6; border-color:#283593; color:#283593; }
+        .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#323232; color:#fff; padding:12px 24px; border-radius:12px; font-size:13px; z-index:2000; opacity:0; transition:opacity .3s,transform .3s; max-width:90%; text-align:center; pointer-events:none; box-shadow:0 4px 20px rgba(0,0,0,.3); }
+        .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+        .toast.warning { background:#e65100; }
+        .toast.success { background:#2e7d32; }
+        .config-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.5); z-index:3000; padding:16px; animation:fadeIn .3s; overflow-y:auto; }
+        .config-overlay.active { display:flex; align-items:center; justify-content:center; }
+        .config-panel { background:#fff; border-radius:16px; max-width:500px; width:100%; padding:24px; animation:slideUp .3s ease; }
+        .config-panel h3 { color:#1a237e; font-size:18px; margin-bottom:4px; }
+        .config-panel p { color:#666; font-size:13px; margin-bottom:16px; }
+        .config-panel label { font-size:13px; font-weight:600; color:#333; display:block; margin-top:12px; margin-bottom:4px; }
+        .config-panel input, .config-panel textarea { width:100%; padding:10px 12px; border:1px solid #e0e0e0; border-radius:8px; font-size:13px; background:#fafafa; }
+        .config-panel textarea { min-height:80px; font-family:monospace; font-size:12px; resize:vertical; }
+        .config-panel .btn-row { display:flex; gap:8px; margin-top:16px; }
+        .config-panel .btn-row button { flex:1; padding:10px; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; }
+        .config-panel .btn-row .btn-save { background:#283593; color:#fff; }
+        .config-panel .btn-row .btn-cancel { background:#e8eaf6; color:#666; }
+        .config-panel .btn-row button:active { transform:scale(.96); }
+        .supported-formats { font-size:11px; color:#999; margin-top:4px; }
+        @media (max-width:480px) { body { padding:12px; } .stats-grid { grid-template-columns:repeat(2,1fr); gap:8px; } .stat-card .number { font-size:18px; } .detail-panel { padding:16px; margin:8px; } .detail-table { font-size:11px; } .detail-table th, .detail-table td { padding:4px 3px; } .search-section .search-row { flex-wrap:wrap; } .search-section .search-btn { flex:1; } .toast { font-size:12px; padding:10px 16px; bottom:12px; } .info-bar { flex-direction:column; gap:6px; } .header .sync-status { position:static; margin-top:8px; justify-content:center; } .config-panel { padding:16px; margin:8px; } }
     </style>
 </head>
 <body>
@@ -742,32 +271,31 @@
 
     <script>
         // ============================================================
-        // FIREBASE CONFIG
+        // FIREBASE CONFIG - HARDCODED
         // ============================================================
-        let firebaseApp = null;
-        let firestore = null;
-        let isFirebaseReady = false;
-        let currentDocId = null;
-        let isSaving = false;
-        let isDataLoaded = false;
+        const HARDCODED_CONFIG = {
+            apiKey: "AIzaSyCAgWNNhOj7bX4quVvk-K6f_vencaoAVI8",
+            authDomain: "cek-data-base.firebaseapp.com",
+            projectId: "cek-data-base",
+            storageBucket: "cek-data-base.firebasestorage.app",
+            messagingSenderId: "931843377657",
+            appId: "1:931843377657:web:df975217df15d2de5a5528"
+        };
 
+        // ============================================================
+        // GET FIREBASE CONFIG
+        // ============================================================
         function getFirebaseConfig() {
             try {
                 const saved = localStorage.getItem('firebaseConfig');
-                if (saved) return JSON.parse(saved);
-                return null;
-            } catch { return null; }
-        }
-
-        function getCollectionName() {
-            return localStorage.getItem('firebaseCollection') || 'sales_data';
-        }
-
-        function updateSyncStatus(status, text) {
-            const dot = document.getElementById('syncDot');
-            const label = document.getElementById('syncText');
-            if (dot) dot.className = 'dot ' + status;
-            if (label) label.textContent = text || status;
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed.apiKey && parsed.projectId) {
+                        return parsed;
+                    }
+                }
+            } catch (e) { /* ignore */ }
+            return HARDCODED_CONFIG;
         }
 
         // ============================================================
@@ -788,60 +316,43 @@
         }
 
         // ============================================================
-        // SAVE STATE TO SESSION STORAGE
+        // FIREBASE INIT
         // ============================================================
-        function saveStateToSession() {
-            if (originalData && originalData.length > 0) {
-                try {
-                    const metadata = {
-                        recordCount: originalData.length,
-                        totalAmount: originalData.reduce((s, d) => s + d.amount, 0),
-                        totalQty: originalData.reduce((s, d) => s + d.qty, 0),
-                        filename: document.getElementById('fileInfo')?.textContent || 'Unknown',
-                        timestamp: Date.now()
-                    };
-                    sessionStorage.setItem('salesDataMetadata', JSON.stringify(metadata));
-                } catch (e) { /* ignore */ }
-            }
+        let firebaseApp = null;
+        let firestore = null;
+        let isFirebaseReady = false;
+        let currentDocId = null;
+        let isSaving = false;
+        let isDataLoaded = false;
+
+        function updateSyncStatus(status, text) {
+            const dot = document.getElementById('syncDot');
+            const label = document.getElementById('syncText');
+            if (dot) dot.className = 'dot ' + status;
+            if (label) label.textContent = text || status;
         }
 
-        function afterDataLoaded() {
-            isDataLoaded = true;
-            saveStateToSession();
-        }
-
-        // ============================================================
-        // FIREBASE INIT - WITH AUTO LOAD
-        // ============================================================
         async function initFirebase() {
             const config = getFirebaseConfig();
-            if (!config) {
-                updateSyncStatus('offline', 'Not Configured');
-                const summaryContent = document.getElementById('summaryContent');
-                if (summaryContent && !originalData.length) {
-                    summaryContent.innerHTML = `
-                        <div class="empty-state" style="padding:30px;">
-                            <div class="icon">⚙️</div>
-                            <p style="font-weight:500; color:#333;">Firebase Belum Dikonfigurasi</p>
-                            <p style="font-size:13px; color:#888; margin-top:4px;">
-                                Klik tombol <strong>Config</strong> untuk mengatur koneksi Firebase<br>
-                                atau <strong>Upload</strong> file Excel/CSV untuk analisis offline
-                            </p>
-                        </div>
-                    `;
-                }
+            if (!config || !config.apiKey) {
+                updateSyncStatus('error', 'Config Error');
                 return false;
             }
+            
             try {
-                firebaseApp = firebase.initializeApp(config);
+                if (!firebaseApp) {
+                    firebaseApp = firebase.initializeApp(config);
+                }
                 firestore = firebase.firestore();
                 await firestore.collection(getCollectionName()).limit(1).get();
                 isFirebaseReady = true;
                 updateSyncStatus('synced', 'Connected');
                 console.log('✅ Firebase connected');
 
-                // AUTO LOAD DATA
-                const hasData = await loadFromFirebase();
+                // ============================================================
+                // LOAD SUMMARY DULUAN (BUKAN CHUNK)
+                // ============================================================
+                const hasData = await loadSummaryFirst();
                 if (!hasData) {
                     const summaryContent = document.getElementById('summaryContent');
                     if (summaryContent && !originalData.length) {
@@ -850,8 +361,7 @@
                                 <div class="icon">☁️</div>
                                 <p style="font-weight:500; color:#333;">Belum Ada Data di Cloud</p>
                                 <p style="font-size:13px; color:#888; margin-top:4px;">
-                                    Upload file Excel/CSV untuk memulai,<br>
-                                    atau klik <strong>Load from Cloud</strong> untuk memuat data tersimpan
+                                    Upload file Excel/CSV untuk memulai
                                 </p>
                             </div>
                         `;
@@ -860,27 +370,284 @@
                 return true;
             } catch (err) {
                 console.error('Firebase init error:', err);
-                updateSyncStatus('error', 'Error: ' + err.message);
+                updateSyncStatus('error', err.message);
                 isFirebaseReady = false;
                 return false;
             }
         }
 
+        function getCollectionName() {
+            return localStorage.getItem('firebaseCollection') || 'sales_data';
+        }
+
         // ============================================================
-        // SAVE TO FIREBASE - FIXED FOR 1MB LIMIT
+        // SPLIT DATA FOR FIRESTORE - chunkSize = 250
         // ============================================================
         function splitDataForFirestore(data) {
             const chunks = [];
-            const chunkSize = 400;
+            const chunkSize = 250;
             for (let i = 0; i < data.length; i += chunkSize) {
                 chunks.push(data.slice(i, i + chunkSize));
             }
             return chunks;
         }
 
+        // ============================================================
+        // GET PERIOD
+        // ============================================================
+        function getPeriod(data) {
+            if (data && data.length > 0) {
+                const firstDate = data[0]?.dateStr;
+                if (firstDate && firstDate !== 'Unknown') {
+                    return firstDate.substring(0, 7);
+                }
+            }
+            return new Date().toISOString().slice(0, 7);
+        }
+
+        // ============================================================
+        // CALCULATE TOP PRODUCTS
+        // ============================================================
+        function calculateTopProducts(data, limit = 10) {
+            const productSales = {};
+            data.forEach(d => {
+                if (!productSales[d.itemName]) {
+                    productSales[d.itemName] = { qty: 0, amount: 0, dept: d.department };
+                }
+                productSales[d.itemName].qty += d.qty;
+                productSales[d.itemName].amount += d.amount;
+            });
+
+            return Object.entries(productSales)
+                .sort((a, b) => b[1].amount - a[1].amount)
+                .slice(0, limit)
+                .map(([name, data]) => ({
+                    name: name,
+                    amount: data.amount,
+                    qty: data.qty,
+                    department: data.dept
+                }));
+        }
+
+        // ============================================================
+        // CALCULATE DEPARTMENT SALES
+        // ============================================================
+        function calculateDepartmentSales(data) {
+            const deptData = {};
+            data.forEach(d => {
+                if (!deptData[d.department]) deptData[d.department] = { amount: 0, qty: 0 };
+                deptData[d.department].amount += d.amount;
+                deptData[d.department].qty += d.qty;
+            });
+
+            return Object.entries(deptData)
+                .sort((a, b) => b[1].amount - a[1].amount)
+                .map(([department, data]) => ({
+                    department: department,
+                    amount: data.amount,
+                    qty: data.qty
+                }));
+        }
+
+        // ============================================================
+        // LOAD SUMMARY FIRST (Dashboard Langsung Muncul)
+        // ============================================================
+        async function loadSummaryFirst() {
+            if (!isFirebaseReady) {
+                return false;
+            }
+
+            try {
+                // Cek summary terbaru
+                const summarySnapshot = await firestore.collection('sales_summary')
+                    .orderBy('period', 'desc')
+                    .limit(1)
+                    .get();
+
+                if (summarySnapshot.empty) {
+                    console.log('📊 No summary found');
+                    return false;
+                }
+
+                const summaryDoc = summarySnapshot.docs[0];
+                const summary = summaryDoc.data();
+                const period = summaryDoc.id;
+
+                console.log('📊 Summary loaded for period:', period);
+                console.log('📊 Summary data:', summary);
+
+                // ============================================================
+                // UPDATE DASHBOARD DARI SUMMARY
+                // ============================================================
+                const totalAmount = summary.totalAmount || 0;
+                const totalQty = summary.totalQty || 0;
+                const recordCount = summary.recordCount || 0;
+                const departmentCount = summary.departmentCount || 0;
+
+                document.getElementById('totalSales').textContent = formatRupiah(totalAmount);
+                document.getElementById('totalQty').textContent = Math.round(totalQty);
+                document.getElementById('totalItems').textContent = recordCount;
+                document.getElementById('totalDays').textContent = departmentCount || 'N/A';
+
+                // Tampilkan info di info bar
+                let infoText = '☁️ Summary: ' + period + ' • ' + recordCount + ' records';
+                if (summary.updatedAt) {
+                    const updated = summary.updatedAt.toDate ? summary.updatedAt.toDate() : new Date(summary.updatedAt);
+                    infoText += ' • Updated: ' + updated.toLocaleDateString('id-ID');
+                }
+                document.getElementById('fileInfo').textContent = infoText;
+                document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Loaded from Cloud</span>';
+
+                // Tampilkan stats grid
+                statsGrid.style.display = 'grid';
+                tabs.style.display = 'flex';
+                infoBar.style.display = 'flex';
+
+                // ============================================================
+                // RENDER SUMMARY DARI TOP PRODUCTS (jika ada)
+                // ============================================================
+                if (summary.topProducts && summary.topProducts.length > 0) {
+                    renderSummaryFromData(summary.topProducts, summary.totalAmount, summary.totalQty);
+                } else {
+                    // Fallback: muat data penuh
+                    await loadFullData(period);
+                }
+
+                // ============================================================
+                // RENDER CHART DARI DEPARTMENT SALES (jika ada)
+                // ============================================================
+                if (summary.departmentSales && summary.departmentSales.length > 0) {
+                    renderDeptChartFromSummary(summary.departmentSales);
+                } else {
+                    // Fallback: muat data penuh untuk chart
+                    await loadFullData(period);
+                }
+
+                // Simpan summary untuk referensi
+                window._lastSummary = summary;
+                window._lastPeriod = period;
+
+                updateSyncStatus('synced', 'Loaded');
+                showToast('✅ Loaded summary from cloud', 'success');
+                return true;
+
+            } catch (err) {
+                console.error('Load summary error:', err);
+                return false;
+            }
+        }
+
+        // ============================================================
+        // RENDER SUMMARY DARI DATA
+        // ============================================================
+        function renderSummaryFromData(topProducts, totalAmount, totalQty) {
+            const container = document.getElementById('summaryContent');
+            
+            let html = `
+                <div style="background:white; border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.06); margin-bottom:12px;">
+                    <div class="summary-header">
+                        <h4>🏆 Top Products</h4>
+                        <button class="search-toggle-btn" onclick="toggleSearch()">
+                            🔍 Search
+                        </button>
+                    </div>
+                    <p style="font-size:11px; color:#999; margin-top:2px;">Klik item untuk melihat detail penjualan per tanggal</p>
+                </div>
+                <div class="product-list">
+            `;
+
+            if (topProducts.length === 0) {
+                html += '<div class="empty-state" style="padding:20px;"><div class="icon">📭</div><p>Tidak ada data</p></div>';
+            } else {
+                topProducts.forEach((item, i) => {
+                    html += `
+                        <div class="product-item" onclick="showItemDetail('${escapeString(item.name)}', '${escapeString(item.department)}')">
+                            <span style="font-size:12px; color:#999; margin-right:8px; min-width:24px;">#${i+1}</span>
+                            <span class="name">${item.name}</span>
+                            <span class="dept">${item.department}</span>
+                            <span style="display:flex; align-items:center; gap:4px;">
+                                <span class="qty">${Math.round(item.qty)}x</span>
+                                <span class="amount">${formatRupiah(item.amount)}</span>
+                                <span class="click-hint">👉</span>
+                            </span>
+                        </div>
+                    `;
+                });
+            }
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // ============================================================
+        // RENDER DEPT CHART DARI SUMMARY
+        // ============================================================
+        function renderDeptChartFromSummary(departmentSales) {
+            const ctx = document.getElementById('deptChart').getContext('2d');
+            if (chartDept) chartDept.destroy();
+
+            const labels = departmentSales.map(d => d.department);
+            const values = departmentSales.map(d => d.amount);
+            const colors = ['#283593', '#1a237e', '#3f51b5', '#5c6bc0', '#7986cb', '#9fa8da', '#c5cae9'];
+
+            chartDept = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Sales by Department',
+                        data: values,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: v => formatRupiah(v, true) }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ============================================================
+        // LOAD FULL DATA (untuk detail)
+        // ============================================================
+        async function loadFullData(period) {
+            if (!isFirebaseReady || !period) {
+                return false;
+            }
+
+            try {
+                const collection = getCollectionName();
+                const docRef = firestore.collection(collection).doc(period);
+                const doc = await docRef.get();
+
+                if (!doc.exists) {
+                    showToast('Data tidak ditemukan untuk period: ' + period, 'warning');
+                    return false;
+                }
+
+                const docData = doc.data();
+                currentDocId = period;
+                await restoreData(docData, period);
+                return true;
+            } catch (err) {
+                console.error('Load full data error:', err);
+                return false;
+            }
+        }
+
+        // ============================================================
+        // SAVE TO FIREBASE - DENGAN SUMMARY, TOP PRODUCTS, DEPT SALES
+        // ============================================================
         async function saveToFirebase(data, filename) {
             if (!isFirebaseReady) {
-                showToast('Firebase not configured.', 'warning');
+                showToast('Firebase not connected.', 'warning');
                 return false;
             }
             if (isSaving) {
@@ -891,40 +658,107 @@
                 isSaving = true;
                 updateSyncStatus('syncing', 'Saving...');
                 const collection = getCollectionName();
+                const period = getPeriod(data);
                 const chunks = splitDataForFirestore(data);
 
-                let docRef;
+                const totalAmount = data.reduce((sum, d) => sum + d.amount, 0);
+                const totalQty = data.reduce((sum, d) => sum + d.qty, 0);
+                const departments = [...new Set(data.map(d => d.department))];
+
+                // ============================================================
+                // 1. MAIN DATA
+                // ============================================================
                 const mainData = {
                     filename: filename,
+                    period: period,
                     uploadedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     recordCount: data.length,
-                    totalAmount: data.reduce((sum, d) => sum + d.amount, 0),
-                    totalQty: data.reduce((sum, d) => sum + d.qty, 0),
-                    departments: [...new Set(data.map(d => d.department))],
+                    totalAmount: totalAmount,
+                    totalQty: totalQty,
+                    departments: departments,
+                    status: "processing",
                     chunkCount: chunks.length
                 };
 
-                if (currentDocId) {
-                    docRef = firestore.collection(collection).doc(currentDocId);
-                    await docRef.update(mainData);
-                } else {
-                    docRef = await firestore.collection(collection).add(mainData);
-                    currentDocId = docRef.id;
-                }
+                const docRef = firestore.collection(collection).doc(period);
+                await docRef.set(mainData);
+                currentDocId = period;
 
+                // ============================================================
+                // 2. SIMPAN CHUNKS
+                // ============================================================
                 const batch = firestore.batch();
                 for (let i = 0; i < chunks.length; i++) {
                     const chunkRef = docRef.collection('chunks').doc('chunk_' + i);
-                    batch.set(chunkRef, { index: i, data: chunks[i], count: chunks[i].length });
+                    batch.set(chunkRef, {
+                        index: i,
+                        data: chunks[i],
+                        count: chunks[i].length
+                    });
                 }
                 await batch.commit();
 
-                showToast('✅ ' + data.length + ' records saved in ' + chunks.length + ' chunks!', 'success');
-                updateSyncStatus('synced', 'Saved');
+                // ============================================================
+                // 3. UPDATE STATUS => completed
+                // ============================================================
+                await docRef.update({ status: "completed" });
+
+                // ============================================================
+                // 4. BUAT SUMMARY DENGAN TOP PRODUCTS & DEPARTMENT SALES
+                // ============================================================
+                const topProducts = calculateTopProducts(data, 10);
+                const departmentSales = calculateDepartmentSales(data);
+
+                const summaryRef = firestore.collection('sales_summary').doc(period);
+                await summaryRef.set({
+                    period: period,
+                    totalAmount: totalAmount,
+                    totalQty: totalQty,
+                    recordCount: data.length,
+                    departmentCount: departments.length,
+                    departments: departments,
+                    topProducts: topProducts,
+                    departmentSales: departmentSales,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    filename: filename
+                });
+
+                // ============================================================
+                // 5. UPDATE DASHBOARD LANGSUNG DARI SUMMARY
+                // ============================================================
+                document.getElementById('totalSales').textContent = formatRupiah(totalAmount);
+                document.getElementById('totalQty').textContent = Math.round(totalQty);
+                document.getElementById('totalItems').textContent = data.length;
+                document.getElementById('totalDays').textContent = departments.length || 'N/A';
+
+                // Render summary dari top products
+                renderSummaryFromData(topProducts, totalAmount, totalQty);
+                renderDeptChartFromSummary(departmentSales);
+
+                // Update info
+                let infoText = '☁️ ' + filename + ' • ' + data.length + ' records • Period: ' + period;
+                document.getElementById('fileInfo').textContent = infoText;
                 document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Saved to Cloud</span>';
+
+                showToast('✅ ' + data.length + ' records saved!', 'success');
+                updateSyncStatus('synced', 'Saved');
                 return true;
+
             } catch (err) {
                 console.error('Save error:', err);
+                
+                try {
+                    if (currentDocId) {
+                        const collection = getCollectionName();
+                        await firestore.collection(collection).doc(currentDocId).update({
+                            status: "failed",
+                            error: err.message
+                        });
+                    }
+                } catch (updateErr) {
+                    console.warn('Could not update status:', updateErr);
+                }
+                
                 updateSyncStatus('error', 'Save failed');
                 showToast('Error saving: ' + err.message, 'warning');
                 return false;
@@ -934,7 +768,7 @@
         }
 
         // ============================================================
-        // LOAD FROM FIREBASE
+        // LOAD FROM FIREBASE (dengan pengecekan chunk)
         // ============================================================
         async function loadFromFirebase(docId = null) {
             if (!isFirebaseReady) {
@@ -943,10 +777,9 @@
             try {
                 updateSyncStatus('syncing', 'Loading...');
                 const collection = getCollectionName();
-                let query = firestore.collection(collection);
 
                 if (docId) {
-                    const doc = await query.doc(docId).get();
+                    const doc = await firestore.collection(collection).doc(docId).get();
                     if (!doc.exists) {
                         showToast('Document not found', 'warning');
                         updateSyncStatus('error', 'Not found');
@@ -957,11 +790,31 @@
                     await restoreData(data, docId);
                     return true;
                 } else {
-                    const snapshot = await query.orderBy('uploadedAt', 'desc').limit(1).get();
+                    // Coba load dari summary dulu
+                    const summarySnapshot = await firestore.collection('sales_summary')
+                        .orderBy('period', 'desc')
+                        .limit(1)
+                        .get();
+
+                    let latestPeriod = null;
+                    if (!summarySnapshot.empty) {
+                        const summaryData = summarySnapshot.docs[0].data();
+                        latestPeriod = summaryData.period;
+                        console.log('📊 Found summary for period:', latestPeriod);
+                    }
+
+                    let query = firestore.collection(collection);
+                    if (latestPeriod) {
+                        query = query.where('period', '==', latestPeriod);
+                    }
+                    query = query.orderBy('uploadedAt', 'desc').limit(1);
+                    
+                    const snapshot = await query.get();
                     if (snapshot.empty) {
                         updateSyncStatus('synced', 'No data');
                         return false;
                     }
+                    
                     const doc = snapshot.docs[0];
                     const data = doc.data();
                     currentDocId = doc.id;
@@ -981,6 +834,13 @@
                 return;
             }
 
+            if (docData.status === 'processing') {
+                showToast('⚠️ Data masih dalam proses upload, mungkin tidak lengkap', 'warning', 3000);
+            }
+            if (docData.status === 'failed') {
+                showToast('⚠️ Upload sebelumnya gagal: ' + (docData.error || 'unknown error'), 'warning', 4000);
+            }
+
             let allData = [];
             const chunkCount = docData.chunkCount || 1;
 
@@ -990,11 +850,19 @@
                     try {
                         const chunkRef = firestore.collection(collection).doc(docId).collection('chunks').doc('chunk_' + i);
                         const chunkSnap = await chunkRef.get();
-                        if (chunkSnap.exists) {
-                            const chunkData = chunkSnap.data();
-                            if (chunkData && chunkData.data) {
-                                allData = allData.concat(chunkData.data);
-                            }
+                        
+                        // ============================================================
+                        // PENGECEKAN CHUNK
+                        // ============================================================
+                        if (!chunkSnap.exists) {
+                            console.error(`❌ Chunk ${i} tidak ditemukan untuk period ${docId}`);
+                            continue;
+                        }
+                        
+                        const chunkData = chunkSnap.data();
+                        if (chunkData && chunkData.data) {
+                            allData = allData.concat(chunkData.data);
+                            console.log(`✅ Chunk ${i} loaded: ${chunkData.data.length} records`);
                         }
                     } catch (err) {
                         console.warn('Error loading chunk ' + i + ':', err);
@@ -1022,6 +890,11 @@
             renderCharts();
 
             let infoText = '☁️ ' + (docData.filename || 'cloud_data') + ' • ' + allData.length + ' records';
+            if (docData.period) infoText += ' • Period: ' + docData.period;
+            if (docData.status === 'completed') infoText += ' ✅';
+            else if (docData.status === 'processing') infoText += ' ⏳';
+            else if (docData.status === 'failed') infoText += ' ❌';
+            
             document.getElementById('fileInfo').textContent = infoText;
             document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Loaded from Cloud</span>';
 
@@ -1038,12 +911,35 @@
         }
 
         // ============================================================
+        // SAVE STATE TO SESSION
+        // ============================================================
+        function saveStateToSession() {
+            if (originalData && originalData.length > 0) {
+                try {
+                    const metadata = {
+                        recordCount: originalData.length,
+                        totalAmount: originalData.reduce((s, d) => s + d.amount, 0),
+                        totalQty: originalData.reduce((s, d) => s + d.qty, 0),
+                        filename: document.getElementById('fileInfo')?.textContent || 'Unknown',
+                        timestamp: Date.now()
+                    };
+                    sessionStorage.setItem('salesDataMetadata', JSON.stringify(metadata));
+                } catch (e) { /* ignore */ }
+            }
+        }
+
+        function afterDataLoaded() {
+            isDataLoaded = true;
+            saveStateToSession();
+        }
+
+        // ============================================================
         // CONFIG FUNCTIONS
         // ============================================================
         function openConfig() {
             const config = getFirebaseConfig();
             const input = document.getElementById('firebaseConfigInput');
-            input.value = config ? JSON.stringify(config, null, 2) : '';
+            input.value = JSON.stringify(config, null, 2);
             document.getElementById('collectionNameInput').value = getCollectionName();
             document.getElementById('configOverlay').classList.add('active');
             document.getElementById('configStatus').textContent = '';
@@ -1082,7 +978,7 @@
 
         async function showDocumentList() {
             if (!isFirebaseReady) {
-                showToast('Firebase not configured', 'warning');
+                showToast('Firebase not connected', 'warning');
                 return;
             }
             try {
@@ -1097,7 +993,9 @@
 
                 const docList = docs.map((doc, i) => {
                     const date = doc.uploadedAt ? new Date(doc.uploadedAt.seconds * 1000).toLocaleDateString('id-ID') : 'Unknown';
-                    return (i + 1) + '. ' + (doc.filename || 'Untitled') + ' (' + (doc.recordCount || 0) + ' records) - ' + date;
+                    const status = doc.status || 'unknown';
+                    const statusIcon = status === 'completed' ? '✅' : status === 'processing' ? '⏳' : '❌';
+                    return (i + 1) + '. ' + (doc.filename || 'Untitled') + ' (' + (doc.recordCount || 0) + ' records) ' + statusIcon + ' - ' + date;
                 }).join('\n');
 
                 const choice = prompt('Pilih data yang akan dimuat:\n\n' + docList + '\n\nMasukkan nomor (1-' + docs.length + '):');
@@ -1170,8 +1068,8 @@
         document.getElementById('configBtn').addEventListener('click', openConfig);
         document.getElementById('loadFromFirebaseBtn').addEventListener('click', async () => {
             if (!isFirebaseReady) {
-                showToast('Firebase not configured. Please set up config first.', 'warning');
-                openConfig();
+                showToast('Firebase not connected. Please check config.', 'warning');
+                await initFirebase();
                 return;
             }
             await showDocumentList();
@@ -1711,7 +1609,7 @@
         }
 
         // ============================================================
-        // PDF EXPORT - FINAL FIX
+        // PDF EXPORT - FIXED
         // ============================================================
         function exportDetailPDF() {
             if (!currentDetailItem || detailDataCache.length === 0) {
@@ -1785,18 +1683,15 @@
 
                 // ----- FUNCTION: Draw Table Cell -----
                 function drawTableCell(x, y, w, h, text, align = 'left', textColor = null, fillColor = null) {
-                    // Draw background
                     if (fillColor) {
                         doc.setFillColor(fillColor[0], fillColor[1], fillColor[2]);
                         doc.rect(x, y, w, h, 'F');
                     }
                     
-                    // Draw border
                     doc.setDrawColor(200, 200, 200);
                     doc.setLineWidth(0.5);
                     doc.rect(x, y, w, h, 'D');
                     
-                    // Draw text
                     if (textColor) {
                         doc.setTextColor(textColor[0], textColor[1], textColor[2]);
                     } else {
@@ -1825,16 +1720,12 @@
                 const maxRows = Math.floor((pageHeight - currentY - 40) / rowHeight);
 
                 tableData.forEach((row, idx) => {
-                    // Check if need new page
                     if (idx > 0 && idx % maxRows === 0) {
                         doc.addPage();
                         currentY = 40;
                         
-                        // Redraw header on new page
                         doc.setFontSize(10);
                         doc.setFont('helvetica', 'bold');
-                        doc.setTextColor(255);
-                        doc.setFillColor(26, 35, 126);
                         
                         drawTableCell(margin, currentY, colWidths[0], rowHeight, 'Tanggal', 'left', headerTextColor, headerColor);
                         drawTableCell(margin + colWidths[0], currentY, colWidths[1], rowHeight, 'Qty', 'right', headerTextColor, headerColor);
@@ -1847,7 +1738,6 @@
                     const fillColor = isTotal ? [240, 242, 250] : null;
                     const textColor = isTotal ? [26, 35, 126] : [51, 51, 51];
                     
-                    // Bold for total row
                     if (isTotal) {
                         doc.setFont('helvetica', 'bold');
                     } else {
@@ -1861,7 +1751,6 @@
                     currentY += rowHeight;
                 });
 
-                // Reset font
                 doc.setFont('helvetica', 'normal');
 
                 // ----- FOOTER -----
@@ -1882,7 +1771,6 @@
                     );
                 }
 
-                // ----- SAVE -----
                 const filename = 'Detail_' + currentDetailItem.name.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf';
                 doc.save(filename);
                 showToast('✅ PDF berhasil diexport!', 'success');
@@ -1908,7 +1796,28 @@
         // INIT
         // ============================================================
         console.log('🚀 Sales Data Analyzer starting...');
-        initFirebase();
+        
+        updateSyncStatus('syncing', 'Connecting...');
+        
+        initFirebase().then(success => {
+            if (!success) {
+                updateSyncStatus('error', 'Connection failed');
+                const summaryContent = document.getElementById('summaryContent');
+                if (summaryContent && !originalData.length) {
+                    summaryContent.innerHTML = `
+                        <div class="empty-state" style="padding:30px;">
+                            <div class="icon">⚠️</div>
+                            <p style="font-weight:500; color:#333;">Koneksi Firebase Gagal</p>
+                            <p style="font-size:13px; color:#888; margin-top:4px;">
+                                Anda tetap bisa menganalisis data secara offline.<br>
+                                Upload file Excel atau CSV untuk memulai.
+                            </p>
+                        </div>
+                    `;
+                }
+            }
+        });
+        
         console.log('✅ Sales Data Analyzer loaded. Upload Excel or CSV to start.');
     </script>
 
