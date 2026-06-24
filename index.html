@@ -137,7 +137,51 @@
         .config-panel .btn-row .btn-cancel { background:#e8eaf6; color:#666; }
         .config-panel .btn-row button:active { transform:scale(.96); }
         .supported-formats { font-size:11px; color:#999; margin-top:4px; }
-        @media (max-width:480px) { body { padding:12px; } .stats-grid { grid-template-columns:repeat(2,1fr); gap:8px; } .stat-card .number { font-size:18px; } .detail-panel { padding:16px; margin:8px; } .detail-table { font-size:11px; } .detail-table th, .detail-table td { padding:4px 3px; } .search-section .search-row { flex-wrap:wrap; } .search-section .search-btn { flex:1; } .toast { font-size:12px; padding:10px 16px; bottom:12px; } .info-bar { flex-direction:column; gap:6px; } .header .sync-status { position:static; margin-top:8px; justify-content:center; } .config-panel { padding:16px; margin:8px; } }
+
+        /* Upload Mode Radio */
+        .upload-mode {
+            background: #f5f6fa;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-top: 12px;
+            text-align: left;
+        }
+        .upload-mode label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #333;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .upload-mode .radio-group {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .upload-mode .radio-group label {
+            font-weight: 400;
+            font-size: 13px;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            margin-bottom: 0;
+        }
+        .upload-mode .radio-group input[type="radio"] {
+            accent-color: #283593;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        .upload-mode .radio-group .desc {
+            font-size: 11px;
+            color: #999;
+            margin-left: 22px;
+            display: block;
+        }
+
+        @media (max-width:480px) { body { padding:12px; } .stats-grid { grid-template-columns:repeat(2,1fr); gap:8px; } .stat-card .number { font-size:18px; } .detail-panel { padding:16px; margin:8px; } .detail-table { font-size:11px; } .detail-table th, .detail-table td { padding:4px 3px; } .search-section .search-row { flex-wrap:wrap; } .search-section .search-btn { flex:1; } .toast { font-size:12px; padding:10px 16px; bottom:12px; } .info-bar { flex-direction:column; gap:6px; } .header .sync-status { position:static; margin-top:8px; justify-content:center; } .config-panel { padding:16px; margin:8px; } .upload-mode .radio-group { flex-direction:column; gap:8px; } }
     </style>
 </head>
 <body>
@@ -156,7 +200,25 @@
         <h3>Upload File Excel atau CSV</h3>
         <p>Drag & drop atau klik untuk upload</p>
         <div class="supported-formats">Support: .xlsx, .xls, .csv</div>
-        <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:8px;">
+
+        <!-- UPLOAD MODE -->
+        <div class="upload-mode">
+            <label>📌 Mode Upload</label>
+            <div class="radio-group">
+                <label>
+                    <input type="radio" name="uploadMode" value="continue" checked>
+                    ➕ Continue Upload
+                    <span class="desc">Gabung dengan data existing (deduplikasi otomatis)</span>
+                </label>
+                <label>
+                    <input type="radio" name="uploadMode" value="replace">
+                    🔄 Replace Period
+                    <span class="desc">Hapus data lama, simpan data baru</span>
+                </label>
+            </div>
+        </div>
+
+        <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:12px;">
             <button class="upload-btn" id="uploadBtn">Pilih File</button>
             <button class="upload-btn secondary" id="loadFromFirebaseBtn">☁️ Load from Cloud</button>
             <button class="upload-btn secondary" id="configBtn">⚙️ Config</button>
@@ -349,9 +411,6 @@
                 updateSyncStatus('synced', 'Connected');
                 console.log('✅ Firebase connected');
 
-                // ============================================================
-                // LOAD SUMMARY DULUAN (BUKAN CHUNK)
-                // ============================================================
                 const hasData = await loadSummaryFirst();
                 if (!hasData) {
                     const summaryContent = document.getElementById('summaryContent');
@@ -406,6 +465,74 @@
         }
 
         // ============================================================
+        // DEDUPLIKASI - GENERATE UNIQUE KEY
+        // ============================================================
+        function generateUniqueKey(row) {
+            // Department + Date + Item Name + Qty + Amount
+            return `${row.department}|${row.dateStr}|${row.itemName}|${row.qty}|${row.amount}`;
+        }
+
+        function removeDuplicates(data) {
+            const seen = new Set();
+            const unique = [];
+            let duplicates = 0;
+            
+            data.forEach(row => {
+                const key = generateUniqueKey(row);
+                if (seen.has(key)) {
+                    duplicates++;
+                } else {
+                    seen.add(key);
+                    unique.push(row);
+                }
+            });
+            
+            if (duplicates > 0) {
+                console.log(`✅ ${duplicates} duplicate records removed`);
+            }
+            
+            return unique;
+        }
+
+        // ============================================================
+        // LOAD ALL DATA FROM CHUNKS (untuk merge)
+        // ============================================================
+        async function loadAllDataFromChunks(docId, chunkCount) {
+            let allData = [];
+            const collection = getCollectionName();
+            
+            for (let i = 0; i < chunkCount; i++) {
+                try {
+                    const chunkRef = firestore.collection(collection).doc(docId).collection('chunks').doc('chunk_' + i);
+                    const chunkSnap = await chunkRef.get();
+                    
+                    if (!chunkSnap.exists) {
+                        console.error(`❌ Chunk ${i} tidak ditemukan untuk period ${docId}`);
+                        continue;
+                    }
+                    
+                    const chunkData = chunkSnap.data();
+                    if (chunkData && chunkData.data) {
+                        allData = allData.concat(chunkData.data);
+                        console.log(`✅ Chunk ${i} loaded: ${chunkData.data.length} records`);
+                    }
+                } catch (err) {
+                    console.warn('Error loading chunk ' + i + ':', err);
+                }
+            }
+            
+            return allData;
+        }
+
+        // ============================================================
+        // GET UPLOAD MODE
+        // ============================================================
+        function getUploadMode() {
+            const selected = document.querySelector('input[name="uploadMode"]:checked');
+            return selected ? selected.value : 'continue';
+        }
+
+        // ============================================================
         // CALCULATE TOP PRODUCTS
         // ============================================================
         function calculateTopProducts(data, limit = 10) {
@@ -450,7 +577,219 @@
         }
 
         // ============================================================
-        // LOAD SUMMARY FIRST (Dashboard Langsung Muncul)
+        // SAVE TO FIREBASE - DENGAN CONTINUE / REPLACE
+        // ============================================================
+        async function saveToFirebase(data, filename) {
+            if (!isFirebaseReady) {
+                showToast('Firebase not connected.', 'warning');
+                return false;
+            }
+            if (isSaving) {
+                showToast('Saving in progress...', 'warning');
+                return false;
+            }
+            
+            try {
+                isSaving = true;
+                updateSyncStatus('syncing', 'Saving...');
+                
+                const collection = getCollectionName();
+                const period = getPeriod(data);
+                const mode = getUploadMode();
+                
+                console.log(`📌 Upload Mode: ${mode}`);
+                console.log(`📌 Period: ${period}`);
+                console.log(`📌 New data: ${data.length} records`);
+
+                // Cek apakah document sudah ada
+                const docRef = firestore.collection(collection).doc(period);
+                const doc = await docRef.get();
+                const docExists = doc.exists;
+
+                let finalData = data;
+                let isReplace = (mode === 'replace');
+                let existingRecordCount = 0;
+
+                // ============================================================
+                // CONTINUE MODE - Load existing data, merge, dedup
+                // ============================================================
+                if (docExists && mode === 'continue') {
+                    console.log('📂 Existing document found. Loading existing data...');
+                    
+                    const existingDoc = doc.data();
+                    const chunkCount = existingDoc.chunkCount || 1;
+                    existingRecordCount = existingDoc.recordCount || 0;
+                    
+                    // Load all existing data from chunks
+                    const existingData = await loadAllDataFromChunks(period, chunkCount);
+                    console.log(`📂 Existing data: ${existingData.length} records`);
+                    
+                    // Merge new data with existing data
+                    const mergedData = existingData.concat(data);
+                    console.log(`📊 Merged data: ${mergedData.length} records (before dedup)`);
+                    
+                    // Deduplicate
+                    finalData = removeDuplicates(mergedData);
+                    console.log(`📊 Final data: ${finalData.length} records (after dedup)`);
+                    
+                    // Update info bar
+                    document.getElementById('fileInfo').textContent = 
+                        `📄 ${filename} • Continue • Old: ${existingRecordCount} • New: ${data.length} • Final: ${finalData.length} • Dedup: ${(existingRecordCount + data.length) - finalData.length} removed`;
+                    
+                    showToast(`🔄 Continue: ${existingRecordCount} old + ${data.length} new → ${finalData.length} unique records`, 'info', 3000);
+                }
+                
+                // ============================================================
+                // REPLACE MODE - Hapus data lama (atau overwrite)
+                // ============================================================
+                if (isReplace) {
+                    console.log('🔄 Replace mode: will overwrite existing data');
+                    finalData = data;
+                    if (docExists) {
+                        // Hapus semua chunks lama
+                        const existingDoc = doc.data();
+                        const chunkCount = existingDoc.chunkCount || 0;
+                        for (let i = 0; i < chunkCount; i++) {
+                            try {
+                                await docRef.collection('chunks').doc('chunk_' + i).delete();
+                            } catch (e) { /* ignore */ }
+                        }
+                        console.log(`🗑️ Old chunks deleted: ${chunkCount}`);
+                    }
+                    document.getElementById('fileInfo').textContent = 
+                        `📄 ${filename} • Replace • ${finalData.length} records`;
+                    showToast(`🔄 Replace: ${finalData.length} records saved (old data replaced)`, 'info', 3000);
+                }
+
+                // ============================================================
+                // HITUNG ULANG METADATA
+                // ============================================================
+                const totalAmount = finalData.reduce((sum, d) => sum + d.amount, 0);
+                const totalQty = finalData.reduce((sum, d) => sum + d.qty, 0);
+                const departments = [...new Set(finalData.map(d => d.department))];
+                const chunks = splitDataForFirestore(finalData);
+
+                const mainData = {
+                    filename: filename,
+                    period: period,
+                    uploadedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    recordCount: finalData.length,
+                    totalAmount: totalAmount,
+                    totalQty: totalQty,
+                    departments: departments,
+                    status: "processing",
+                    chunkCount: chunks.length,
+                    uploadMode: mode,
+                    previousRecordCount: docExists ? (mode === 'continue' ? existingRecordCount : 0) : 0,
+                    dedupRemoved: docExists && mode === 'continue' ? (existingRecordCount + data.length) - finalData.length : 0
+                };
+
+                // ============================================================
+                // SIMPAN MAIN DATA
+                // ============================================================
+                await docRef.set(mainData);
+                currentDocId = period;
+
+                // ============================================================
+                // SIMPAN CHUNKS
+                // ============================================================
+                const batch = firestore.batch();
+                for (let i = 0; i < chunks.length; i++) {
+                    const chunkRef = docRef.collection('chunks').doc('chunk_' + i);
+                    batch.set(chunkRef, {
+                        index: i,
+                        data: chunks[i],
+                        count: chunks[i].length
+                    });
+                }
+                await batch.commit();
+
+                // ============================================================
+                // UPDATE STATUS => completed
+                // ============================================================
+                await docRef.update({ status: "completed" });
+
+                // ============================================================
+                // BUAT SUMMARY DENGAN TOP PRODUCTS & DEPARTMENT SALES
+                // ============================================================
+                const topProducts = calculateTopProducts(finalData, 10);
+                const departmentSales = calculateDepartmentSales(finalData);
+
+                const summaryRef = firestore.collection('sales_summary').doc(period);
+                await summaryRef.set({
+                    period: period,
+                    totalAmount: totalAmount,
+                    totalQty: totalQty,
+                    recordCount: finalData.length,
+                    departmentCount: departments.length,
+                    departments: departments,
+                    topProducts: topProducts,
+                    departmentSales: departmentSales,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    filename: filename,
+                    uploadMode: mode,
+                    previousRecordCount: docExists ? (mode === 'continue' ? existingRecordCount : 0) : 0,
+                    dedupRemoved: docExists && mode === 'continue' ? (existingRecordCount + data.length) - finalData.length : 0
+                });
+
+                // ============================================================
+                // UPDATE DASHBOARD
+                // ============================================================
+                document.getElementById('totalSales').textContent = formatRupiah(totalAmount);
+                document.getElementById('totalQty').textContent = Math.round(totalQty);
+                document.getElementById('totalItems').textContent = finalData.length;
+                document.getElementById('totalDays').textContent = departments.length || 'N/A';
+
+                renderSummaryFromData(topProducts, totalAmount, totalQty);
+                renderDeptChartFromSummary(departmentSales);
+
+                // Update originalData untuk session
+                originalData = finalData;
+                salesData = [...finalData];
+
+                let infoText = `☁️ ${filename} • ${finalData.length} records • Period: ${period}`;
+                if (mode === 'continue' && docExists) {
+                    infoText += ` • Continue (${existingRecordCount}→${finalData.length})`;
+                }
+                document.getElementById('fileInfo').textContent = infoText;
+                document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Saved to Cloud</span>';
+
+                // Populate filters dengan data baru
+                populateFilters();
+                renderProducts();
+                renderDeptSummary();
+                renderCharts();
+
+                const dedupMsg = docExists && mode === 'continue' ? `, ${(existingRecordCount + data.length) - finalData.length} duplicates removed` : '';
+                showToast(`✅ ${finalData.length} records saved${dedupMsg}`, 'success');
+                updateSyncStatus('synced', 'Saved');
+                return true;
+
+            } catch (err) {
+                console.error('Save error:', err);
+                
+                try {
+                    if (currentDocId) {
+                        const collection = getCollectionName();
+                        await firestore.collection(collection).doc(currentDocId).update({
+                            status: "failed",
+                            error: err.message
+                        });
+                    }
+                } catch (updateErr) {
+                    console.warn('Could not update status:', updateErr);
+                }
+                
+                updateSyncStatus('error', 'Save failed');
+                showToast('Error saving: ' + err.message, 'warning');
+                return false;
+            } finally {
+                isSaving = false;
+            }
+        }
+
+        // ============================================================
+        // LOAD SUMMARY FIRST
         // ============================================================
         async function loadSummaryFirst() {
             if (!isFirebaseReady) {
@@ -458,7 +797,6 @@
             }
 
             try {
-                // Cek summary terbaru
                 const summarySnapshot = await firestore.collection('sales_summary')
                     .orderBy('period', 'desc')
                     .limit(1)
@@ -474,11 +812,7 @@
                 const period = summaryDoc.id;
 
                 console.log('📊 Summary loaded for period:', period);
-                console.log('📊 Summary data:', summary);
 
-                // ============================================================
-                // UPDATE DASHBOARD DARI SUMMARY
-                // ============================================================
                 const totalAmount = summary.totalAmount || 0;
                 const totalQty = summary.totalQty || 0;
                 const recordCount = summary.recordCount || 0;
@@ -489,8 +823,9 @@
                 document.getElementById('totalItems').textContent = recordCount;
                 document.getElementById('totalDays').textContent = departmentCount || 'N/A';
 
-                // Tampilkan info di info bar
                 let infoText = '☁️ Summary: ' + period + ' • ' + recordCount + ' records';
+                if (summary.uploadMode) infoText += ' • Mode: ' + summary.uploadMode;
+                if (summary.dedupRemoved) infoText += ' • 🧹 ' + summary.dedupRemoved + ' duplicates removed';
                 if (summary.updatedAt) {
                     const updated = summary.updatedAt.toDate ? summary.updatedAt.toDate() : new Date(summary.updatedAt);
                     infoText += ' • Updated: ' + updated.toLocaleDateString('id-ID');
@@ -498,32 +833,18 @@
                 document.getElementById('fileInfo').textContent = infoText;
                 document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Loaded from Cloud</span>';
 
-                // Tampilkan stats grid
                 statsGrid.style.display = 'grid';
                 tabs.style.display = 'flex';
                 infoBar.style.display = 'flex';
 
-                // ============================================================
-                // RENDER SUMMARY DARI TOP PRODUCTS (jika ada)
-                // ============================================================
                 if (summary.topProducts && summary.topProducts.length > 0) {
                     renderSummaryFromData(summary.topProducts, summary.totalAmount, summary.totalQty);
-                } else {
-                    // Fallback: muat data penuh
-                    await loadFullData(period);
                 }
 
-                // ============================================================
-                // RENDER CHART DARI DEPARTMENT SALES (jika ada)
-                // ============================================================
                 if (summary.departmentSales && summary.departmentSales.length > 0) {
                     renderDeptChartFromSummary(summary.departmentSales);
-                } else {
-                    // Fallback: muat data penuh untuk chart
-                    await loadFullData(period);
                 }
 
-                // Simpan summary untuk referensi
                 window._lastSummary = summary;
                 window._lastPeriod = period;
 
@@ -538,7 +859,7 @@
         }
 
         // ============================================================
-        // RENDER SUMMARY DARI DATA
+        // RENDER SUMMARY FROM DATA
         // ============================================================
         function renderSummaryFromData(topProducts, totalAmount, totalQty) {
             const container = document.getElementById('summaryContent');
@@ -579,7 +900,7 @@
         }
 
         // ============================================================
-        // RENDER DEPT CHART DARI SUMMARY
+        // RENDER DEPT CHART FROM SUMMARY
         // ============================================================
         function renderDeptChartFromSummary(departmentSales) {
             const ctx = document.getElementById('deptChart').getContext('2d');
@@ -615,160 +936,7 @@
         }
 
         // ============================================================
-        // LOAD FULL DATA (untuk detail)
-        // ============================================================
-        async function loadFullData(period) {
-            if (!isFirebaseReady || !period) {
-                return false;
-            }
-
-            try {
-                const collection = getCollectionName();
-                const docRef = firestore.collection(collection).doc(period);
-                const doc = await docRef.get();
-
-                if (!doc.exists) {
-                    showToast('Data tidak ditemukan untuk period: ' + period, 'warning');
-                    return false;
-                }
-
-                const docData = doc.data();
-                currentDocId = period;
-                await restoreData(docData, period);
-                return true;
-            } catch (err) {
-                console.error('Load full data error:', err);
-                return false;
-            }
-        }
-
-        // ============================================================
-        // SAVE TO FIREBASE - DENGAN SUMMARY, TOP PRODUCTS, DEPT SALES
-        // ============================================================
-        async function saveToFirebase(data, filename) {
-            if (!isFirebaseReady) {
-                showToast('Firebase not connected.', 'warning');
-                return false;
-            }
-            if (isSaving) {
-                showToast('Saving in progress...', 'warning');
-                return false;
-            }
-            try {
-                isSaving = true;
-                updateSyncStatus('syncing', 'Saving...');
-                const collection = getCollectionName();
-                const period = getPeriod(data);
-                const chunks = splitDataForFirestore(data);
-
-                const totalAmount = data.reduce((sum, d) => sum + d.amount, 0);
-                const totalQty = data.reduce((sum, d) => sum + d.qty, 0);
-                const departments = [...new Set(data.map(d => d.department))];
-
-                // ============================================================
-                // 1. MAIN DATA
-                // ============================================================
-                const mainData = {
-                    filename: filename,
-                    period: period,
-                    uploadedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    recordCount: data.length,
-                    totalAmount: totalAmount,
-                    totalQty: totalQty,
-                    departments: departments,
-                    status: "processing",
-                    chunkCount: chunks.length
-                };
-
-                const docRef = firestore.collection(collection).doc(period);
-                await docRef.set(mainData);
-                currentDocId = period;
-
-                // ============================================================
-                // 2. SIMPAN CHUNKS
-                // ============================================================
-                const batch = firestore.batch();
-                for (let i = 0; i < chunks.length; i++) {
-                    const chunkRef = docRef.collection('chunks').doc('chunk_' + i);
-                    batch.set(chunkRef, {
-                        index: i,
-                        data: chunks[i],
-                        count: chunks[i].length
-                    });
-                }
-                await batch.commit();
-
-                // ============================================================
-                // 3. UPDATE STATUS => completed
-                // ============================================================
-                await docRef.update({ status: "completed" });
-
-                // ============================================================
-                // 4. BUAT SUMMARY DENGAN TOP PRODUCTS & DEPARTMENT SALES
-                // ============================================================
-                const topProducts = calculateTopProducts(data, 10);
-                const departmentSales = calculateDepartmentSales(data);
-
-                const summaryRef = firestore.collection('sales_summary').doc(period);
-                await summaryRef.set({
-                    period: period,
-                    totalAmount: totalAmount,
-                    totalQty: totalQty,
-                    recordCount: data.length,
-                    departmentCount: departments.length,
-                    departments: departments,
-                    topProducts: topProducts,
-                    departmentSales: departmentSales,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    filename: filename
-                });
-
-                // ============================================================
-                // 5. UPDATE DASHBOARD LANGSUNG DARI SUMMARY
-                // ============================================================
-                document.getElementById('totalSales').textContent = formatRupiah(totalAmount);
-                document.getElementById('totalQty').textContent = Math.round(totalQty);
-                document.getElementById('totalItems').textContent = data.length;
-                document.getElementById('totalDays').textContent = departments.length || 'N/A';
-
-                // Render summary dari top products
-                renderSummaryFromData(topProducts, totalAmount, totalQty);
-                renderDeptChartFromSummary(departmentSales);
-
-                // Update info
-                let infoText = '☁️ ' + filename + ' • ' + data.length + ' records • Period: ' + period;
-                document.getElementById('fileInfo').textContent = infoText;
-                document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Saved to Cloud</span>';
-
-                showToast('✅ ' + data.length + ' records saved!', 'success');
-                updateSyncStatus('synced', 'Saved');
-                return true;
-
-            } catch (err) {
-                console.error('Save error:', err);
-                
-                try {
-                    if (currentDocId) {
-                        const collection = getCollectionName();
-                        await firestore.collection(collection).doc(currentDocId).update({
-                            status: "failed",
-                            error: err.message
-                        });
-                    }
-                } catch (updateErr) {
-                    console.warn('Could not update status:', updateErr);
-                }
-                
-                updateSyncStatus('error', 'Save failed');
-                showToast('Error saving: ' + err.message, 'warning');
-                return false;
-            } finally {
-                isSaving = false;
-            }
-        }
-
-        // ============================================================
-        // LOAD FROM FIREBASE (dengan pengecekan chunk)
+        // LOAD FROM FIREBASE (untuk detail)
         // ============================================================
         async function loadFromFirebase(docId = null) {
             if (!isFirebaseReady) {
@@ -790,7 +958,6 @@
                     await restoreData(data, docId);
                     return true;
                 } else {
-                    // Coba load dari summary dulu
                     const summarySnapshot = await firestore.collection('sales_summary')
                         .orderBy('period', 'desc')
                         .limit(1)
@@ -800,7 +967,6 @@
                     if (!summarySnapshot.empty) {
                         const summaryData = summarySnapshot.docs[0].data();
                         latestPeriod = summaryData.period;
-                        console.log('📊 Found summary for period:', latestPeriod);
                     }
 
                     let query = firestore.collection(collection);
@@ -851,9 +1017,6 @@
                         const chunkRef = firestore.collection(collection).doc(docId).collection('chunks').doc('chunk_' + i);
                         const chunkSnap = await chunkRef.get();
                         
-                        // ============================================================
-                        // PENGECEKAN CHUNK
-                        // ============================================================
                         if (!chunkSnap.exists) {
                             console.error(`❌ Chunk ${i} tidak ditemukan untuk period ${docId}`);
                             continue;
@@ -891,6 +1054,7 @@
 
             let infoText = '☁️ ' + (docData.filename || 'cloud_data') + ' • ' + allData.length + ' records';
             if (docData.period) infoText += ' • Period: ' + docData.period;
+            if (docData.uploadMode) infoText += ' • Mode: ' + docData.uploadMode;
             if (docData.status === 'completed') infoText += ' ✅';
             else if (docData.status === 'processing') infoText += ' ⏳';
             else if (docData.status === 'failed') infoText += ' ❌';
@@ -1013,7 +1177,7 @@
         }
 
         // ============================================================
-        // MAIN APPLICATION CODE
+        // MAIN APPLICATION CODE (SAMA SEPERTI SEBELUMNYA)
         // ============================================================
         let salesData = [];
         let originalData = [];
@@ -1236,15 +1400,10 @@
                 return;
             }
 
-            originalData = [...salesData];
+            // Simpan data sementara untuk upload (belum di-merge dengan existing)
+            const newData = [...salesData];
 
-            const validation = validateData(salesData);
-            if (validation.warnings.length > 0) {
-                setTimeout(() => showToast('⚠️ ' + validation.warnings.join(' • '), 'warning', 5000), 500);
-            } else {
-                setTimeout(() => showToast('✅ ' + salesData.length + ' records loaded', 'success', 3000), 500);
-            }
-
+            // Tampilkan UI dulu
             showUI(filename);
             updateStats();
             populateFilters();
@@ -1256,15 +1415,26 @@
             uploadLoading.classList.remove('active');
             uploadBtn.disabled = false;
 
-            let infoText = '📄 ' + filename + ' • ' + salesData.length + ' records';
-            if (validation.duplicates > 0) infoText += ' • ⚠️ ' + validation.duplicates + ' duplicates';
-            if (validation.dateErrors > 0) infoText += ' • ⚠️ ' + validation.dateErrors + ' invalid dates';
+            let infoText = '📄 ' + filename + ' • ' + salesData.length + ' records (processing...)';
             fileInfo.textContent = infoText;
 
             afterDataLoaded();
 
-            if (isFirebaseReady && originalData.length > 0) {
-                setTimeout(async () => await saveToFirebase(originalData, filename), 1000);
+            // Save to Firebase (dengan mode upload)
+            if (isFirebaseReady && newData.length > 0) {
+                setTimeout(async () => {
+                    const success = await saveToFirebase(newData, filename);
+                    if (success) {
+                        // Reload summary untuk update dashboard
+                        await loadSummaryFirst();
+                    }
+                }, 1000);
+            } else {
+                // Jika Firebase tidak siap, tetap tampilkan data offline
+                originalData = salesData;
+                let infoText2 = '📄 ' + filename + ' • ' + salesData.length + ' records (offline mode)';
+                fileInfo.textContent = infoText2;
+                showToast('📂 Data loaded (offline mode)', 'info', 2000);
             }
         }
 
@@ -1630,7 +1800,6 @@
                 const margin = 40;
                 let y = 50;
 
-                // ----- HEADER -----
                 doc.setFontSize(18);
                 doc.setTextColor(26, 35, 126);
                 doc.text('Detail Penjualan: ' + currentDetailItem.name, margin, y);
@@ -1641,7 +1810,6 @@
                 doc.text('Department: ' + currentDetailItem.dept, margin, y);
                 y += 20;
 
-                // Date range
                 const from = document.getElementById('detailDateFrom').value;
                 const to = document.getElementById('detailDateTo').value;
                 let range = 'Semua Tanggal';
@@ -1651,7 +1819,6 @@
                 doc.text('Periode: ' + range, margin, y);
                 y += 30;
 
-                // Summary
                 const totalQty = detailDataCache.reduce((s, d) => s + d.qty, 0);
                 const totalAmount = detailDataCache.reduce((s, d) => s + d.amount, 0);
                 doc.setFontSize(12);
@@ -1661,7 +1828,6 @@
                 doc.text('Total Amount: ' + formatRupiah(totalAmount), margin, y);
                 y += 30;
 
-                // ----- TABLE DATA -----
                 const dailyData = {};
                 detailDataCache.forEach(d => {
                     if (!dailyData[d.dateStr]) dailyData[d.dateStr] = { qty: 0, amount: 0 };
@@ -1681,94 +1847,70 @@
                 const rowHeight = 25;
                 let currentY = y;
 
-                // ----- FUNCTION: Draw Table Cell -----
                 function drawTableCell(x, y, w, h, text, align = 'left', textColor = null, fillColor = null) {
                     if (fillColor) {
                         doc.setFillColor(fillColor[0], fillColor[1], fillColor[2]);
                         doc.rect(x, y, w, h, 'F');
                     }
-                    
                     doc.setDrawColor(200, 200, 200);
                     doc.setLineWidth(0.5);
                     doc.rect(x, y, w, h, 'D');
-                    
                     if (textColor) {
                         doc.setTextColor(textColor[0], textColor[1], textColor[2]);
                     } else {
                         doc.setTextColor(51, 51, 51);
                     }
-                    
                     const textX = align === 'right' ? x + w - 8 : x + 8;
                     const textAlign = align === 'right' ? 'right' : 'left';
                     doc.text(text, textX, y + 17, { align: textAlign });
                 }
 
-                // ----- TABLE HEADER -----
                 const headerColor = [26, 35, 126];
                 const headerTextColor = [255, 255, 255];
-                
                 doc.setFontSize(10);
                 doc.setFont('helvetica', 'bold');
-                
                 drawTableCell(margin, currentY, colWidths[0], rowHeight, 'Tanggal', 'left', headerTextColor, headerColor);
                 drawTableCell(margin + colWidths[0], currentY, colWidths[1], rowHeight, 'Qty', 'right', headerTextColor, headerColor);
                 drawTableCell(margin + colWidths[0] + colWidths[1], currentY, colWidths[2], rowHeight, 'Amount', 'right', headerTextColor, headerColor);
-                
                 currentY += rowHeight;
 
-                // ----- TABLE ROWS -----
                 const maxRows = Math.floor((pageHeight - currentY - 40) / rowHeight);
 
                 tableData.forEach((row, idx) => {
                     if (idx > 0 && idx % maxRows === 0) {
                         doc.addPage();
                         currentY = 40;
-                        
                         doc.setFontSize(10);
                         doc.setFont('helvetica', 'bold');
-                        
                         drawTableCell(margin, currentY, colWidths[0], rowHeight, 'Tanggal', 'left', headerTextColor, headerColor);
                         drawTableCell(margin + colWidths[0], currentY, colWidths[1], rowHeight, 'Qty', 'right', headerTextColor, headerColor);
                         drawTableCell(margin + colWidths[0] + colWidths[1], currentY, colWidths[2], rowHeight, 'Amount', 'right', headerTextColor, headerColor);
-                        
                         currentY += rowHeight;
                     }
 
                     const isTotal = row[0] === 'TOTAL';
                     const fillColor = isTotal ? [240, 242, 250] : null;
                     const textColor = isTotal ? [26, 35, 126] : [51, 51, 51];
-                    
                     if (isTotal) {
                         doc.setFont('helvetica', 'bold');
                     } else {
                         doc.setFont('helvetica', 'normal');
                     }
-                    
                     drawTableCell(margin, currentY, colWidths[0], rowHeight, row[0], 'left', textColor, fillColor);
                     drawTableCell(margin + colWidths[0], currentY, colWidths[1], rowHeight, row[1], 'right', textColor, fillColor);
                     drawTableCell(margin + colWidths[0] + colWidths[1], currentY, colWidths[2], rowHeight, row[2], 'right', textColor, fillColor);
-                    
                     currentY += rowHeight;
                 });
 
                 doc.setFont('helvetica', 'normal');
 
-                // ----- FOOTER -----
                 const totalPages = doc.internal.getNumberOfPages();
                 doc.setFontSize(9);
                 doc.setTextColor(150);
                 for (let i = 1; i <= totalPages; i++) {
                     doc.setPage(i);
-                    doc.text(
-                        'Halaman ' + i + ' dari ' + totalPages,
-                        pageWidth - 120,
-                        pageHeight - 20
-                    );
-                    doc.text(
-                        'Generated: ' + new Date().toLocaleDateString('id-ID') + ' ' + new Date().toLocaleTimeString('id-ID'),
-                        margin,
-                        pageHeight - 20
-                    );
+                    doc.text('Halaman ' + i + ' dari ' + totalPages, pageWidth - 120, pageHeight - 20);
+                    doc.text('Generated: ' + new Date().toLocaleDateString('id-ID') + ' ' + new Date().toLocaleTimeString('id-ID'), margin, pageHeight - 20);
                 }
 
                 const filename = 'Detail_' + currentDetailItem.name.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf';
@@ -1796,9 +1938,8 @@
         // INIT
         // ============================================================
         console.log('🚀 Sales Data Analyzer starting...');
-        
         updateSyncStatus('syncing', 'Connecting...');
-        
+
         initFirebase().then(success => {
             if (!success) {
                 updateSyncStatus('error', 'Connection failed');
@@ -1817,7 +1958,7 @@
                 }
             }
         });
-        
+
         console.log('✅ Sales Data Analyzer loaded. Upload Excel or CSV to start.');
     </script>
 
