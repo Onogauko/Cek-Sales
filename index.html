@@ -994,10 +994,9 @@
                     <input type="date" id="filterDateTo" onchange="applyFilters()">
                 </div>
             </div>
-            <div class="search-section" id="searchSection" style="display:none;">
+            <div class="search-section" id="searchSection">
                 <div class="search-row">
-                    <input type="text" id="searchInput" placeholder="Cari Item Name atau SKU..." onkeyup="if(event.key==='Enter') applySearch()">
-                    <button class="search-btn" onclick="applySearch()">🔍 Cari</button>
+                    <input type="text" id="searchInput" placeholder="Cari Item Name atau SKU..." oninput="applySearch()">
                     <button class="clear-btn" onclick="clearSearch()">✕</button>
                 </div>
                 <div class="search-hint">Cari berdasarkan nama item atau SKU/Item Code</div>
@@ -1123,6 +1122,7 @@
         let originalData = [];
         let salesData = [];
         let searchQuery = '';
+        let searchTimeout;
         let currentDetailItem = null;
         let detailDataCache = [];
         let chartTrend = null;
@@ -1259,7 +1259,6 @@
                     <div style="background:white; border-radius:10px; padding:10px 12px; box-shadow:0 2px 8px rgba(0,0,0,0.06); margin-bottom:8px;">
                         <div class="summary-header">
                             <h4>🏆 Top 10 Products</h4>
-                            <button class="search-toggle-btn" onclick="toggleSearch()">🔍 Search</button>
                         </div>
                         <p style="font-size:9px; color:#999; margin-top:2px;">Klik item untuk melihat detail penjualan per tanggal</p>
                     </div>
@@ -1676,8 +1675,11 @@
         }
 
         function applySearch() {
-            searchQuery = document.getElementById('searchInput').value.trim();
-            renderSummary();
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                searchQuery = document.getElementById('searchInput').value.trim();
+                renderSummary();
+            }, 300);
         }
 
         function clearSearch() {
@@ -1715,9 +1717,6 @@
                 <div style="background:white; border-radius:10px; padding:10px 12px; box-shadow:0 2px 8px rgba(0,0,0,0.06); margin-bottom:8px;">
                     <div class="summary-header">
                         <h4>🏆 Top 10 Products</h4>
-                        <button class="search-toggle-btn ${searchQuery ? 'active' : ''}" onclick="toggleSearch()">
-                            🔍 ${searchQuery ? 'Search Active' : 'Search'}
-                        </button>
                     </div>
                     ${searchQuery ? '<p style="font-size:9px; color:#666; margin-top:2px;">Hasil pencarian: <strong>"' + searchQuery + '"</strong> • ' + productArray.length + ' item ditemukan</p>' : ''}
                     <p style="font-size:9px; color:#999; margin-top:1px;">Klik item untuk melihat detail penjualan per tanggal</p>
