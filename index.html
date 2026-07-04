@@ -428,6 +428,9 @@
             grid-template-columns: 1fr 1fr;
             gap: 4px;
         }
+        #periodFilter {
+            width: 100%;
+        }
         .dept-summary {
             background: #fff;
             border-radius: 8px;
@@ -988,6 +991,11 @@
     <div id="tabContent">
         <div class="tab-content active" id="tab-summary">
             <div class="filter-section">
+                <div class="filter-row">
+                    <select id="periodFilter" onchange="changePeriod()">
+                        <option value="">Loading period...</option>
+                    </select>
+                </div>
                 <select id="filterDept" onchange="applyFilters()"><option value="all">All Departments</option></select>
                 <div class="filter-row">
                     <input type="date" id="filterDateFrom" onchange="applyFilters()">
@@ -1071,6 +1079,12 @@
 
     <script>
         // ============================================================
+        // VARIABEL GLOBAL
+        // ============================================================
+        let currentPeriod = null;
+        let availablePeriods = [];
+
+        // ============================================================
         // FIREBASE CONFIG - HARDCODED
         // ============================================================
         const HARDCODED_CONFIG = {
@@ -1110,7 +1124,7 @@
         }
 
         // ============================================================
-        // FIREBASE INIT WITH REAL-TIME SNAPSHOT LISTENER (FIX LOGIC)
+        // FIREBASE INIT WITH REAL-TIME SNAPSHOT LISTENER
         // ============================================================
         let firebaseApp = null;
         let firestore = null;
@@ -1155,6 +1169,7 @@
                 console.log('✅ Firebase connected');
 
                 initRealtimeSummaryListener();
+                await loadAvailablePeriods();
                 return true;
             } catch (err) {
                 console.error('Firebase init error:', err);
@@ -1164,6 +1179,279 @@
             }
         }
 
+        // ============================================================
+        // FUNGSI PERIODE
+        // ============================================================
+        async function loadAvailablePeriods() {
+            if (!isFirebaseReady) {
+                console.warn('Firebase not ready');
+                return;
+            }
+
+            try {
+                const snapshot = await firestore.collection('sales_summary')
+                    .orderBy('period', 'desc')
+                    .get();
+
+                availablePeriods = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.period) {
+                        availablePeriods.push(data.period);
+                    }
+                });
+
+                // Tambahkan "All Periods" sebagai opsi pertama
+                const periodFilter = document.getElementById('periodFilter');
+                if (periodFilter) {
+                    const currentValue = periodFilter.value;
+                    periodFilter.innerHTML = '<option value="all">📅 All Periods</option>';
+                    availablePeriods.forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p;
+                        opt.textContent = p;
+                        periodFilter.appendChild(opt);
+                    });
+
+                    // Tentukan default period
+                    const defaultPeriod = getDefaultPeriod();
+                    if (availablePeriods.includes(defaultPeriod)) {
+                        periodFilter.value = defaultPeriod;
+                    } else if (availablePeriods.length > 0) {
+                        periodFilter.value = availablePeriods[0];
+                    } else {
+                        periodFilter.value = 'all';
+                    }
+
+                    // Trigger change period
+                    changePeriod();
+                }
+
+                console.log('📅 Available periods:', availablePeriods);
+                return availablePeriods;
+
+            } catch (err) {
+                console.error('Error loading periods:', err);
+                return [];
+            }
+        }
+
+        function getDefaultPeriod() {
+            // Kalau ada bulan berjalan, pakai bulan berjalan
+            const now = new Date();
+            const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+
+            if (availablePeriods.includes(currentMonth)) {
+                return currentMonth;
+            }
+
+            // else pakai periode terbaru
+            if (availablePeriods.length > 0) {
+                return availablePeriods[0];
+            }
+
+            return null;
+        }
+
+        async function changePeriod() {
+            const periodFilter = document.getElementById('periodFilter');
+            if (!periodFilter) return;
+
+            const selected = periodFilter.value;
+            if (!selected) return;
+
+            if (selected === 'all') {
+                await loadAllPeriods();
+            } else {
+                await loadPeriod(selected);
+            }
+        }
+
+        async function loadPeriod(period) {
+            if (!isFirebaseReady || !period) {
+                console.warn('Cannot load period:', period);
+                return;
+            }
+
+            try {
+                console.log('📂 Loading period:', period);
+                currentPeriod = period;
+                showToast(`📂 Memuat data ${period}...`, 'info', 1500);
+
+                const collection = getCollectionName();
+                const docRef = firestore.collection(collection).doc(period);
+                const doc = await docRef.get();
+
+                if (!doc.exists) {
+                    showToast(`⚠️ Data untuk ${period} tidak ditemukan`, 'warning');
+                    return;
+                }
+
+                const docData = doc.data();
+                const chunkCount = docData.chunkCount || 1;
+                let allData = [];
+
+                for (let i = 0; i < chunkCount; i++) {
+                    const chunkSnap = await docRef.collection('chunks').doc('chunk_' + i).get();
+                    if (chunkSnap.exists && chunkSnap.data().data) {
+                        allData = allData.concat(chunkSnap.data().data);
+                    }
+                }
+
+                if (allData.length > 0) {
+                    originalData = allData;
+                    salesData = [...allData];
+                    populateFilters();
+                    setPeriodDate(period);
+                    renderDashboard();
+                    showToast(`✅ Data ${period} dimuat (${allData.length} records)`, 'success', 1500);
+
+                    // Update info bar
+                    const infoText = `📅 ${period} • ${allData.length} records • ${new Set(allData.map(d => d.dateStr)).size} days`;
+                    document.getElementById('fileInfo').textContent = infoText;
+                    document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Loaded</span>';
+
+                    statsGrid.style.display = 'grid';
+                    tabs.style.display = 'flex';
+                    infoBar.style.display = 'flex';
+                    afterDataLoaded();
+                } else {
+                    showToast(`⚠️ Tidak ada data untuk ${period}`, 'warning');
+                }
+
+            } catch (err) {
+                console.error('Error loading period:', err);
+                showToast(`❌ Gagal memuat ${period}`, 'warning');
+            }
+        }
+
+        async function loadAllPeriods() {
+            if (!isFirebaseReady || availablePeriods.length === 0) {
+                console.warn('No periods available');
+                return;
+            }
+
+            try {
+                showToast('📂 Memuat semua periode...', 'info', 1500);
+                currentPeriod = 'all';
+                let allData = [];
+                const collection = getCollectionName();
+
+                for (const period of availablePeriods) {
+                    try {
+                        const docRef = firestore.collection(collection).doc(period);
+                        const doc = await docRef.get();
+                        if (!doc.exists) continue;
+
+                        const docData = doc.data();
+                        const chunkCount = docData.chunkCount || 1;
+
+                        for (let i = 0; i < chunkCount; i++) {
+                            const chunkSnap = await docRef.collection('chunks').doc('chunk_' + i).get();
+                            if (chunkSnap.exists && chunkSnap.data().data) {
+                                allData = allData.concat(chunkSnap.data().data);
+                            }
+                        }
+                    } catch (err) {
+                        console.warn('Error loading period:', period, err);
+                    }
+                }
+
+                if (allData.length > 0) {
+                    originalData = allData;
+                    salesData = [...allData];
+                    populateFilters();
+                    // Clear date filters when showing all periods
+                    document.getElementById('filterDateFrom').value = '';
+                    document.getElementById('filterDateTo').value = '';
+                    renderDashboard();
+                    showToast(`✅ Semua periode dimuat (${allData.length} records)`, 'success', 1500);
+
+                    const infoText = `📅 All Periods • ${allData.length} records • ${new Set(allData.map(d => d.dateStr)).size} days`;
+                    document.getElementById('fileInfo').textContent = infoText;
+                    document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Loaded</span>';
+
+                    statsGrid.style.display = 'grid';
+                    tabs.style.display = 'flex';
+                    infoBar.style.display = 'flex';
+                    afterDataLoaded();
+                } else {
+                    showToast('⚠️ Tidak ada data di semua periode', 'warning');
+                }
+
+            } catch (err) {
+                console.error('Error loading all periods:', err);
+                showToast('❌ Gagal memuat semua periode', 'warning');
+            }
+        }
+
+        function setPeriodDate(period) {
+            if (!period || period === 'all') {
+                document.getElementById('filterDateFrom').value = '';
+                document.getElementById('filterDateTo').value = '';
+                return;
+            }
+
+            const [year, month] = period.split('-').map(Number);
+            const firstDay = new Date(year, month - 1, 1);
+            const lastDay = new Date(year, month, 0);
+
+            const fromDate = firstDay.toISOString().split('T')[0];
+            const toDate = lastDay.toISOString().split('T')[0];
+
+            document.getElementById('filterDateFrom').value = fromDate;
+            document.getElementById('filterDateTo').value = toDate;
+        }
+
+        function renderDashboard() {
+            updateStats();
+            renderSummary();
+            renderProducts();
+            renderDeptSummary();
+            renderCharts();
+        }
+
+        // ============================================================
+        // FUNGSI APPLY FILTERS - DENGAN VALIDASI PERIODE
+        // ============================================================
+        function applyFilters() {
+            // Validasi: Kalau currentPeriod bukan "all", filter tanggal tidak boleh keluar dari bulan itu
+            if (currentPeriod && currentPeriod !== 'all') {
+                const [year, month] = currentPeriod.split('-').map(Number);
+                const from = document.getElementById('filterDateFrom').value;
+                const to = document.getElementById('filterDateTo').value;
+
+                if (from) {
+                    const fromDate = new Date(from);
+                    const firstDay = new Date(year, month - 1, 1);
+                    if (fromDate < firstDay) {
+                        showToast(`⚠️ Tanggal dari berada di luar periode ${currentPeriod}`, 'warning', 2000);
+                        document.getElementById('filterDateFrom').value = firstDay.toISOString().split('T')[0];
+                        return;
+                    }
+                }
+
+                if (to) {
+                    const toDate = new Date(to);
+                    const lastDay = new Date(year, month, 0);
+                    if (toDate > lastDay) {
+                        showToast(`⚠️ Tanggal sampai berada di luar periode ${currentPeriod}`, 'warning', 2000);
+                        document.getElementById('filterDateTo').value = lastDay.toISOString().split('T')[0];
+                        return;
+                    }
+                }
+            }
+
+            updateStats();
+            renderSummary();
+            renderProducts();
+            renderDeptSummary();
+            renderCharts();
+        }
+
+        // ============================================================
+        // FUNGSI LISTENER - DIUBAH
+        // ============================================================
         function initRealtimeSummaryListener() {
             if (!isFirebaseReady) return;
 
@@ -1171,23 +1459,13 @@
 
             updateSyncStatus('syncing', 'Listening to Cloud...');
 
+            // Listener cukup bertugas: kalau ada upload baru, reload daftar period
             summaryUnsubscribe = firestore.collection('sales_summary')
                 .orderBy('updatedAt', 'desc')
-                .limit(1)
                 .onSnapshot(async (snapshot) => {
                     if (snapshot.empty) {
                         console.log('📊 No summary found in cloud');
                         updateSyncStatus('synced', 'Connected (DB Empty)');
-                        const summaryContent = document.getElementById('summaryContent');
-                        if (summaryContent && !originalData.length) {
-                            summaryContent.innerHTML = `
-                                <div class="empty-state" style="padding:20px;">
-                                    <div class="icon">☁️</div>
-                                    <p style="font-weight:500; color:#333; font-size:12px;">Belum Ada Data di Cloud</p>
-                                    <p style="font-size:11px; color:#888; margin-top:2px;">Upload file Excel/CSV untuk memulai</p>
-                                </div>
-                            `;
-                        }
                         return;
                     }
 
@@ -1196,55 +1474,9 @@
                         return;
                     }
 
-                    const summaryDoc = snapshot.docs[0];
-                    const summary = summaryDoc.data();
-                    const period = summaryDoc.id;
-
-                    console.log('🔔 Cloud Update Diterima Real-time untuk periode:', period);
-
-                    const totalAmount = summary.totalAmount || 0;
-                    const totalQty = summary.totalQty || 0;
-                    const recordCount = summary.recordCount || 0;
-
-                    document.getElementById('totalSales').textContent = formatRupiah(totalAmount);
-                    document.getElementById('totalQty').textContent = Math.round(totalQty);
-                    document.getElementById('totalItems').textContent = recordCount;
-
-                    window._lastPeriod = period;
-                    await loadFullDataForDetail(period);
-
-                    if (originalData.length > 0) {
-                        const uniqueDays = new Set(originalData.map(d => d.dateStr));
-                        document.getElementById('totalDays').textContent = uniqueDays.size;
-                    } else {
-                        document.getElementById('totalDays').textContent = summary.daysCount || 'N/A';
-                    }
-
-                    if (summary.topProducts && summary.topProducts.length > 0) {
-                        renderSummaryFromData(summary.topProducts, summary.totalAmount, summary.totalQty);
-                    }
-                    if (summary.departmentSales && summary.departmentSales.length > 0) {
-                        renderDeptChartFromSummary(summary.departmentSales);
-                    }
-
-                    let infoText = `☁️ ${summary.filename || 'Data'} • ${summary.recordCount || 0} records • Period: ${period}`;
-                    if (summary.daysCount) infoText += ` • ${summary.daysCount} days`;
-                    if (summary.status === 'completed') infoText += ' ✅';
-
-                    if (summary.updatedAt) {
-                        const updated = summary.updatedAt.toDate ? summary.updatedAt.toDate() : new Date(summary.updatedAt);
-                        infoText += ` • Updated: ${updated.toLocaleDateString('id-ID')} ${updated.toLocaleTimeString('id-ID')}`;
-                    }
-                    document.getElementById('fileInfo').textContent = infoText;
-                    document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Auto-Synced</span>';
-
-                    statsGrid.style.display = 'grid';
-                    tabs.style.display = 'flex';
-                    infoBar.style.display = 'flex';
-
+                    console.log('🔔 Cloud update detected, reloading period list...');
+                    await loadAvailablePeriods();
                     updateSyncStatus('synced', 'Cloud Aktif');
-                    showToast(`🔔 Dasbor diperbarui otomatis dari Cloud (${period})`, 'success', 2000);
-                    afterDataLoaded();
 
                 }, (error) => {
                     console.error("Listener error:", error);
@@ -1252,6 +1484,9 @@
                 });
         }
 
+        // ============================================================
+        // FUNGSI LAINNYA (TIDAK DIUBAH)
+        // ============================================================
         function renderSummaryFromData(topProducts, totalAmount, totalQty) {
             if (topProducts && topProducts.length > 0) {
                 const container = document.getElementById('summaryContent');
@@ -1390,30 +1625,7 @@
                 .map(([department, d]) => ({ department: department, amount: d.amount, qty: d.qty }));
         }
 
-        async function loadFullDataForDetail(period) {
-            if (!firestore || !period) return false;
-            try {
-                const collection = getCollectionName();
-                const docRef = firestore.collection(collection).doc(period);
-                const doc = await docRef.get();
-                if (!doc.exists) return false;
-
-                const docData = doc.data();
-                const chunkCount = docData.chunkCount || 1;
-                let allData = [];
-                for (let i = 0; i < chunkCount; i++) {
-                    const chunkSnap = await docRef.collection('chunks').doc('chunk_' + i).get();
-                    if (chunkSnap.exists && chunkSnap.data().data) allData = allData.concat(chunkSnap.data().data);
-                }
-                if (allData.length > 0) {
-                    originalData = allData;
-                    salesData = [...allData];
-                    populateFilters();
-                    return true;
-                }
-                return false;
-            } catch (err) { return false; }
-        }
+        // FUNGSI loadFullDataForDetail DIUBAH MENJADI loadPeriod (sudah dibuat di atas)
 
         async function saveToFirebase(data, filename) {
             if (!isFirebaseReady) { showToast('Firebase not connected.', 'warning'); return false; }
@@ -1496,16 +1708,17 @@
                     status: "completed"
                 });
 
-                originalData = finalData;
-                salesData = [...finalData];
-                updateStats();
-                populateFilters();
-                renderSummary();
-                renderProducts();
-                renderDeptSummary();
-                renderCharts();
+                // Setelah save: reload period list, pilih period terbaru, render
+                await loadAvailablePeriods();
 
-                showToast(`✅ Data Berhasil digabungkan & Disimpan!`, 'success');
+                // Pilih period yang baru disimpan
+                const periodFilter = document.getElementById('periodFilter');
+                if (periodFilter && availablePeriods.includes(period)) {
+                    periodFilter.value = period;
+                    await loadPeriod(period);
+                }
+
+                showToast(`✅ Data Berhasil disimpan untuk ${period}!`, 'success');
                 updateSyncStatus('synced', 'Cloud Aktif');
                 return true;
 
@@ -1653,12 +1866,6 @@
                 if (depts.includes(current)) sel.value = current;
             });
         }
-
-        function applyFilters() { updateStats();
-            renderSummary();
-            renderProducts();
-            renderDeptSummary();
-            renderCharts(); }
 
         function toggleSearch() {
             const section = document.getElementById('searchSection');
