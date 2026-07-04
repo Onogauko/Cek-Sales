@@ -27,27 +27,27 @@
         body {
             background: #f0f2f5;
             min-height: 100vh;
-            padding: 12px;
+            padding: 8px;
             padding-bottom: 80px;
         }
         .header {
             background: linear-gradient(135deg, #1a237e, #283593);
             color: #fff;
-            padding: 10px 14px;
+            padding: 8px 12px;
             border-radius: 12px;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
             text-align: center;
             box-shadow: 0 4px 20px rgba(26, 35, 126, .3);
             position: relative;
         }
         .header h1 {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 700;
         }
         .header p {
-            font-size: 11px;
+            font-size: 10px;
             opacity: .8;
-            margin-top: 2px;
+            margin-top: 0;
         }
         .header .sync-status {
             position: absolute;
@@ -91,13 +91,13 @@
         /* ===== UPLOAD AREA YANG SANGAT DIPERKECIL ===== */
         .upload-area {
             background: #fff;
-            border-radius: 12px;
-            padding: 10px 14px 12px;
+            border-radius: 8px;
+            padding: 8px 12px;
             text-align: center;
             border: 2px dashed #c5cae9;
             transition: all .3s;
-            margin-bottom: 10px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+            margin-bottom: 6px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
             position: relative;
         }
         .upload-area.dragover {
@@ -115,7 +115,7 @@
             justify-content: center;
             gap: 6px;
             flex-wrap: wrap;
-            margin-bottom: 2px;
+            margin-bottom: 0;
         }
         .upload-area .title-row h3 {
             color: #1a237e;
@@ -129,7 +129,7 @@
         .upload-area .sub-text {
             color: #888;
             font-size: 10px;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
 
         /* ===== BARIS UTAMA: MODE + TOMBOL ===== */
@@ -141,7 +141,7 @@
             flex-wrap: nowrap;
             background: #f5f6fa;
             border-radius: 8px;
-            padding: 4px 8px 4px 12px;
+            padding: 3px 8px;
         }
         .upload-controls .mode-group {
             display: flex;
@@ -179,7 +179,7 @@
             flex-shrink: 0;
         }
         .upload-controls .btn-group .upload-btn {
-            padding: 4px 10px;
+            padding: 3px 8px;
             font-size: 11px;
             border-radius: 6px;
             border: none;
@@ -196,11 +196,11 @@
         .upload-controls .btn-group .upload-btn.secondary {
             background: #e8eaf6;
             color: #283593;
-            padding: 4px 8px;
+            padding: 3px 8px;
             font-size: 10px;
         }
         .upload-controls .btn-group .upload-btn.icon-btn {
-            padding: 4px 6px;
+            padding: 3px 6px;
             font-size: 14px;
             background: transparent;
             color: #666;
@@ -258,18 +258,18 @@
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-            margin-bottom: 10px;
+            gap: 6px;
+            margin-bottom: 6px;
         }
         .stat-card {
             background: #fff;
-            border-radius: 10px;
-            padding: 10px 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+            border-radius: 8px;
+            padding: 8px 8px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
             text-align: center;
         }
         .stat-card .number {
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 700;
             color: #1a237e;
         }
@@ -281,14 +281,14 @@
         .tabs {
             display: flex;
             background: #fff;
-            border-radius: 10px;
+            border-radius: 8px;
             overflow: hidden;
-            margin-bottom: 10px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+            margin-bottom: 6px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
         }
         .tab {
             flex: 1;
-            padding: 8px 4px;
+            padding: 6px 4px;
             text-align: center;
             font-size: 10px;
             font-weight: 600;
@@ -336,15 +336,15 @@
         /* ===== OTHER COMPONENTS ===== */
         .product-list {
             background: #fff;
-            border-radius: 10px;
+            border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
         }
         .product-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 12px;
+            padding: 6px 10px;
             border-bottom: 1px solid #f5f5f5;
             cursor: pointer;
             transition: background .2s;
@@ -356,7 +356,7 @@
             border-bottom: none;
         }
         .product-item .name {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 500;
             color: #333;
             flex: 1;
@@ -370,13 +370,13 @@
             margin-right: 6px;
         }
         .product-item .amount {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             color: #1a237e;
             white-space: nowrap;
         }
         .product-item .qty {
-            font-size: 9px;
+            font-size: 8px;
             color: #888;
             margin-right: 6px;
         }
@@ -387,10 +387,10 @@
         }
         .chart-container {
             background: #fff;
-            border-radius: 10px;
-            padding: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
-            margin-bottom: 10px;
+            border-radius: 8px;
+            padding: 8px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
+            margin-bottom: 6px;
         }
         .chart-container h4 {
             font-size: 12px;
@@ -399,19 +399,19 @@
         }
         .chart-wrapper {
             position: relative;
-            height: 160px;
+            height: 145px;
         }
         .filter-section {
             background: #fff;
-            border-radius: 10px;
-            padding: 8px 12px;
-            margin-bottom: 10px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+            border-radius: 8px;
+            padding: 6px 10px;
+            margin-bottom: 6px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
         }
         .filter-section select,
         .filter-section input {
             width: 100%;
-            padding: 6px 8px;
+            padding: 5px 8px;
             border: 1px solid #e0e0e0;
             border-radius: 6px;
             font-size: 11px;
@@ -430,15 +430,15 @@
         }
         .dept-summary {
             background: #fff;
-            border-radius: 10px;
+            border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
             margin-bottom: 10px;
         }
         .dept-row {
             display: flex;
             justify-content: space-between;
-            padding: 6px 12px;
+            padding: 5px 10px;
             border-bottom: 1px solid #f5f5f5;
         }
         .dept-row:last-child {
@@ -479,12 +479,12 @@
         }
         .info-bar {
             background: #fff;
-            border-radius: 10px;
-            padding: 6px 12px;
+            border-radius: 8px;
+            padding: 5px 10px;
             font-size: 9px;
             color: #999;
             text-align: center;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -501,10 +501,10 @@
         }
         .search-section {
             background: #fff;
-            border-radius: 10px;
-            padding: 8px 12px;
-            margin-bottom: 10px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+            border-radius: 8px;
+            padding: 6px 10px;
+            margin-bottom: 6px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
         }
         .search-section .search-row {
             display: flex;
@@ -516,7 +516,7 @@
         }
         .search-section input {
             flex: 1;
-            padding: 6px 8px;
+            padding: 5px 8px;
             border: 1px solid #e0e0e0;
             border-radius: 6px;
             font-size: 11px;
@@ -1256,7 +1256,7 @@
             if (topProducts && topProducts.length > 0) {
                 const container = document.getElementById('summaryContent');
                 let html = `
-                    <div style="background:white; border-radius:10px; padding:10px 12px; box-shadow:0 2px 8px rgba(0,0,0,0.06); margin-bottom:8px;">
+                    <div style="background:white; border-radius:8px; padding:10px 12px; box-shadow:0 1px 4px rgba(0,0,0,0.05); margin-bottom:8px;">
                         <div class="summary-header">
                             <h4>🏆 Top 10 Products</h4>
                         </div>
@@ -1608,7 +1608,7 @@
                 if (found) return found;
             }
             for (const c of candidates) {
-                const found = headers.find(h => h.toLowerCase().includes(c.toLowerCase()));
+                const found = headers.find(h => h.toLowerCase().includes(c));
                 if (found) return found;
             }
             return null;
@@ -1714,7 +1714,7 @@
             const topProducts = productArray.slice(0, 10);
 
             let html = `
-                <div style="background:white; border-radius:10px; padding:10px 12px; box-shadow:0 2px 8px rgba(0,0,0,0.06); margin-bottom:8px;">
+                <div style="background:white; border-radius:8px; padding:10px 12px; box-shadow:0 1px 4px rgba(0,0,0,0.05); margin-bottom:8px;">
                     <div class="summary-header">
                         <h4>🏆 Top 10 Products</h4>
                     </div>
