@@ -428,9 +428,6 @@
             grid-template-columns: 1fr 1fr;
             gap: 4px;
         }
-        #periodFilter {
-            width: 100%;
-        }
         .dept-summary {
             background: #fff;
             border-radius: 8px;
@@ -991,9 +988,10 @@
     <div id="tabContent">
         <div class="tab-content active" id="tab-summary">
             <div class="filter-section">
+                <!-- DROPDOWN PERIODE -->
                 <div class="filter-row">
-                    <select id="periodFilter" onchange="changePeriod()">
-                        <option value="">Loading period...</option>
+                    <select id="periodFilter" onchange="onPeriodChange()">
+                        <option value="all">📅 All Periods</option>
                     </select>
                 </div>
                 <select id="filterDept" onchange="applyFilters()"><option value="all">All Departments</option></select>
@@ -1083,6 +1081,7 @@
         // ============================================================
         let currentPeriod = null;
         let availablePeriods = [];
+        let isInitialLoad = true;
 
         // ============================================================
         // FIREBASE CONFIG - HARDCODED
@@ -1168,8 +1167,12 @@
                 updateSyncStatus('synced', 'Connected');
                 console.log('✅ Firebase connected');
 
-                initRealtimeSummaryListener();
+                // Load available periods dulu
                 await loadAvailablePeriods();
+
+                // Baru init listener
+                initRealtimeSummaryListener();
+
                 return true;
             } catch (err) {
                 console.error('Firebase init error:', err);
@@ -1201,33 +1204,58 @@
                     }
                 });
 
-                // Tambahkan "All Periods" sebagai opsi pertama
+                console.log('📅 Available periods:', availablePeriods);
+
+                // Update dropdown
                 const periodFilter = document.getElementById('periodFilter');
                 if (periodFilter) {
                     const currentValue = periodFilter.value;
                     periodFilter.innerHTML = '<option value="all">📅 All Periods</option>';
+
+                    // Tambahkan separator
+                    if (availablePeriods.length > 0) {
+                        const separator = document.createElement('option');
+                        separator.disabled = true;
+                        separator.textContent = '────────────';
+                        periodFilter.appendChild(separator);
+                    }
+
                     availablePeriods.forEach(p => {
                         const opt = document.createElement('option');
                         opt.value = p;
-                        opt.textContent = p;
+                        // Format: Juli 2026
+                        const [year, month] = p.split('-');
+                        const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+                        ];
+                        opt.textContent = monthNames[parseInt(month) - 1] + ' ' + year;
                         periodFilter.appendChild(opt);
                     });
 
-                    // Tentukan default period
-                    const defaultPeriod = getDefaultPeriod();
-                    if (availablePeriods.includes(defaultPeriod)) {
-                        periodFilter.value = defaultPeriod;
-                    } else if (availablePeriods.length > 0) {
-                        periodFilter.value = availablePeriods[0];
+                    // Jika ini pertama kali load atau currentValue tidak valid
+                    if (isInitialLoad || !availablePeriods.includes(currentValue)) {
+                        const defaultPeriod = getDefaultPeriod();
+                        if (availablePeriods.includes(defaultPeriod)) {
+                            periodFilter.value = defaultPeriod;
+                        } else if (availablePeriods.length > 0) {
+                            periodFilter.value = availablePeriods[0];
+                        } else {
+                            periodFilter.value = 'all';
+                        }
+                        isInitialLoad = false;
                     } else {
-                        periodFilter.value = 'all';
+                        // Pertahankan pilihan user
+                        periodFilter.value = currentValue;
                     }
 
-                    // Trigger change period
-                    changePeriod();
+                    // Load period
+                    if (periodFilter.value && periodFilter.value !== 'all') {
+                        await loadPeriod(periodFilter.value);
+                    } else if (periodFilter.value === 'all') {
+                        await loadAllPeriods();
+                    }
                 }
 
-                console.log('📅 Available periods:', availablePeriods);
                 return availablePeriods;
 
             } catch (err) {
@@ -1253,7 +1281,15 @@
             return null;
         }
 
-        async function changePeriod() {
+        function formatPeriodLabel(period) {
+            const [year, month] = period.split('-');
+            const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            ];
+            return monthNames[parseInt(month) - 1] + ' ' + year;
+        }
+
+        async function onPeriodChange() {
             const periodFilter = document.getElementById('periodFilter');
             if (!periodFilter) return;
 
@@ -1276,14 +1312,14 @@
             try {
                 console.log('📂 Loading period:', period);
                 currentPeriod = period;
-                showToast(`📂 Memuat data ${period}...`, 'info', 1500);
+                showToast(`📂 Memuat ${formatPeriodLabel(period)}...`, 'info', 1500);
 
                 const collection = getCollectionName();
                 const docRef = firestore.collection(collection).doc(period);
                 const doc = await docRef.get();
 
                 if (!doc.exists) {
-                    showToast(`⚠️ Data untuk ${period} tidak ditemukan`, 'warning');
+                    showToast(`⚠️ Data untuk ${formatPeriodLabel(period)} tidak ditemukan`, 'warning');
                     return;
                 }
 
@@ -1302,12 +1338,26 @@
                     originalData = allData;
                     salesData = [...allData];
                     populateFilters();
-                    setPeriodDate(period);
+
+                    // Set date range based on actual data
+                    const dates = allData.map(d => d.dateStr).filter(d => d && d !== 'Unknown');
+                    if (dates.length > 0) {
+                        const sortedDates = dates.sort();
+                        const minDate = sortedDates[0];
+                        const maxDate = sortedDates[sortedDates.length - 1];
+                        document.getElementById('filterDateFrom').value = minDate;
+                        document.getElementById('filterDateTo').value = maxDate;
+                    } else {
+                        document.getElementById('filterDateFrom').value = '';
+                        document.getElementById('filterDateTo').value = '';
+                    }
+
                     renderDashboard();
-                    showToast(`✅ Data ${period} dimuat (${allData.length} records)`, 'success', 1500);
+                    const daysCount = new Set(allData.map(d => d.dateStr)).size;
+                    showToast(`✅ ${formatPeriodLabel(period)} dimuat (${allData.length} records, ${daysCount} hari)`, 'success', 1500);
 
                     // Update info bar
-                    const infoText = `📅 ${period} • ${allData.length} records • ${new Set(allData.map(d => d.dateStr)).size} days`;
+                    const infoText = `📅 ${formatPeriodLabel(period)} • ${allData.length} records • ${daysCount} days`;
                     document.getElementById('fileInfo').textContent = infoText;
                     document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Loaded</span>';
 
@@ -1316,12 +1366,12 @@
                     infoBar.style.display = 'flex';
                     afterDataLoaded();
                 } else {
-                    showToast(`⚠️ Tidak ada data untuk ${period}`, 'warning');
+                    showToast(`⚠️ Tidak ada data untuk ${formatPeriodLabel(period)}`, 'warning');
                 }
 
             } catch (err) {
                 console.error('Error loading period:', err);
-                showToast(`❌ Gagal memuat ${period}`, 'warning');
+                showToast(`❌ Gagal memuat ${formatPeriodLabel(period)}`, 'warning');
             }
         }
 
@@ -1361,13 +1411,25 @@
                     originalData = allData;
                     salesData = [...allData];
                     populateFilters();
-                    // Clear date filters when showing all periods
-                    document.getElementById('filterDateFrom').value = '';
-                    document.getElementById('filterDateTo').value = '';
-                    renderDashboard();
-                    showToast(`✅ Semua periode dimuat (${allData.length} records)`, 'success', 1500);
 
-                    const infoText = `📅 All Periods • ${allData.length} records • ${new Set(allData.map(d => d.dateStr)).size} days`;
+                    // Set date range based on actual data
+                    const dates = allData.map(d => d.dateStr).filter(d => d && d !== 'Unknown');
+                    if (dates.length > 0) {
+                        const sortedDates = dates.sort();
+                        const minDate = sortedDates[0];
+                        const maxDate = sortedDates[sortedDates.length - 1];
+                        document.getElementById('filterDateFrom').value = minDate;
+                        document.getElementById('filterDateTo').value = maxDate;
+                    } else {
+                        document.getElementById('filterDateFrom').value = '';
+                        document.getElementById('filterDateTo').value = '';
+                    }
+
+                    renderDashboard();
+                    const daysCount = new Set(allData.map(d => d.dateStr)).size;
+                    showToast(`✅ Semua periode dimuat (${allData.length} records, ${daysCount} hari)`, 'success', 1500);
+
+                    const infoText = `📅 All Periods • ${allData.length} records • ${daysCount} days`;
                     document.getElementById('fileInfo').textContent = infoText;
                     document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Loaded</span>';
 
@@ -1385,24 +1447,6 @@
             }
         }
 
-        function setPeriodDate(period) {
-            if (!period || period === 'all') {
-                document.getElementById('filterDateFrom').value = '';
-                document.getElementById('filterDateTo').value = '';
-                return;
-            }
-
-            const [year, month] = period.split('-').map(Number);
-            const firstDay = new Date(year, month - 1, 1);
-            const lastDay = new Date(year, month, 0);
-
-            const fromDate = firstDay.toISOString().split('T')[0];
-            const toDate = lastDay.toISOString().split('T')[0];
-
-            document.getElementById('filterDateFrom').value = fromDate;
-            document.getElementById('filterDateTo').value = toDate;
-        }
-
         function renderDashboard() {
             updateStats();
             renderSummary();
@@ -1412,36 +1456,9 @@
         }
 
         // ============================================================
-        // FUNGSI APPLY FILTERS - DENGAN VALIDASI PERIODE
+        // FUNGSI APPLY FILTERS
         // ============================================================
         function applyFilters() {
-            // Validasi: Kalau currentPeriod bukan "all", filter tanggal tidak boleh keluar dari bulan itu
-            if (currentPeriod && currentPeriod !== 'all') {
-                const [year, month] = currentPeriod.split('-').map(Number);
-                const from = document.getElementById('filterDateFrom').value;
-                const to = document.getElementById('filterDateTo').value;
-
-                if (from) {
-                    const fromDate = new Date(from);
-                    const firstDay = new Date(year, month - 1, 1);
-                    if (fromDate < firstDay) {
-                        showToast(`⚠️ Tanggal dari berada di luar periode ${currentPeriod}`, 'warning', 2000);
-                        document.getElementById('filterDateFrom').value = firstDay.toISOString().split('T')[0];
-                        return;
-                    }
-                }
-
-                if (to) {
-                    const toDate = new Date(to);
-                    const lastDay = new Date(year, month, 0);
-                    if (toDate > lastDay) {
-                        showToast(`⚠️ Tanggal sampai berada di luar periode ${currentPeriod}`, 'warning', 2000);
-                        document.getElementById('filterDateTo').value = lastDay.toISOString().split('T')[0];
-                        return;
-                    }
-                }
-            }
-
             updateStats();
             renderSummary();
             renderProducts();
@@ -1450,7 +1467,7 @@
         }
 
         // ============================================================
-        // FUNGSI LISTENER - DIUBAH
+        // FUNGSI LISTENER - HANYA REFRESH DAFTAR PERIODE
         // ============================================================
         function initRealtimeSummaryListener() {
             if (!isFirebaseReady) return;
@@ -1459,7 +1476,6 @@
 
             updateSyncStatus('syncing', 'Listening to Cloud...');
 
-            // Listener cukup bertugas: kalau ada upload baru, reload daftar period
             summaryUnsubscribe = firestore.collection('sales_summary')
                 .orderBy('updatedAt', 'desc')
                 .onSnapshot(async (snapshot) => {
@@ -1475,7 +1491,26 @@
                     }
 
                     console.log('🔔 Cloud update detected, reloading period list...');
+
+                    // Simpan pilihan saat ini
+                    const periodFilter = document.getElementById('periodFilter');
+                    const currentSelection = periodFilter ? periodFilter.value : null;
+
+                    // Reload daftar period
                     await loadAvailablePeriods();
+
+                    // Kembalikan pilihan user jika masih valid
+                    if (periodFilter && currentSelection) {
+                        if (availablePeriods.includes(currentSelection) || currentSelection === 'all') {
+                            periodFilter.value = currentSelection;
+                            if (currentSelection === 'all') {
+                                await loadAllPeriods();
+                            } else if (currentSelection !== 'all') {
+                                await loadPeriod(currentSelection);
+                            }
+                        }
+                    }
+
                     updateSyncStatus('synced', 'Cloud Aktif');
 
                 }, (error) => {
@@ -1625,8 +1660,6 @@
                 .map(([department, d]) => ({ department: department, amount: d.amount, qty: d.qty }));
         }
 
-        // FUNGSI loadFullDataForDetail DIUBAH MENJADI loadPeriod (sudah dibuat di atas)
-
         async function saveToFirebase(data, filename) {
             if (!isFirebaseReady) { showToast('Firebase not connected.', 'warning'); return false; }
             if (isSaving) return false;
@@ -1708,7 +1741,7 @@
                     status: "completed"
                 });
 
-                // Setelah save: reload period list, pilih period terbaru, render
+                // Setelah save: reload period list
                 await loadAvailablePeriods();
 
                 // Pilih period yang baru disimpan
@@ -1718,7 +1751,7 @@
                     await loadPeriod(period);
                 }
 
-                showToast(`✅ Data Berhasil disimpan untuk ${period}!`, 'success');
+                showToast(`✅ Data Berhasil disimpan untuk ${formatPeriodLabel(period)}!`, 'success');
                 updateSyncStatus('synced', 'Cloud Aktif');
                 return true;
 
