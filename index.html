@@ -1091,6 +1091,34 @@
         let isInitialLoad = true;
 
         // ============================================================
+        // DIVISION MASTER
+        // ============================================================
+        const DIVISIONS = {
+            "24": {
+                name: "Division 24",
+                departments: ["2031", "2032"]
+            },
+            "25": {
+                name: "Division 25",
+                departments: ["2033", "2034", "2035", "2036", "5212"]
+            },
+            "26": {
+                name: "Division 26",
+                departments: ["2037", "2038", "5213"]
+            },
+            "27": {
+                name: "Division 27",
+                departments: ["2039", "2040", "5214"]
+            },
+            "28": {
+                name: "Division 28",
+                departments: ["2041", "2042", "5216"]
+            }
+        };
+
+        let currentDivision = localStorage.getItem("currentDivision") || "27";
+
+        // ============================================================
         // FIREBASE CONFIG - HARDCODED
         // ============================================================
         const HARDCODED_CONFIG = {
@@ -1127,6 +1155,18 @@
             toast.classList.add('show');
             if (toastTimeout) clearTimeout(toastTimeout);
             toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, duration);
+        }
+
+        // ============================================================
+        // DIVISION FUNCTIONS
+        // ============================================================
+        function setDivision(div) {
+            currentDivision = div;
+            localStorage.setItem("currentDivision", div);
+        }
+
+        function getCurrentDivision() {
+            return DIVISIONS[currentDivision];
         }
 
         // ============================================================
