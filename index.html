@@ -1517,7 +1517,7 @@
         }
 
         // ============================================================
-        // FUNGSI LISTENER - HANYA REFRESH DAFTAR PERIODE
+        // FUNGSI LISTENER - PERBAIKAN (TANPA ORDERBY)
         // ============================================================
         function initRealtimeSummaryListener() {
             if (!isFirebaseReady) return;
@@ -1526,9 +1526,9 @@
 
             updateSyncStatus('syncing', 'Listening to Cloud...');
 
+            // Tanpa orderBy untuk menghindari kebutuhan index
             summaryUnsubscribe = firestore.collection('sales_summary')
                 .where('division', '==', currentDivision)
-                .orderBy('updatedAt', 'desc')
                 .onSnapshot(async (snapshot) => {
                     if (snapshot.empty) {
                         console.log('📊 No summary found in cloud');
@@ -1543,14 +1543,11 @@
 
                     console.log('🔔 Cloud update detected, reloading period list...');
 
-                    // Simpan pilihan saat ini
                     const periodFilter = document.getElementById('periodFilter');
                     const currentSelection = periodFilter ? periodFilter.value : null;
 
-                    // Reload daftar period
                     await loadAvailablePeriods();
 
-                    // Kembalikan pilihan user jika masih valid
                     if (periodFilter && currentSelection) {
                         if (availablePeriods.includes(currentSelection) || currentSelection === 'all') {
                             periodFilter.value = currentSelection;
