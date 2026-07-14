@@ -1084,6 +1084,11 @@
 
     <script>
         // ============================================================
+        // CONSTANTS
+        // ============================================================
+        const COLLECTION = "sales_data";
+
+        // ============================================================
         // VARIABEL GLOBAL
         // ============================================================
         let currentPeriod = null;
@@ -1169,7 +1174,7 @@
                     firebaseApp = firebase.initializeApp(config);
                 }
                 firestore = firebase.firestore();
-                await firestore.collection(getCollectionName()).limit(1).get();
+                await firestore.collection(COLLECTION).limit(1).get();
                 isFirebaseReady = true;
                 updateSyncStatus('synced', 'Connected');
                 console.log('✅ Firebase connected');
@@ -1321,8 +1326,7 @@
                 currentPeriod = period;
                 showToast(`📂 Memuat ${formatPeriodLabel(period)}...`, 'info', 1500);
 
-                const collection = getCollectionName();
-                const docRef = firestore.collection(collection).doc(period);
+                const docRef = firestore.collection(COLLECTION).doc(period);
                 const doc = await docRef.get();
 
                 if (!doc.exists) {
@@ -1392,11 +1396,10 @@
                 showToast('📂 Memuat semua periode...', 'info', 1500);
                 currentPeriod = 'all';
                 let allData = [];
-                const collection = getCollectionName();
 
                 for (const period of availablePeriods) {
                     try {
-                        const docRef = firestore.collection(collection).doc(period);
+                        const docRef = firestore.collection(COLLECTION).doc(period);
                         const doc = await docRef.get();
                         if (!doc.exists) continue;
 
@@ -1578,10 +1581,6 @@
             }
         }
 
-        function getCollectionName() {
-            return localStorage.getItem('firebaseCollection') || 'sales_data';
-        }
-
         function splitDataForFirestore(data) {
             const chunks = [];
             const chunkSize = 250;
@@ -1624,10 +1623,9 @@
 
         async function loadAllDataFromChunks(docId, chunkCount) {
             let allData = [];
-            const collection = getCollectionName();
             for (let i = 0; i < chunkCount; i++) {
                 try {
-                    const chunkRef = firestore.collection(collection).doc(docId).collection('chunks').doc('chunk_' + i);
+                    const chunkRef = firestore.collection(COLLECTION).doc(docId).collection('chunks').doc('chunk_' + i);
                     const chunkSnap = await chunkRef.get();
                     if (!chunkSnap.exists) continue;
                     const chunkData = chunkSnap.data();
@@ -1675,11 +1673,10 @@
                 isSaving = true;
                 updateSyncStatus('syncing', 'Saving to Cloud...');
 
-                const collection = getCollectionName();
                 const period = getPeriod(data);
                 let mode = getUploadMode();
 
-                const docRef = firestore.collection(collection).doc(period);
+                const docRef = firestore.collection(COLLECTION).doc(period);
                 const doc = await docRef.get();
                 const docExists = doc.exists;
 
@@ -1775,9 +1772,8 @@
             if (!isFirebaseReady) return false;
             try {
                 updateSyncStatus('syncing', 'Loading data...');
-                const collection = getCollectionName();
                 if (docId) {
-                    const doc = await firestore.collection(collection).doc(docId).get();
+                    const doc = await firestore.collection(COLLECTION).doc(docId).get();
                     if (doc.exists) await restoreData(doc.data(), docId);
                 }
                 return true;
@@ -2353,7 +2349,7 @@
         function openConfig() {
             const config = getFirebaseConfig();
             document.getElementById('firebaseConfigInput').value = JSON.stringify(config, null, 2);
-            document.getElementById('collectionNameInput').value = getCollectionName();
+            document.getElementById('collectionNameInput').value = COLLECTION;
             document.getElementById('configOverlay').classList.add('active');
         }
 
