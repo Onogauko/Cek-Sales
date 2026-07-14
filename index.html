@@ -1230,7 +1230,7 @@
         }
 
         // ============================================================
-        // FUNGSI PERIODE
+        // FUNGSI PERIODE - PERBAIKAN (TANPA ORDERBY)
         // ============================================================
         async function loadAvailablePeriods() {
             if (!isFirebaseReady) {
@@ -1239,9 +1239,9 @@
             }
 
             try {
+                // TANPA orderBy untuk menghindari kebutuhan index
                 const snapshot = await firestore.collection('sales_summary')
                     .where('division', '==', currentDivision)
-                    .orderBy('period', 'desc')
                     .get();
 
                 availablePeriods = [];
@@ -1251,6 +1251,9 @@
                         availablePeriods.push(data.period);
                     }
                 });
+
+                // Sort di JavaScript
+                availablePeriods.sort((a, b) => b.localeCompare(a));
 
                 console.log('📅 Available periods:', availablePeriods);
 
@@ -1517,7 +1520,7 @@
         }
 
         // ============================================================
-        // FUNGSI LISTENER - PERBAIKAN (TANPA ORDERBY)
+        // FUNGSI LISTENER - TANPA ORDERBY
         // ============================================================
         function initRealtimeSummaryListener() {
             if (!isFirebaseReady) return;
