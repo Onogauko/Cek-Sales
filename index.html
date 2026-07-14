@@ -4,13 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sales Data Analyzer</title>
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <link rel="apple-touch-icon" href="icon-192.png">
-    <meta name="theme-color" content="#1a237e">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js">
@@ -34,27 +27,27 @@
         body {
             background: #f0f2f5;
             min-height: 100vh;
-            padding: 8px;
+            padding: 12px;
             padding-bottom: 80px;
         }
         .header {
             background: linear-gradient(135deg, #1a237e, #283593);
             color: #fff;
-            padding: 8px 12px;
+            padding: 10px 14px;
             border-radius: 12px;
-            margin-bottom: 6px;
+            margin-bottom: 10px;
             text-align: center;
             box-shadow: 0 4px 20px rgba(26, 35, 126, .3);
             position: relative;
         }
         .header h1 {
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 700;
         }
         .header p {
-            font-size: 10px;
+            font-size: 11px;
             opacity: .8;
-            margin-top: 0;
+            margin-top: 2px;
         }
         .header .sync-status {
             position: absolute;
@@ -98,13 +91,13 @@
         /* ===== UPLOAD AREA YANG SANGAT DIPERKECIL ===== */
         .upload-area {
             background: #fff;
-            border-radius: 8px;
-            padding: 8px 12px;
+            border-radius: 12px;
+            padding: 10px 14px 12px;
             text-align: center;
             border: 2px dashed #c5cae9;
             transition: all .3s;
-            margin-bottom: 6px;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
             position: relative;
         }
         .upload-area.dragover {
@@ -122,7 +115,7 @@
             justify-content: center;
             gap: 6px;
             flex-wrap: wrap;
-            margin-bottom: 0;
+            margin-bottom: 2px;
         }
         .upload-area .title-row h3 {
             color: #1a237e;
@@ -136,7 +129,7 @@
         .upload-area .sub-text {
             color: #888;
             font-size: 10px;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
 
         /* ===== BARIS UTAMA: MODE + TOMBOL ===== */
@@ -148,7 +141,7 @@
             flex-wrap: nowrap;
             background: #f5f6fa;
             border-radius: 8px;
-            padding: 3px 8px;
+            padding: 4px 8px 4px 12px;
         }
         .upload-controls .mode-group {
             display: flex;
@@ -186,7 +179,7 @@
             flex-shrink: 0;
         }
         .upload-controls .btn-group .upload-btn {
-            padding: 3px 8px;
+            padding: 4px 10px;
             font-size: 11px;
             border-radius: 6px;
             border: none;
@@ -203,11 +196,11 @@
         .upload-controls .btn-group .upload-btn.secondary {
             background: #e8eaf6;
             color: #283593;
-            padding: 3px 8px;
+            padding: 4px 8px;
             font-size: 10px;
         }
         .upload-controls .btn-group .upload-btn.icon-btn {
-            padding: 3px 6px;
+            padding: 4px 6px;
             font-size: 14px;
             background: transparent;
             color: #666;
@@ -265,18 +258,18 @@
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 6px;
-            margin-bottom: 6px;
+            gap: 8px;
+            margin-bottom: 10px;
         }
         .stat-card {
             background: #fff;
-            border-radius: 8px;
-            padding: 8px 8px;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
+            border-radius: 10px;
+            padding: 10px 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
             text-align: center;
         }
         .stat-card .number {
-            font-size: 17px;
+            font-size: 18px;
             font-weight: 700;
             color: #1a237e;
         }
@@ -288,14 +281,14 @@
         .tabs {
             display: flex;
             background: #fff;
-            border-radius: 8px;
+            border-radius: 10px;
             overflow: hidden;
-            margin-bottom: 6px;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
         }
         .tab {
             flex: 1;
-            padding: 6px 4px;
+            padding: 8px 4px;
             text-align: center;
             font-size: 10px;
             font-weight: 600;
@@ -343,15 +336,15 @@
         /* ===== OTHER COMPONENTS ===== */
         .product-list {
             background: #fff;
-            border-radius: 8px;
+            border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
         }
         .product-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 6px 10px;
+            padding: 8px 12px;
             border-bottom: 1px solid #f5f5f5;
             cursor: pointer;
             transition: background .2s;
@@ -363,7 +356,7 @@
             border-bottom: none;
         }
         .product-item .name {
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 500;
             color: #333;
             flex: 1;
@@ -377,13 +370,13 @@
             margin-right: 6px;
         }
         .product-item .amount {
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
             color: #1a237e;
             white-space: nowrap;
         }
         .product-item .qty {
-            font-size: 8px;
+            font-size: 9px;
             color: #888;
             margin-right: 6px;
         }
@@ -394,10 +387,10 @@
         }
         .chart-container {
             background: #fff;
-            border-radius: 8px;
-            padding: 8px;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
-            margin-bottom: 6px;
+            border-radius: 10px;
+            padding: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+            margin-bottom: 10px;
         }
         .chart-container h4 {
             font-size: 12px;
@@ -406,19 +399,19 @@
         }
         .chart-wrapper {
             position: relative;
-            height: 145px;
+            height: 160px;
         }
         .filter-section {
             background: #fff;
-            border-radius: 8px;
-            padding: 6px 10px;
-            margin-bottom: 6px;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
+            border-radius: 10px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
         }
         .filter-section select,
         .filter-section input {
             width: 100%;
-            padding: 5px 8px;
+            padding: 6px 8px;
             border: 1px solid #e0e0e0;
             border-radius: 6px;
             font-size: 11px;
@@ -437,15 +430,15 @@
         }
         .dept-summary {
             background: #fff;
-            border-radius: 8px;
+            border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
             margin-bottom: 10px;
         }
         .dept-row {
             display: flex;
             justify-content: space-between;
-            padding: 5px 10px;
+            padding: 6px 12px;
             border-bottom: 1px solid #f5f5f5;
         }
         .dept-row:last-child {
@@ -486,12 +479,12 @@
         }
         .info-bar {
             background: #fff;
-            border-radius: 8px;
-            padding: 5px 10px;
+            border-radius: 10px;
+            padding: 6px 12px;
             font-size: 9px;
             color: #999;
             text-align: center;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -508,10 +501,10 @@
         }
         .search-section {
             background: #fff;
-            border-radius: 8px;
-            padding: 6px 10px;
-            margin-bottom: 6px;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
+            border-radius: 10px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
         }
         .search-section .search-row {
             display: flex;
@@ -523,7 +516,7 @@
         }
         .search-section input {
             flex: 1;
-            padding: 5px 8px;
+            padding: 6px 8px;
             border: 1px solid #e0e0e0;
             border-radius: 6px;
             font-size: 11px;
@@ -995,12 +988,6 @@
     <div id="tabContent">
         <div class="tab-content active" id="tab-summary">
             <div class="filter-section">
-                <!-- DROPDOWN PERIODE -->
-                <div class="filter-row">
-                    <select id="periodFilter" onchange="onPeriodChange()">
-                        <option value="all">📅 All Periods</option>
-                    </select>
-                </div>
                 <select id="filterDept" onchange="applyFilters()"><option value="all">All Departments</option></select>
                 <div class="filter-row">
                     <input type="date" id="filterDateFrom" onchange="applyFilters()">
@@ -1084,18 +1071,6 @@
 
     <script>
         // ============================================================
-        // CONSTANTS
-        // ============================================================
-        const COLLECTION = "sales_data";
-
-        // ============================================================
-        // VARIABEL GLOBAL
-        // ============================================================
-        let currentPeriod = null;
-        let availablePeriods = [];
-        let isInitialLoad = true;
-
-        // ============================================================
         // FIREBASE CONFIG - HARDCODED
         // ============================================================
         const HARDCODED_CONFIG = {
@@ -1135,7 +1110,7 @@
         }
 
         // ============================================================
-        // FIREBASE INIT WITH REAL-TIME SNAPSHOT LISTENER
+        // FIREBASE INIT WITH REAL-TIME SNAPSHOT LISTENER (FIX LOGIC)
         // ============================================================
         let firebaseApp = null;
         let firestore = null;
@@ -1174,17 +1149,12 @@
                     firebaseApp = firebase.initializeApp(config);
                 }
                 firestore = firebase.firestore();
-                await firestore.collection(COLLECTION).limit(1).get();
+                await firestore.collection(getCollectionName()).limit(1).get();
                 isFirebaseReady = true;
                 updateSyncStatus('synced', 'Connected');
                 console.log('✅ Firebase connected');
 
-                // Load available periods dulu
-                await loadAvailablePeriods();
-
-                // Baru init listener
                 initRealtimeSummaryListener();
-
                 return true;
             } catch (err) {
                 console.error('Firebase init error:', err);
@@ -1194,291 +1164,6 @@
             }
         }
 
-        // ============================================================
-        // FUNGSI PERIODE
-        // ============================================================
-        async function loadAvailablePeriods() {
-            if (!isFirebaseReady) {
-                console.warn('Firebase not ready');
-                return;
-            }
-
-            try {
-                const snapshot = await firestore.collection('sales_summary')
-                    .orderBy('period', 'desc')
-                    .get();
-
-                availablePeriods = [];
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    if (data.period) {
-                        availablePeriods.push(data.period);
-                    }
-                });
-
-                console.log('📅 Available periods:', availablePeriods);
-
-                // Update dropdown
-                const periodFilter = document.getElementById('periodFilter');
-                if (periodFilter) {
-                    const currentValue = periodFilter.value;
-                    periodFilter.innerHTML = '<option value="all">📅 All Periods</option>';
-
-                    // Tambahkan separator
-                    if (availablePeriods.length > 0) {
-                        const separator = document.createElement('option');
-                        separator.disabled = true;
-                        separator.textContent = '────────────';
-                        periodFilter.appendChild(separator);
-                    }
-
-                    availablePeriods.forEach(p => {
-                        const opt = document.createElement('option');
-                        opt.value = p;
-                        // Format: Juli 2026
-                        const [year, month] = p.split('-');
-                        const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-                            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-                        ];
-                        opt.textContent = monthNames[parseInt(month) - 1] + ' ' + year;
-                        periodFilter.appendChild(opt);
-                    });
-
-                    // Jika ini pertama kali load atau currentValue tidak valid
-                    if (isInitialLoad || !availablePeriods.includes(currentValue)) {
-                        const defaultPeriod = getDefaultPeriod();
-                        if (availablePeriods.includes(defaultPeriod)) {
-                            periodFilter.value = defaultPeriod;
-                        } else if (availablePeriods.length > 0) {
-                            periodFilter.value = availablePeriods[0];
-                        } else {
-                            periodFilter.value = 'all';
-                        }
-                        isInitialLoad = false;
-                    } else {
-                        // Pertahankan pilihan user
-                        periodFilter.value = currentValue;
-                    }
-
-                    // Load period
-                    if (periodFilter.value && periodFilter.value !== 'all') {
-                        await loadPeriod(periodFilter.value);
-                    } else if (periodFilter.value === 'all') {
-                        await loadAllPeriods();
-                    }
-                }
-
-                return availablePeriods;
-
-            } catch (err) {
-                console.error('Error loading periods:', err);
-                return [];
-            }
-        }
-
-        function getDefaultPeriod() {
-            // Kalau ada bulan berjalan, pakai bulan berjalan
-            const now = new Date();
-            const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-
-            if (availablePeriods.includes(currentMonth)) {
-                return currentMonth;
-            }
-
-            // else pakai periode terbaru
-            if (availablePeriods.length > 0) {
-                return availablePeriods[0];
-            }
-
-            return null;
-        }
-
-        function formatPeriodLabel(period) {
-            const [year, month] = period.split('-');
-            const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-            ];
-            return monthNames[parseInt(month) - 1] + ' ' + year;
-        }
-
-        async function onPeriodChange() {
-            const periodFilter = document.getElementById('periodFilter');
-            if (!periodFilter) return;
-
-            const selected = periodFilter.value;
-            if (!selected) return;
-
-            if (selected === 'all') {
-                await loadAllPeriods();
-            } else {
-                await loadPeriod(selected);
-            }
-        }
-
-        async function loadPeriod(period) {
-            if (!isFirebaseReady || !period) {
-                console.warn('Cannot load period:', period);
-                return;
-            }
-
-            try {
-                console.log('📂 Loading period:', period);
-                currentPeriod = period;
-                showToast(`📂 Memuat ${formatPeriodLabel(period)}...`, 'info', 1500);
-
-                const docRef = firestore.collection(COLLECTION).doc(period);
-                const doc = await docRef.get();
-
-                if (!doc.exists) {
-                    showToast(`⚠️ Data untuk ${formatPeriodLabel(period)} tidak ditemukan`, 'warning');
-                    return;
-                }
-
-                const docData = doc.data();
-                const chunkCount = docData.chunkCount || 1;
-                let allData = [];
-
-                for (let i = 0; i < chunkCount; i++) {
-                    const chunkSnap = await docRef.collection('chunks').doc('chunk_' + i).get();
-                    if (chunkSnap.exists && chunkSnap.data().data) {
-                        allData = allData.concat(chunkSnap.data().data);
-                    }
-                }
-
-                if (allData.length > 0) {
-                    originalData = allData;
-                    salesData = [...allData];
-                    populateFilters();
-
-                    // Set date range based on actual data
-                    const dates = allData.map(d => d.dateStr).filter(d => d && d !== 'Unknown');
-                    if (dates.length > 0) {
-                        const sortedDates = dates.sort();
-                        const minDate = sortedDates[0];
-                        const maxDate = sortedDates[sortedDates.length - 1];
-                        document.getElementById('filterDateFrom').value = minDate;
-                        document.getElementById('filterDateTo').value = maxDate;
-                    } else {
-                        document.getElementById('filterDateFrom').value = '';
-                        document.getElementById('filterDateTo').value = '';
-                    }
-
-                    renderDashboard();
-                    const daysCount = new Set(allData.map(d => d.dateStr)).size;
-                    showToast(`✅ ${formatPeriodLabel(period)} dimuat (${allData.length} records, ${daysCount} hari)`, 'success', 1500);
-
-                    // Update info bar
-                    const infoText = `📅 ${formatPeriodLabel(period)} • ${allData.length} records • ${daysCount} days`;
-                    document.getElementById('fileInfo').textContent = infoText;
-                    document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Loaded</span>';
-
-                    statsGrid.style.display = 'grid';
-                    tabs.style.display = 'flex';
-                    infoBar.style.display = 'flex';
-                    afterDataLoaded();
-                } else {
-                    showToast(`⚠️ Tidak ada data untuk ${formatPeriodLabel(period)}`, 'warning');
-                }
-
-            } catch (err) {
-                console.error('Error loading period:', err);
-                showToast(`❌ Gagal memuat ${formatPeriodLabel(period)}`, 'warning');
-            }
-        }
-
-        async function loadAllPeriods() {
-            if (!isFirebaseReady || availablePeriods.length === 0) {
-                console.warn('No periods available');
-                return;
-            }
-
-            try {
-                showToast('📂 Memuat semua periode...', 'info', 1500);
-                currentPeriod = 'all';
-                let allData = [];
-
-                for (const period of availablePeriods) {
-                    try {
-                        const docRef = firestore.collection(COLLECTION).doc(period);
-                        const doc = await docRef.get();
-                        if (!doc.exists) continue;
-
-                        const docData = doc.data();
-                        const chunkCount = docData.chunkCount || 1;
-
-                        for (let i = 0; i < chunkCount; i++) {
-                            const chunkSnap = await docRef.collection('chunks').doc('chunk_' + i).get();
-                            if (chunkSnap.exists && chunkSnap.data().data) {
-                                allData = allData.concat(chunkSnap.data().data);
-                            }
-                        }
-                    } catch (err) {
-                        console.warn('Error loading period:', period, err);
-                    }
-                }
-
-                if (allData.length > 0) {
-                    originalData = allData;
-                    salesData = [...allData];
-                    populateFilters();
-
-                    // Set date range based on actual data
-                    const dates = allData.map(d => d.dateStr).filter(d => d && d !== 'Unknown');
-                    if (dates.length > 0) {
-                        const sortedDates = dates.sort();
-                        const minDate = sortedDates[0];
-                        const maxDate = sortedDates[sortedDates.length - 1];
-                        document.getElementById('filterDateFrom').value = minDate;
-                        document.getElementById('filterDateTo').value = maxDate;
-                    } else {
-                        document.getElementById('filterDateFrom').value = '';
-                        document.getElementById('filterDateTo').value = '';
-                    }
-
-                    renderDashboard();
-                    const daysCount = new Set(allData.map(d => d.dateStr)).size;
-                    showToast(`✅ Semua periode dimuat (${allData.length} records, ${daysCount} hari)`, 'success', 1500);
-
-                    const infoText = `📅 All Periods • ${allData.length} records • ${daysCount} days`;
-                    document.getElementById('fileInfo').textContent = infoText;
-                    document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Loaded</span>';
-
-                    statsGrid.style.display = 'grid';
-                    tabs.style.display = 'flex';
-                    infoBar.style.display = 'flex';
-                    afterDataLoaded();
-                } else {
-                    showToast('⚠️ Tidak ada data di semua periode', 'warning');
-                }
-
-            } catch (err) {
-                console.error('Error loading all periods:', err);
-                showToast('❌ Gagal memuat semua periode', 'warning');
-            }
-        }
-
-        function renderDashboard() {
-            updateStats();
-            renderSummary();
-            renderProducts();
-            renderDeptSummary();
-            renderCharts();
-        }
-
-        // ============================================================
-        // FUNGSI APPLY FILTERS
-        // ============================================================
-        function applyFilters() {
-            updateStats();
-            renderSummary();
-            renderProducts();
-            renderDeptSummary();
-            renderCharts();
-        }
-
-        // ============================================================
-        // FUNGSI LISTENER - HANYA REFRESH DAFTAR PERIODE
-        // ============================================================
         function initRealtimeSummaryListener() {
             if (!isFirebaseReady) return;
 
@@ -1488,10 +1173,21 @@
 
             summaryUnsubscribe = firestore.collection('sales_summary')
                 .orderBy('updatedAt', 'desc')
+                .limit(1)
                 .onSnapshot(async (snapshot) => {
                     if (snapshot.empty) {
                         console.log('📊 No summary found in cloud');
                         updateSyncStatus('synced', 'Connected (DB Empty)');
+                        const summaryContent = document.getElementById('summaryContent');
+                        if (summaryContent && !originalData.length) {
+                            summaryContent.innerHTML = `
+                                <div class="empty-state" style="padding:20px;">
+                                    <div class="icon">☁️</div>
+                                    <p style="font-weight:500; color:#333; font-size:12px;">Belum Ada Data di Cloud</p>
+                                    <p style="font-size:11px; color:#888; margin-top:2px;">Upload file Excel/CSV untuk memulai</p>
+                                </div>
+                            `;
+                        }
                         return;
                     }
 
@@ -1500,28 +1196,55 @@
                         return;
                     }
 
-                    console.log('🔔 Cloud update detected, reloading period list...');
+                    const summaryDoc = snapshot.docs[0];
+                    const summary = summaryDoc.data();
+                    const period = summaryDoc.id;
 
-                    // Simpan pilihan saat ini
-                    const periodFilter = document.getElementById('periodFilter');
-                    const currentSelection = periodFilter ? periodFilter.value : null;
+                    console.log('🔔 Cloud Update Diterima Real-time untuk periode:', period);
 
-                    // Reload daftar period
-                    await loadAvailablePeriods();
+                    const totalAmount = summary.totalAmount || 0;
+                    const totalQty = summary.totalQty || 0;
+                    const recordCount = summary.recordCount || 0;
 
-                    // Kembalikan pilihan user jika masih valid
-                    if (periodFilter && currentSelection) {
-                        if (availablePeriods.includes(currentSelection) || currentSelection === 'all') {
-                            periodFilter.value = currentSelection;
-                            if (currentSelection === 'all') {
-                                await loadAllPeriods();
-                            } else if (currentSelection !== 'all') {
-                                await loadPeriod(currentSelection);
-                            }
-                        }
+                    document.getElementById('totalSales').textContent = formatRupiah(totalAmount);
+                    document.getElementById('totalQty').textContent = Math.round(totalQty);
+                    document.getElementById('totalItems').textContent = recordCount;
+
+                    window._lastPeriod = period;
+                    await loadFullDataForDetail(period);
+
+                    if (originalData.length > 0) {
+                        const uniqueDays = new Set(originalData.map(d => d.dateStr));
+                        document.getElementById('totalDays').textContent = uniqueDays.size;
+                    } else {
+                        document.getElementById('totalDays').textContent = summary.daysCount || 'N/A';
                     }
 
+                    if (summary.topProducts && summary.topProducts.length > 0) {
+                        renderSummaryFromData(summary.topProducts, summary.totalAmount, summary.totalQty);
+                    }
+                    if (summary.departmentSales && summary.departmentSales.length > 0) {
+                        renderDeptChartFromSummary(summary.departmentSales);
+                    }
+
+                    let infoText = `☁️ ${summary.filename || 'Data'} • ${summary.recordCount || 0} records • Period: ${period}`;
+                    if (summary.daysCount) infoText += ` • ${summary.daysCount} days`;
+                    if (summary.status === 'completed') infoText += ' ✅';
+
+                    if (summary.updatedAt) {
+                        const updated = summary.updatedAt.toDate ? summary.updatedAt.toDate() : new Date(summary.updatedAt);
+                        infoText += ` • Updated: ${updated.toLocaleDateString('id-ID')} ${updated.toLocaleTimeString('id-ID')}`;
+                    }
+                    document.getElementById('fileInfo').textContent = infoText;
+                    document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Auto-Synced</span>';
+
+                    statsGrid.style.display = 'grid';
+                    tabs.style.display = 'flex';
+                    infoBar.style.display = 'flex';
+
                     updateSyncStatus('synced', 'Cloud Aktif');
+                    showToast(`🔔 Dasbor diperbarui otomatis dari Cloud (${period})`, 'success', 2000);
+                    afterDataLoaded();
 
                 }, (error) => {
                     console.error("Listener error:", error);
@@ -1529,14 +1252,11 @@
                 });
         }
 
-        // ============================================================
-        // FUNGSI LAINNYA (TIDAK DIUBAH)
-        // ============================================================
         function renderSummaryFromData(topProducts, totalAmount, totalQty) {
             if (topProducts && topProducts.length > 0) {
                 const container = document.getElementById('summaryContent');
                 let html = `
-                    <div style="background:white; border-radius:8px; padding:10px 12px; box-shadow:0 1px 4px rgba(0,0,0,0.05); margin-bottom:8px;">
+                    <div style="background:white; border-radius:10px; padding:10px 12px; box-shadow:0 2px 8px rgba(0,0,0,0.06); margin-bottom:8px;">
                         <div class="summary-header">
                             <h4>🏆 Top 10 Products</h4>
                         </div>
@@ -1581,6 +1301,10 @@
             }
         }
 
+        function getCollectionName() {
+            return localStorage.getItem('firebaseCollection') || 'sales_data';
+        }
+
         function splitDataForFirestore(data) {
             const chunks = [];
             const chunkSize = 250;
@@ -1623,9 +1347,10 @@
 
         async function loadAllDataFromChunks(docId, chunkCount) {
             let allData = [];
+            const collection = getCollectionName();
             for (let i = 0; i < chunkCount; i++) {
                 try {
-                    const chunkRef = firestore.collection(COLLECTION).doc(docId).collection('chunks').doc('chunk_' + i);
+                    const chunkRef = firestore.collection(collection).doc(docId).collection('chunks').doc('chunk_' + i);
                     const chunkSnap = await chunkRef.get();
                     if (!chunkSnap.exists) continue;
                     const chunkData = chunkSnap.data();
@@ -1665,6 +1390,31 @@
                 .map(([department, d]) => ({ department: department, amount: d.amount, qty: d.qty }));
         }
 
+        async function loadFullDataForDetail(period) {
+            if (!firestore || !period) return false;
+            try {
+                const collection = getCollectionName();
+                const docRef = firestore.collection(collection).doc(period);
+                const doc = await docRef.get();
+                if (!doc.exists) return false;
+
+                const docData = doc.data();
+                const chunkCount = docData.chunkCount || 1;
+                let allData = [];
+                for (let i = 0; i < chunkCount; i++) {
+                    const chunkSnap = await docRef.collection('chunks').doc('chunk_' + i).get();
+                    if (chunkSnap.exists && chunkSnap.data().data) allData = allData.concat(chunkSnap.data().data);
+                }
+                if (allData.length > 0) {
+                    originalData = allData;
+                    salesData = [...allData];
+                    populateFilters();
+                    return true;
+                }
+                return false;
+            } catch (err) { return false; }
+        }
+
         async function saveToFirebase(data, filename) {
             if (!isFirebaseReady) { showToast('Firebase not connected.', 'warning'); return false; }
             if (isSaving) return false;
@@ -1673,10 +1423,11 @@
                 isSaving = true;
                 updateSyncStatus('syncing', 'Saving to Cloud...');
 
+                const collection = getCollectionName();
                 const period = getPeriod(data);
                 let mode = getUploadMode();
 
-                const docRef = firestore.collection(COLLECTION).doc(period);
+                const docRef = firestore.collection(collection).doc(period);
                 const doc = await docRef.get();
                 const docExists = doc.exists;
 
@@ -1745,17 +1496,16 @@
                     status: "completed"
                 });
 
-                // Setelah save: reload period list
-                await loadAvailablePeriods();
+                originalData = finalData;
+                salesData = [...finalData];
+                updateStats();
+                populateFilters();
+                renderSummary();
+                renderProducts();
+                renderDeptSummary();
+                renderCharts();
 
-                // Pilih period yang baru disimpan
-                const periodFilter = document.getElementById('periodFilter');
-                if (periodFilter && availablePeriods.includes(period)) {
-                    periodFilter.value = period;
-                    await loadPeriod(period);
-                }
-
-                showToast(`✅ Data Berhasil disimpan untuk ${formatPeriodLabel(period)}!`, 'success');
+                showToast(`✅ Data Berhasil digabungkan & Disimpan!`, 'success');
                 updateSyncStatus('synced', 'Cloud Aktif');
                 return true;
 
@@ -1772,8 +1522,9 @@
             if (!isFirebaseReady) return false;
             try {
                 updateSyncStatus('syncing', 'Loading data...');
+                const collection = getCollectionName();
                 if (docId) {
-                    const doc = await firestore.collection(COLLECTION).doc(docId).get();
+                    const doc = await firestore.collection(collection).doc(docId).get();
                     if (doc.exists) await restoreData(doc.data(), docId);
                 }
                 return true;
@@ -1857,7 +1608,7 @@
                 if (found) return found;
             }
             for (const c of candidates) {
-                const found = headers.find(h => h.toLowerCase().includes(c));
+                const found = headers.find(h => h.toLowerCase().includes(c.toLowerCase()));
                 if (found) return found;
             }
             return null;
@@ -1902,6 +1653,12 @@
                 if (depts.includes(current)) sel.value = current;
             });
         }
+
+        function applyFilters() { updateStats();
+            renderSummary();
+            renderProducts();
+            renderDeptSummary();
+            renderCharts(); }
 
         function toggleSearch() {
             const section = document.getElementById('searchSection');
@@ -1957,7 +1714,7 @@
             const topProducts = productArray.slice(0, 10);
 
             let html = `
-                <div style="background:white; border-radius:8px; padding:10px 12px; box-shadow:0 1px 4px rgba(0,0,0,0.05); margin-bottom:8px;">
+                <div style="background:white; border-radius:10px; padding:10px 12px; box-shadow:0 2px 8px rgba(0,0,0,0.06); margin-bottom:8px;">
                     <div class="summary-header">
                         <h4>🏆 Top 10 Products</h4>
                     </div>
@@ -2349,7 +2106,7 @@
         function openConfig() {
             const config = getFirebaseConfig();
             document.getElementById('firebaseConfigInput').value = JSON.stringify(config, null, 2);
-            document.getElementById('collectionNameInput').value = COLLECTION;
+            document.getElementById('collectionNameInput').value = getCollectionName();
             document.getElementById('configOverlay').classList.add('active');
         }
 
@@ -2538,20 +2295,5 @@
 
         console.log('🚀 Sales Data Analyzer ready!');
     </script>
-
-    <!-- ===== SERVICE WORKER REGISTRATION ===== -->
-    <script>
-        if ("serviceWorker" in navigator) {
-            window.addEventListener("load", async () => {
-                try {
-                    const registration = await navigator.serviceWorker.register("./service-worker.js");
-                    console.log("✅ Service Worker berhasil didaftarkan:", registration.scope);
-                } catch (error) {
-                    console.error("❌ Gagal mendaftarkan Service Worker:", error);
-                }
-            });
-        }
-    </script>
-
 </body>
 </html>
