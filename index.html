@@ -1091,34 +1091,6 @@
         let isInitialLoad = true;
 
         // ============================================================
-        // DIVISION MASTER
-        // ============================================================
-        const DIVISIONS = {
-            "24": {
-                name: "Division 24",
-                departments: ["2031", "2032"]
-            },
-            "25": {
-                name: "Division 25",
-                departments: ["2033", "2034", "2035", "2036", "5212"]
-            },
-            "26": {
-                name: "Division 26",
-                departments: ["2037", "2038", "5213"]
-            },
-            "27": {
-                name: "Division 27",
-                departments: ["2039", "2040", "5214"]
-            },
-            "28": {
-                name: "Division 28",
-                departments: ["2041", "2042", "5216"]
-            }
-        };
-
-        let currentDivision = localStorage.getItem("currentDivision") || "27";
-
-        // ============================================================
         // FIREBASE CONFIG - HARDCODED
         // ============================================================
         const HARDCODED_CONFIG = {
@@ -1155,18 +1127,6 @@
             toast.classList.add('show');
             if (toastTimeout) clearTimeout(toastTimeout);
             toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, duration);
-        }
-
-        // ============================================================
-        // DIVISION FUNCTIONS
-        // ============================================================
-        function setDivision(div) {
-            currentDivision = div;
-            localStorage.setItem("currentDivision", div);
-        }
-
-        function getCurrentDivision() {
-            return DIVISIONS[currentDivision];
         }
 
         // ============================================================
@@ -1230,7 +1190,7 @@
         }
 
         // ============================================================
-        // FUNGSI PERIODE - PERBAIKAN (TANPA ORDERBY)
+        // FUNGSI PERIODE
         // ============================================================
         async function loadAvailablePeriods() {
             if (!isFirebaseReady) {
@@ -1239,9 +1199,8 @@
             }
 
             try {
-                // TANPA orderBy untuk menghindari kebutuhan index
                 const snapshot = await firestore.collection('sales_summary')
-                    .where('division', '==', currentDivision)
+                    .orderBy('period', 'desc')
                     .get();
 
                 availablePeriods = [];
@@ -1251,9 +1210,6 @@
                         availablePeriods.push(data.period);
                     }
                 });
-
-                // Sort di JavaScript
-                availablePeriods.sort((a, b) => b.localeCompare(a));
 
                 console.log('📅 Available periods:', availablePeriods);
 
@@ -1366,8 +1322,7 @@
                 showToast(`📂 Memuat ${formatPeriodLabel(period)}...`, 'info', 1500);
 
                 const collection = getCollectionName();
-                const documentId = `div${currentDivision}_${period}`;
-                const docRef = firestore.collection(collection).doc(documentId);
+                const docRef = firestore.collection(collection).doc(period);
                 const doc = await docRef.get();
 
                 if (!doc.exists) {
@@ -1441,8 +1396,7 @@
 
                 for (const period of availablePeriods) {
                     try {
-                        const documentId = `div${currentDivision}_${period}`;
-                        const docRef = firestore.collection(collection).doc(documentId);
+                        const docRef = firestore.collection(collection).doc(period);
                         const doc = await docRef.get();
                         if (!doc.exists) continue;
 
@@ -1520,7 +1474,7 @@
         }
 
         // ============================================================
-        // FUNGSI LISTENER - TANPA ORDERBY
+        // FUNGSI LISTENER - HANYA REFRESH DAFTAR PERIODE
         // ============================================================
         function initRealtimeSummaryListener() {
             if (!isFirebaseReady) return;
@@ -1529,9 +1483,8 @@
 
             updateSyncStatus('syncing', 'Listening to Cloud...');
 
-            // Tanpa orderBy untuk menghindari kebutuhan index
             summaryUnsubscribe = firestore.collection('sales_summary')
-                .where('division', '==', currentDivision)
+                .orderBy('updatedAt', 'desc')
                 .onSnapshot(async (snapshot) => {
                     if (snapshot.empty) {
                         console.log('📊 No summary found in cloud');
@@ -1546,11 +1499,14 @@
 
                     console.log('🔔 Cloud update detected, reloading period list...');
 
+                    // Simpan pilihan saat ini
                     const periodFilter = document.getElementById('periodFilter');
                     const currentSelection = periodFilter ? periodFilter.value : null;
 
+                    // Reload daftar period
                     await loadAvailablePeriods();
 
+                    // Kembalikan pilihan user jika masih valid
                     if (periodFilter && currentSelection) {
                         if (availablePeriods.includes(currentSelection) || currentSelection === 'all') {
                             periodFilter.value = currentSelection;
@@ -1721,11 +1677,11 @@
 
                 const collection = getCollectionName();
                 const period = getPeriod(data);
-                const documentId = `div${currentDivision}_${period}`;
-                const docRef = firestore.collection(collection).doc(documentId);
+                let mode = getUploadMode();
+
+                const docRef = firestore.collection(collection).doc(period);
                 const doc = await docRef.get();
                 const docExists = doc.exists;
-                let mode = getUploadMode();
 
                 if (!docExists) mode = 'new_period';
 
@@ -1735,7 +1691,7 @@
                 if (docExists && mode === 'continue') {
                     const existingDoc = doc.data();
                     existingRecordCount = existingDoc.recordCount || 0;
-                    const existingData = await loadAllDataFromChunks(documentId, existingDoc.chunkCount || 1);
+                    const existingData = await loadAllDataFromChunks(period, existingDoc.chunkCount || 1);
                     finalData = removeDuplicates(existingData.concat(data));
                 }
 
@@ -1777,8 +1733,7 @@
                 const topProducts = calculateTopProducts(finalData, 10);
                 const departmentSales = calculateDepartmentSales(finalData);
 
-                await firestore.collection('sales_summary').doc(documentId).set({
-                    division: currentDivision,
+                await firestore.collection('sales_summary').doc(period).set({
                     period: period,
                     totalAmount: totalAmount,
                     totalQty: totalQty,
@@ -1848,9 +1803,6 @@
                 return;
             }
 
-            // Get valid departments from current division
-            const validDepartments = DIVISIONS[currentDivision].departments;
-
             salesData = json.map(row => {
                 const dateVal = colMap.date ? row[colMap.date] : null;
                 let parsedDate = null;
@@ -1871,18 +1823,12 @@
                     amount: parseFloat(colMap.amount ? row[colMap.amount] : 0) || 0,
                     _raw: row
                 };
-            }).filter(d => {
-                // Filter by valid departments for current division
-                if (!validDepartments.includes(String(d.department))) {
-                    return false;
-                }
-                return d.amount > 0 || d.qty > 0;
-            });
+            }).filter(d => d.amount > 0 || d.qty > 0);
 
             if (salesData.length === 0) {
                 uploadLoading.classList.remove('active');
                 uploadBtn.disabled = false;
-                showToast('Tidak ada data penjualan yang valid untuk division ini', 'warning');
+                showToast('Tidak ada data penjualan yang valid', 'warning');
                 return;
             }
 
