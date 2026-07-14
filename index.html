@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sales Data Analyzer</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="theme-color" content="#1a237e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js">
@@ -1084,6 +1091,34 @@
         let isInitialLoad = true;
 
         // ============================================================
+        // DIVISION MASTER
+        // ============================================================
+        const DIVISIONS = {
+            "24": {
+                name: "Division 24",
+                departments: ["2031", "2032"]
+            },
+            "25": {
+                name: "Division 25",
+                departments: ["2033", "2034", "2035", "2036", "5212"]
+            },
+            "26": {
+                name: "Division 26",
+                departments: ["2037", "2038", "5213"]
+            },
+            "27": {
+                name: "Division 27",
+                departments: ["2039", "2040", "5214"]
+            },
+            "28": {
+                name: "Division 28",
+                departments: ["2041", "2042", "5216"]
+            }
+        };
+
+        let currentDivision = localStorage.getItem("currentDivision") || "27";
+
+        // ============================================================
         // FIREBASE CONFIG - HARDCODED
         // ============================================================
         const HARDCODED_CONFIG = {
@@ -1120,6 +1155,18 @@
             toast.classList.add('show');
             if (toastTimeout) clearTimeout(toastTimeout);
             toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, duration);
+        }
+
+        // ============================================================
+        // DIVISION FUNCTIONS
+        // ============================================================
+        function setDivision(div) {
+            currentDivision = div;
+            localStorage.setItem("currentDivision", div);
+        }
+
+        function getCurrentDivision() {
+            return DIVISIONS[currentDivision];
         }
 
         // ============================================================
@@ -2535,5 +2582,20 @@
 
         console.log('🚀 Sales Data Analyzer ready!');
     </script>
+
+    <!-- ===== SERVICE WORKER REGISTRATION ===== -->
+    <script>
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", async () => {
+                try {
+                    const registration = await navigator.serviceWorker.register("./service-worker.js");
+                    console.log("✅ Service Worker berhasil didaftarkan:", registration.scope);
+                } catch (error) {
+                    console.error("❌ Gagal mendaftarkan Service Worker:", error);
+                }
+            });
+        }
+    </script>
+
 </body>
 </html>
