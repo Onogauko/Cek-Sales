@@ -95,7 +95,7 @@
             }
         }
 
-        /* ===== UPLOAD AREA YANG SANGAT DIPERKECIL ===== */
+        /* ===== UPLOAD AREA ===== */
         .upload-area {
             background: #fff;
             border-radius: 8px;
@@ -139,55 +139,18 @@
             margin-bottom: 4px;
         }
 
-        /* ===== BARIS UTAMA: MODE + TOMBOL ===== */
         .upload-controls {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center;
             gap: 6px;
-            flex-wrap: nowrap;
             background: #f5f6fa;
             border-radius: 8px;
             padding: 3px 8px;
         }
-        .upload-controls .mode-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex: 1;
-            min-width: 0;
-        }
-        .upload-controls .mode-group .mode-label {
-            font-size: 11px;
-            font-weight: 600;
-            color: #333;
-            white-space: nowrap;
-        }
-        .upload-controls .mode-group label {
-            font-size: 11px;
-            color: #555;
-            display: flex;
-            align-items: center;
-            gap: 3px;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        .upload-controls .mode-group input[type="radio"] {
-            accent-color: #283593;
-            width: 13px;
-            height: 13px;
-            cursor: pointer;
-            margin: 0;
-        }
-        .upload-controls .btn-group {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            flex-shrink: 0;
-        }
-        .upload-controls .btn-group .upload-btn {
-            padding: 3px 8px;
-            font-size: 11px;
+        .upload-controls .upload-btn {
+            padding: 6px 16px;
+            font-size: 12px;
             border-radius: 6px;
             border: none;
             font-weight: 600;
@@ -197,23 +160,12 @@
             color: #fff;
             white-space: nowrap;
         }
-        .upload-controls .btn-group .upload-btn:active {
+        .upload-controls .upload-btn:active {
             transform: scale(.95);
         }
-        .upload-controls .btn-group .upload-btn.secondary {
-            background: #e8eaf6;
-            color: #283593;
-            padding: 3px 8px;
-            font-size: 10px;
-        }
-        .upload-controls .btn-group .upload-btn.icon-btn {
-            padding: 3px 6px;
-            font-size: 14px;
-            background: transparent;
-            color: #666;
-        }
-        .upload-controls .btn-group .upload-btn.icon-btn:active {
-            background: #e8eaf6;
+        .upload-controls .upload-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         #fileInput {
@@ -226,12 +178,13 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(255, 255, 255, .92);
+            background: rgba(255, 255, 255, .95);
             border-radius: 12px;
             z-index: 10;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            padding: 16px;
         }
         .upload-loading.active {
             display: flex;
@@ -255,10 +208,29 @@
             color: #888;
             font-weight: 400;
         }
+        .upload-loading .progress-bar {
+            width: 80%;
+            max-width: 300px;
+            height: 6px;
+            background: #e8eaf6;
+            border-radius: 4px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        .upload-loading .progress-bar .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #283593, #5c6bc0);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        .upload-loading .progress-text {
+            font-size: 11px;
+            color: #666;
+            margin-top: 4px;
+        }
         @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+            to { transform: rotate(360deg); }
         }
 
         /* ===== STATS GRID & TAB ===== */
@@ -330,14 +302,8 @@
             display: block;
         }
         @keyframes fadeIn {
-            from {
-                transform: translateY(10px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
+            from { transform: translateY(10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         /* ===== OTHER COMPONENTS ===== */
@@ -415,7 +381,6 @@
             margin-bottom: 6px;
             box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
         }
-        .filter-section select,
         .filter-section input {
             width: 100%;
             padding: 5px 8px;
@@ -425,7 +390,6 @@
             margin-bottom: 4px;
             background: #fafafa;
         }
-        .filter-section select:focus,
         .filter-section input:focus {
             outline: none;
             border-color: #283593;
@@ -477,19 +441,29 @@
         }
         .empty-state {
             text-align: center;
-            padding: 20px 16px;
+            padding: 30px 16px;
             color: #999;
         }
         .empty-state .icon {
-            font-size: 32px;
-            margin-bottom: 6px;
+            font-size: 48px;
+            margin-bottom: 8px;
+        }
+        .empty-state .title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+        .empty-state .sub {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
         }
         .info-bar {
             background: #fff;
             border-radius: 8px;
             padding: 5px 10px;
             font-size: 9px;
-            color: #999;
+            color: #666;
             text-align: center;
             box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
             display: flex;
@@ -498,13 +472,17 @@
             flex-wrap: wrap;
             gap: 4px;
         }
-        .info-bar .saved-badge {
-            background: #4caf50;
-            color: #fff;
-            padding: 1px 6px;
-            border-radius: 8px;
-            font-size: 8px;
+        .info-bar .info-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .info-bar .info-item .label {
+            color: #999;
+        }
+        .info-bar .info-item .value {
             font-weight: 600;
+            color: #1a237e;
         }
         .search-section {
             background: #fff;
@@ -533,20 +511,6 @@
             outline: none;
             border-color: #283593;
         }
-        .search-section .search-btn {
-            padding: 6px 10px;
-            background: #283593;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 600;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        .search-section .search-btn:active {
-            transform: scale(.95);
-        }
         .search-section .clear-btn {
             padding: 6px 8px;
             background: #e8eaf6;
@@ -572,26 +536,6 @@
         .summary-header h4 {
             font-size: 12px;
             color: #333;
-        }
-        .summary-header .search-toggle-btn {
-            background: none;
-            border: 1px solid #e0e0e0;
-            border-radius: 16px;
-            padding: 2px 10px;
-            font-size: 10px;
-            color: #666;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 3px;
-        }
-        .summary-header .search-toggle-btn:active {
-            background: #f5f5f5;
-        }
-        .summary-header .search-toggle-btn.active {
-            background: #e8eaf6;
-            border-color: #283593;
-            color: #283593;
         }
 
         /* ===== OVERLAY & TOAST ===== */
@@ -625,14 +569,8 @@
             animation: slideUp .3s ease;
         }
         @keyframes slideUp {
-            from {
-                transform: translateY(30px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
         .detail-header {
             display: flex;
@@ -749,90 +687,6 @@
             color: #999;
             font-size: 11px;
         }
-        .config-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, .5);
-            z-index: 3000;
-            padding: 12px;
-            animation: fadeIn .3s;
-            overflow-y: auto;
-        }
-        .config-overlay.active {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .config-panel {
-            background: #fff;
-            border-radius: 14px;
-            max-width: 500px;
-            width: 100%;
-            padding: 16px;
-            animation: slideUp .3s ease;
-        }
-        .config-panel h3 {
-            color: #1a237e;
-            font-size: 15px;
-            margin-bottom: 4px;
-        }
-        .config-panel p {
-            color: #666;
-            font-size: 11px;
-            margin-bottom: 10px;
-        }
-        .config-panel label {
-            font-size: 11px;
-            font-weight: 600;
-            color: #333;
-            display: block;
-            margin-top: 8px;
-            margin-bottom: 2px;
-        }
-        .config-panel input,
-        .config-panel textarea {
-            width: 100%;
-            padding: 6px 8px;
-            border: 1px solid #e0e0e0;
-            border-radius: 6px;
-            font-size: 11px;
-            background: #fafafa;
-        }
-        .config-panel textarea {
-            min-height: 60px;
-            font-family: monospace;
-            font-size: 10px;
-            resize: vertical;
-        }
-        .config-panel .btn-row {
-            display: flex;
-            gap: 4px;
-            margin-top: 10px;
-        }
-        .config-panel .btn-row button {
-            flex: 1;
-            padding: 6px;
-            border: none;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .config-panel .btn-row .btn-save {
-            background: #283593;
-            color: #fff;
-        }
-        .config-panel .btn-row .btn-cancel {
-            background: #e8eaf6;
-            color: #666;
-        }
-        .config-panel .btn-row button:active {
-            transform: scale(.95);
-        }
         .toast {
             position: fixed;
             bottom: 12px;
@@ -863,69 +717,22 @@
         }
 
         @media (max-width:480px) {
-            body {
-                padding: 8px;
-            }
-            .header {
-                padding: 8px 10px;
-            }
-            .header h1 {
-                font-size: 14px;
-            }
-            .header p {
-                font-size: 10px;
-            }
-            .upload-area {
-                padding: 8px 10px 10px;
-            }
-            .upload-area .icon {
-                font-size: 18px;
-            }
-            .upload-area .title-row h3 {
-                font-size: 12px;
-            }
-            .upload-controls {
-                flex-wrap: wrap;
-                padding: 4px 6px;
-            }
-            .upload-controls .mode-group {
-                flex-wrap: wrap;
-                gap: 4px;
-            }
-            .upload-controls .mode-group label {
-                font-size: 10px;
-            }
-            .upload-controls .btn-group .upload-btn {
-                font-size: 10px;
-                padding: 3px 8px;
-            }
-            .stats-grid {
-                gap: 6px;
-            }
-            .stat-card .number {
-                font-size: 15px;
-            }
-            .detail-panel {
-                padding: 10px;
-                margin: 4px;
-            }
-            .toast {
-                font-size: 10px;
-                padding: 6px 12px;
-                bottom: 8px;
-            }
-            .info-bar {
-                font-size: 8px;
-                padding: 4px 8px;
-            }
-            .header .sync-status {
-                position: static;
-                margin-top: 2px;
-                justify-content: center;
-            }
-            .chart-wrapper {
-                height: 130px;
-            }
+            body { padding: 8px; }
+            .header { padding: 8px 10px; }
+            .header h1 { font-size: 14px; }
+            .header p { font-size: 10px; }
+            .upload-area { padding: 8px 10px 10px; }
+            .upload-area .icon { font-size: 18px; }
+            .upload-area .title-row h3 { font-size: 12px; }
+            .upload-controls { flex-wrap: wrap; padding: 4px 6px; }
+            .upload-controls .upload-btn { font-size: 10px; padding: 4px 12px; }
+            .stats-grid { gap: 6px; }
+            .stat-card .number { font-size: 15px; }
+            .detail-panel { padding: 10px; margin: 4px; }
+            .toast { font-size: 10px; padding: 6px 12px; bottom: 8px; }
+            .info-bar { font-size: 8px; padding: 4px 8px; }
+            .header .sync-status { position: static; margin-top: 2px; justify-content: center; }
+            .chart-wrapper { height: 130px; }
         }
     </style>
 </head>
@@ -933,55 +740,43 @@
 
     <div class="header">
         <h1>📊 Sales Data Analyzer</h1>
-        <p>Upload Excel/CSV untuk analisis penjualan</p>
+        <p>Department 2039 • 2040 • 5214</p>
         <div class="sync-status" id="syncStatus">
             <span class="dot offline" id="syncDot"></span>
             <span id="syncText">Offline</span>
         </div>
     </div>
 
-    <!-- ===== UPLOAD AREA YANG SANGAT DIPERKECIL ===== -->
+    <!-- ===== UPLOAD AREA ===== -->
     <div class="upload-area" id="uploadArea">
         <div class="title-row">
             <span class="icon">📁</span>
             <h3>Upload File</h3>
             <span class="format">.xlsx .xls .csv</span>
         </div>
-        <div class="sub-text">Drag & drop atau klik tombol</div>
+        <div class="sub-text">Klik tombol untuk upload file</div>
 
-        <!-- BARIS UTAMA: MODE + TOMBOL -->
         <div class="upload-controls">
-            <div class="mode-group">
-                <span class="mode-label">📌 Mode:</span>
-                <label>
-                    <input type="radio" name="uploadMode" value="continue" checked>
-                    Continue
-                </label>
-                <label>
-                    <input type="radio" name="uploadMode" value="replace">
-                    Replace
-                </label>
-            </div>
-            <div class="btn-group">
-                <button class="upload-btn" id="uploadBtn">📂 Pilih</button>
-                <button class="upload-btn secondary" id="loadFromFirebaseBtn">☁️</button>
-                <button class="upload-btn icon-btn" id="configBtn">⚙️</button>
-            </div>
+            <button class="upload-btn" id="uploadBtn">📂 Pilih File</button>
         </div>
 
         <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
 
         <div class="upload-loading" id="uploadLoading">
             <div class="spinner"></div>
-            <p>Memproses file...</p>
-            <span class="sub" id="uploadProgress">Membaca data</span>
+            <p id="uploadStatus">Membaca File...</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <span class="progress-text" id="progressText">0%</span>
+            <span class="sub" id="uploadProgress">Memproses data</span>
         </div>
     </div>
 
     <div class="stats-grid" id="statsGrid" style="display:none;">
         <div class="stat-card"><div class="number" id="totalSales">0</div><div class="label">Total Sales (Rp)</div></div>
         <div class="stat-card"><div class="number" id="totalQty">0</div><div class="label">Total Qty Sold</div></div>
-        <div class="stat-card"><div class="number" id="totalItems">0</div><div class="label">Total Items</div></div>
+        <div class="stat-card"><div class="number" id="totalItems">0</div><div class="label">Total SKU</div></div>
         <div class="stat-card"><div class="number" id="totalDays">0</div><div class="label">Days of Data</div></div>
     </div>
 
@@ -995,13 +790,6 @@
     <div id="tabContent">
         <div class="tab-content active" id="tab-summary">
             <div class="filter-section">
-                <!-- DROPDOWN PERIODE -->
-                <div class="filter-row">
-                    <select id="periodFilter" onchange="onPeriodChange()">
-                        <option value="all">📅 All Periods</option>
-                    </select>
-                </div>
-                <select id="filterDept" onchange="applyFilters()"><option value="all">All Departments</option></select>
                 <div class="filter-row">
                     <input type="date" id="filterDateFrom" onchange="applyFilters()">
                     <input type="date" id="filterDateTo" onchange="applyFilters()">
@@ -1019,10 +807,8 @@
 
         <div class="tab-content" id="tab-products">
             <div class="filter-section">
-                <select id="productFilterDept" onchange="renderProducts()"><option value="all">All Departments</option></select>
                 <div style="display:flex; gap:4px;">
                     <input type="number" id="productLimit" value="20" style="flex:1;" placeholder="Limit" onchange="renderProducts()">
-                    <button class="upload-btn" style="padding:4px 10px; font-size:10px; margin:0; background:#283593; color:#fff; border:none; border-radius:6px; cursor:pointer;" onclick="renderProducts()">Apply</button>
                 </div>
             </div>
             <div class="product-list" id="productList"><div class="loading"><div class="spinner"></div></div></div>
@@ -1039,8 +825,10 @@
     </div>
 
     <div class="info-bar" id="infoBar" style="display:none;">
-        <span id="fileInfo">No file loaded</span>
-        <span id="saveStatus"></span>
+        <span class="info-item"><span class="label">📅 Periode:</span> <span class="value" id="infoPeriod">-</span></span>
+        <span class="info-item"><span class="label">📆 Hari:</span> <span class="value" id="infoDays">-</span></span>
+        <span class="info-item"><span class="label">📦 SKU:</span> <span class="value" id="infoSku">-</span></span>
+        <span class="info-item"><span class="label">🔄 Update:</span> <span class="value" id="infoUpdate">-</span></span>
     </div>
 
     <div class="detail-overlay" id="detailOverlay" onclick="closeDetail(event)">
@@ -1064,59 +852,14 @@
         </div>
     </div>
 
-    <div class="config-overlay" id="configOverlay">
-        <div class="config-panel">
-            <h3>⚙️ Firebase Configuration</h3>
-            <p>Masukkan konfigurasi Firebase Anda. Data akan disimpan di Firestore.</p>
-            <label>Firebase Config (JSON)</label>
-            <textarea id="firebaseConfigInput" placeholder='{\n  "apiKey": "your-api-key",\n  "authDomain": "your-auth-domain",\n  "projectId": "your-project-id",\n  "storageBucket": "your-storage-bucket",\n  "messagingSenderId": "your-sender-id",\n  "appId": "your-app-id"\n}'></textarea>
-            <label>Collection Name</label>
-            <input type="text" id="collectionNameInput" value="sales_data">
-            <div class="btn-row">
-                <button class="btn-save" onclick="saveFirebaseConfig()">💾 Save</button>
-                <button class="btn-cancel" onclick="closeConfig()">Cancel</button>
-            </div>
-            <div id="configStatus" style="margin-top:8px; font-size:10px; color:#666;"></div>
-        </div>
-    </div>
-
     <div class="toast" id="toast"></div>
 
     <script>
         // ============================================================
-        // VARIABEL GLOBAL
+        // CONSTANTS
         // ============================================================
-        let currentPeriod = null;
-        let availablePeriods = [];
-        let isInitialLoad = true;
-
-        // ============================================================
-        // DIVISION MASTER
-        // ============================================================
-        const DIVISIONS = {
-            "24": {
-                name: "Division 24",
-                departments: ["2031", "2032"]
-            },
-            "25": {
-                name: "Division 25",
-                departments: ["2033", "2034", "2035", "2036", "5212"]
-            },
-            "26": {
-                name: "Division 26",
-                departments: ["2037", "2038", "5213"]
-            },
-            "27": {
-                name: "Division 27",
-                departments: ["2039", "2040", "5214"]
-            },
-            "28": {
-                name: "Division 28",
-                departments: ["2041", "2042", "5216"]
-            }
-        };
-
-        let currentDivision = localStorage.getItem("currentDivision") || "27";
+        const COLLECTION = "sales";
+        const VALID_DEPARTMENTS = ["2039", "2040", "5214"];
 
         // ============================================================
         // FIREBASE CONFIG - HARDCODED
@@ -1158,27 +901,13 @@
         }
 
         // ============================================================
-        // DIVISION FUNCTIONS
-        // ============================================================
-        function setDivision(div) {
-            currentDivision = div;
-            localStorage.setItem("currentDivision", div);
-        }
-
-        function getCurrentDivision() {
-            return DIVISIONS[currentDivision];
-        }
-
-        // ============================================================
-        // FIREBASE INIT WITH REAL-TIME SNAPSHOT LISTENER
+        // FIREBASE INIT
         // ============================================================
         let firebaseApp = null;
         let firestore = null;
         let isFirebaseReady = false;
-        let currentDocId = null;
         let isSaving = false;
         let isDataLoaded = false;
-        let summaryUnsubscribe = null;
         let originalData = [];
         let salesData = [];
         let searchQuery = '';
@@ -1209,16 +938,12 @@
                     firebaseApp = firebase.initializeApp(config);
                 }
                 firestore = firebase.firestore();
-                await firestore.collection(getCollectionName()).limit(1).get();
+                await firestore.collection(COLLECTION).limit(1).get();
                 isFirebaseReady = true;
                 updateSyncStatus('synced', 'Connected');
                 console.log('✅ Firebase connected');
 
-                // Load available periods dulu
-                await loadAvailablePeriods();
-
-                // Baru init listener
-                initRealtimeSummaryListener();
+                await loadData();
 
                 return true;
             } catch (err) {
@@ -1230,607 +955,186 @@
         }
 
         // ============================================================
-        // FUNGSI PERIODE
+        // LOAD DATA
         // ============================================================
-        async function loadAvailablePeriods() {
-            if (!isFirebaseReady) {
-                console.warn('Firebase not ready');
-                return;
-            }
+        async function loadData() {
+            if (!isFirebaseReady) return;
 
             try {
-                const snapshot = await firestore.collection('sales_summary')
-                    .orderBy('period', 'desc')
+                updateSyncStatus('syncing', 'Loading data...');
+                const snapshot = await firestore.collection(COLLECTION)
+                    .orderBy('date', 'desc')
                     .get();
 
-                availablePeriods = [];
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    if (data.period) {
-                        availablePeriods.push(data.period);
-                    }
-                });
-
-                console.log('📅 Available periods:', availablePeriods);
-
-                // Update dropdown
-                const periodFilter = document.getElementById('periodFilter');
-                if (periodFilter) {
-                    const currentValue = periodFilter.value;
-                    periodFilter.innerHTML = '<option value="all">📅 All Periods</option>';
-
-                    // Tambahkan separator
-                    if (availablePeriods.length > 0) {
-                        const separator = document.createElement('option');
-                        separator.disabled = true;
-                        separator.textContent = '────────────';
-                        periodFilter.appendChild(separator);
-                    }
-
-                    availablePeriods.forEach(p => {
-                        const opt = document.createElement('option');
-                        opt.value = p;
-                        // Format: Juli 2026
-                        const [year, month] = p.split('-');
-                        const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-                            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-                        ];
-                        opt.textContent = monthNames[parseInt(month) - 1] + ' ' + year;
-                        periodFilter.appendChild(opt);
-                    });
-
-                    // Jika ini pertama kali load atau currentValue tidak valid
-                    if (isInitialLoad || !availablePeriods.includes(currentValue)) {
-                        const defaultPeriod = getDefaultPeriod();
-                        if (availablePeriods.includes(defaultPeriod)) {
-                            periodFilter.value = defaultPeriod;
-                        } else if (availablePeriods.length > 0) {
-                            periodFilter.value = availablePeriods[0];
-                        } else {
-                            periodFilter.value = 'all';
-                        }
-                        isInitialLoad = false;
-                    } else {
-                        // Pertahankan pilihan user
-                        periodFilter.value = currentValue;
-                    }
-
-                    // Load period
-                    if (periodFilter.value && periodFilter.value !== 'all') {
-                        await loadPeriod(periodFilter.value);
-                    } else if (periodFilter.value === 'all') {
-                        await loadAllPeriods();
-                    }
-                }
-
-                return availablePeriods;
-
-            } catch (err) {
-                console.error('Error loading periods:', err);
-                return [];
-            }
-        }
-
-        function getDefaultPeriod() {
-            // Kalau ada bulan berjalan, pakai bulan berjalan
-            const now = new Date();
-            const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-
-            if (availablePeriods.includes(currentMonth)) {
-                return currentMonth;
-            }
-
-            // else pakai periode terbaru
-            if (availablePeriods.length > 0) {
-                return availablePeriods[0];
-            }
-
-            return null;
-        }
-
-        function formatPeriodLabel(period) {
-            const [year, month] = period.split('-');
-            const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-            ];
-            return monthNames[parseInt(month) - 1] + ' ' + year;
-        }
-
-        async function onPeriodChange() {
-            const periodFilter = document.getElementById('periodFilter');
-            if (!periodFilter) return;
-
-            const selected = periodFilter.value;
-            if (!selected) return;
-
-            if (selected === 'all') {
-                await loadAllPeriods();
-            } else {
-                await loadPeriod(selected);
-            }
-        }
-
-        async function loadPeriod(period) {
-            if (!isFirebaseReady || !period) {
-                console.warn('Cannot load period:', period);
-                return;
-            }
-
-            try {
-                console.log('📂 Loading period:', period);
-                currentPeriod = period;
-                showToast(`📂 Memuat ${formatPeriodLabel(period)}...`, 'info', 1500);
-
-                const collection = getCollectionName();
-                const docRef = firestore.collection(collection).doc(period);
-                const doc = await docRef.get();
-
-                if (!doc.exists) {
-                    showToast(`⚠️ Data untuk ${formatPeriodLabel(period)} tidak ditemukan`, 'warning');
+                if (snapshot.empty) {
+                    showEmptyState();
+                    updateSyncStatus('synced', 'No Data');
                     return;
                 }
 
-                const docData = doc.data();
-                const chunkCount = docData.chunkCount || 1;
-                let allData = [];
+                const data = [];
+                snapshot.forEach(doc => {
+                    data.push(doc.data());
+                });
 
-                for (let i = 0; i < chunkCount; i++) {
-                    const chunkSnap = await docRef.collection('chunks').doc('chunk_' + i).get();
-                    if (chunkSnap.exists && chunkSnap.data().data) {
-                        allData = allData.concat(chunkSnap.data().data);
-                    }
+                originalData = data;
+                salesData = [...data];
+
+                // Update stats
+                const totalAmount = data.reduce((s, d) => s + (d.amount || 0), 0);
+                const totalQty = data.reduce((s, d) => s + (d.qty || 0), 0);
+                const uniqueSku = new Set(data.map(d => d.sku || d.itemName)).size;
+                const uniqueDays = new Set(data.map(d => d.date)).size;
+
+                document.getElementById('totalSales').textContent = formatRupiah(totalAmount);
+                document.getElementById('totalQty').textContent = Math.round(totalQty);
+                document.getElementById('totalItems').textContent = uniqueSku;
+                document.getElementById('totalDays').textContent = uniqueDays;
+
+                // Set date range
+                const dates = data.map(d => d.date).filter(d => d).sort();
+                if (dates.length > 0) {
+                    document.getElementById('filterDateFrom').value = dates[0];
+                    document.getElementById('filterDateTo').value = dates[dates.length - 1];
                 }
 
-                if (allData.length > 0) {
-                    originalData = allData;
-                    salesData = [...allData];
-                    populateFilters();
+                // Update info bar
+                const periods = new Set(data.map(d => d.period)).size;
+                document.getElementById('infoPeriod').textContent = periods + ' bulan';
+                document.getElementById('infoDays').textContent = uniqueDays + ' hari';
+                document.getElementById('infoSku').textContent = uniqueSku + ' SKU';
+                document.getElementById('infoUpdate').textContent = new Date().toLocaleDateString('id-ID');
 
-                    // Set date range based on actual data
-                    const dates = allData.map(d => d.dateStr).filter(d => d && d !== 'Unknown');
-                    if (dates.length > 0) {
-                        const sortedDates = dates.sort();
-                        const minDate = sortedDates[0];
-                        const maxDate = sortedDates[sortedDates.length - 1];
-                        document.getElementById('filterDateFrom').value = minDate;
-                        document.getElementById('filterDateTo').value = maxDate;
-                    } else {
-                        document.getElementById('filterDateFrom').value = '';
-                        document.getElementById('filterDateTo').value = '';
-                    }
+                statsGrid.style.display = 'grid';
+                tabs.style.display = 'flex';
+                infoBar.style.display = 'flex';
 
-                    renderDashboard();
-                    const daysCount = new Set(allData.map(d => d.dateStr)).size;
-                    showToast(`✅ ${formatPeriodLabel(period)} dimuat (${allData.length} records, ${daysCount} hari)`, 'success', 1500);
-
-                    // Update info bar
-                    const infoText = `📅 ${formatPeriodLabel(period)} • ${allData.length} records • ${daysCount} days`;
-                    document.getElementById('fileInfo').textContent = infoText;
-                    document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Loaded</span>';
-
-                    statsGrid.style.display = 'grid';
-                    tabs.style.display = 'flex';
-                    infoBar.style.display = 'flex';
-                    afterDataLoaded();
-                } else {
-                    showToast(`⚠️ Tidak ada data untuk ${formatPeriodLabel(period)}`, 'warning');
-                }
+                renderDashboard();
+                afterDataLoaded();
+                updateSyncStatus('synced', 'Connected');
 
             } catch (err) {
-                console.error('Error loading period:', err);
-                showToast(`❌ Gagal memuat ${formatPeriodLabel(period)}`, 'warning');
+                console.error('Error loading data:', err);
+                updateSyncStatus('error', 'Load failed');
+                showEmptyState();
             }
         }
 
-        async function loadAllPeriods() {
-            if (!isFirebaseReady || availablePeriods.length === 0) {
-                console.warn('No periods available');
+        function showEmptyState() {
+            const container = document.getElementById('summaryContent');
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">📭</div>
+                    <div class="title">Belum Ada Data</div>
+                    <div class="sub">Silakan upload file Sales untuk memulai</div>
+                </div>
+            `;
+            statsGrid.style.display = 'none';
+            tabs.style.display = 'none';
+            infoBar.style.display = 'none';
+        }
+
+        // ============================================================
+        // UPLOAD FILE
+        // ============================================================
+        function handleFile(file) {
+            console.log('Handling file:', file.name);
+            const uploadLoading = document.getElementById('uploadLoading');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const uploadStatus = document.getElementById('uploadStatus');
+
+            if (!file) {
+                showToast('No file selected', 'warning');
                 return;
             }
 
-            try {
-                showToast('📂 Memuat semua periode...', 'info', 1500);
-                currentPeriod = 'all';
-                let allData = [];
-                const collection = getCollectionName();
-
-                for (const period of availablePeriods) {
-                    try {
-                        const docRef = firestore.collection(collection).doc(period);
-                        const doc = await docRef.get();
-                        if (!doc.exists) continue;
-
-                        const docData = doc.data();
-                        const chunkCount = docData.chunkCount || 1;
-
-                        for (let i = 0; i < chunkCount; i++) {
-                            const chunkSnap = await docRef.collection('chunks').doc('chunk_' + i).get();
-                            if (chunkSnap.exists && chunkSnap.data().data) {
-                                allData = allData.concat(chunkSnap.data().data);
-                            }
-                        }
-                    } catch (err) {
-                        console.warn('Error loading period:', period, err);
-                    }
-                }
-
-                if (allData.length > 0) {
-                    originalData = allData;
-                    salesData = [...allData];
-                    populateFilters();
-
-                    // Set date range based on actual data
-                    const dates = allData.map(d => d.dateStr).filter(d => d && d !== 'Unknown');
-                    if (dates.length > 0) {
-                        const sortedDates = dates.sort();
-                        const minDate = sortedDates[0];
-                        const maxDate = sortedDates[sortedDates.length - 1];
-                        document.getElementById('filterDateFrom').value = minDate;
-                        document.getElementById('filterDateTo').value = maxDate;
-                    } else {
-                        document.getElementById('filterDateFrom').value = '';
-                        document.getElementById('filterDateTo').value = '';
-                    }
-
-                    renderDashboard();
-                    const daysCount = new Set(allData.map(d => d.dateStr)).size;
-                    showToast(`✅ Semua periode dimuat (${allData.length} records, ${daysCount} hari)`, 'success', 1500);
-
-                    const infoText = `📅 All Periods • ${allData.length} records • ${daysCount} days`;
-                    document.getElementById('fileInfo').textContent = infoText;
-                    document.getElementById('saveStatus').innerHTML = '<span class="saved-badge">☁️ Loaded</span>';
-
-                    statsGrid.style.display = 'grid';
-                    tabs.style.display = 'flex';
-                    infoBar.style.display = 'flex';
-                    afterDataLoaded();
-                } else {
-                    showToast('⚠️ Tidak ada data di semua periode', 'warning');
-                }
-
-            } catch (err) {
-                console.error('Error loading all periods:', err);
-                showToast('❌ Gagal memuat semua periode', 'warning');
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (!['xlsx', 'xls', 'csv'].includes(ext)) {
+                showToast('Format file tidak didukung. Gunakan .xlsx, .xls, atau .csv', 'warning');
+                return;
             }
-        }
 
-        function renderDashboard() {
-            updateStats();
-            renderSummary();
-            renderProducts();
-            renderDeptSummary();
-            renderCharts();
-        }
+            uploadLoading.classList.add('active');
+            uploadBtn.disabled = true;
+            progressFill.style.width = '0%';
+            progressText.textContent = '0%';
+            uploadStatus.textContent = '📖 Membaca File...';
 
-        // ============================================================
-        // FUNGSI APPLY FILTERS
-        // ============================================================
-        function applyFilters() {
-            updateStats();
-            renderSummary();
-            renderProducts();
-            renderDeptSummary();
-            renderCharts();
-        }
+            const reader = new FileReader();
 
-        // ============================================================
-        // FUNGSI LISTENER - HANYA REFRESH DAFTAR PERIODE
-        // ============================================================
-        function initRealtimeSummaryListener() {
-            if (!isFirebaseReady) return;
-
-            if (summaryUnsubscribe) summaryUnsubscribe();
-
-            updateSyncStatus('syncing', 'Listening to Cloud...');
-
-            summaryUnsubscribe = firestore.collection('sales_summary')
-                .orderBy('updatedAt', 'desc')
-                .onSnapshot(async (snapshot) => {
-                    if (snapshot.empty) {
-                        console.log('📊 No summary found in cloud');
-                        updateSyncStatus('synced', 'Connected (DB Empty)');
-                        return;
-                    }
-
-                    if (isSaving) {
-                        console.log('⏳ Perubahan cloud dideteksi tapi dilewati karena aplikasi sedang menulis data lokal.');
-                        return;
-                    }
-
-                    console.log('🔔 Cloud update detected, reloading period list...');
-
-                    // Simpan pilihan saat ini
-                    const periodFilter = document.getElementById('periodFilter');
-                    const currentSelection = periodFilter ? periodFilter.value : null;
-
-                    // Reload daftar period
-                    await loadAvailablePeriods();
-
-                    // Kembalikan pilihan user jika masih valid
-                    if (periodFilter && currentSelection) {
-                        if (availablePeriods.includes(currentSelection) || currentSelection === 'all') {
-                            periodFilter.value = currentSelection;
-                            if (currentSelection === 'all') {
-                                await loadAllPeriods();
-                            } else if (currentSelection !== 'all') {
-                                await loadPeriod(currentSelection);
-                            }
-                        }
-                    }
-
-                    updateSyncStatus('synced', 'Cloud Aktif');
-
-                }, (error) => {
-                    console.error("Listener error:", error);
-                    updateSyncStatus('error', 'Sync Offline');
-                });
-        }
-
-        // ============================================================
-        // FUNGSI LAINNYA (TIDAK DIUBAH)
-        // ============================================================
-        function renderSummaryFromData(topProducts, totalAmount, totalQty) {
-            if (topProducts && topProducts.length > 0) {
-                const container = document.getElementById('summaryContent');
-                let html = `
-                    <div style="background:white; border-radius:8px; padding:10px 12px; box-shadow:0 1px 4px rgba(0,0,0,0.05); margin-bottom:8px;">
-                        <div class="summary-header">
-                            <h4>🏆 Top 10 Products</h4>
-                        </div>
-                        <p style="font-size:9px; color:#999; margin-top:2px;">Klik item untuk melihat detail penjualan per tanggal</p>
-                    </div>
-                    <div class="product-list">
-                `;
-                topProducts.forEach((item, i) => {
-                    html += `
-                        <div class="product-item" onclick="showItemDetail('${escapeString(item.name)}', '${escapeString(item.department || item.dept || '')}')">
-                            <span style="font-size:10px; color:#999; margin-right:4px; min-width:18px;">#${i+1}</span>
-                            <span class="name">${item.name}</span>
-                            <span class="dept">${item.department || item.dept || ''}</span>
-                            <span style="display:flex; align-items:center; gap:3px;">
-                                <span class="qty">${Math.round(item.qty || 0)}x</span>
-                                <span class="amount">${formatRupiah(item.amount || 0)}</span>
-                                <span class="click-hint">👉</span>
-                            </span>
-                        </div>
-                    `;
-                });
-                html += '</div>';
-                container.innerHTML = html;
-            }
-        }
-
-        function renderDeptChartFromSummary(departmentSales) {
-            if (departmentSales && departmentSales.length > 0) {
-                const ctx2 = document.getElementById('deptChart').getContext('2d');
-                if (chartDept) chartDept.destroy();
-                chartDept = new Chart(ctx2, {
-                    type: 'bar',
-                    data: {
-                        labels: departmentSales.map(d => d.department),
-                        datasets: [{ label: 'Sales by Department', data: departmentSales.map(d => d.amount),
-                            backgroundColor: ['#283593', '#1a237e', '#3f51b5', '#5c6bc0', '#7986cb'],
-                            borderRadius: 4 }]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true, ticks: { callback: v => formatRupiah(v, true) } } } }
-                });
-            }
-        }
-
-        function getCollectionName() {
-            return localStorage.getItem('firebaseCollection') || 'sales_data';
-        }
-
-        function splitDataForFirestore(data) {
-            const chunks = [];
-            const chunkSize = 250;
-            for (let i = 0; i < data.length; i += chunkSize) {
-                chunks.push(data.slice(i, i + chunkSize));
-            }
-            return chunks;
-        }
-
-        function getPeriod(data) {
-            if (data && data.length > 0) {
-                const firstDate = data[0]?.dateStr;
-                if (firstDate && firstDate !== 'Unknown') {
-                    return firstDate.substring(0, 7);
-                }
-            }
-            return new Date().toISOString().slice(0, 7);
-        }
-
-        function generateUniqueKey(row) {
-            return `${row.department}|${row.dateStr}|${row.itemName}|${row.qty}|${row.amount}`;
-        }
-
-        function removeDuplicates(data) {
-            const seen = new Set();
-            const unique = [];
-            let duplicates = 0;
-            data.forEach(row => {
-                const key = generateUniqueKey(row);
-                if (seen.has(key)) {
-                    duplicates++;
-                } else {
-                    seen.add(key);
-                    unique.push(row);
-                }
-            });
-            if (duplicates > 0) console.log(`✅ ${duplicates} duplicate records removed`);
-            return unique;
-        }
-
-        async function loadAllDataFromChunks(docId, chunkCount) {
-            let allData = [];
-            const collection = getCollectionName();
-            for (let i = 0; i < chunkCount; i++) {
+            reader.onload = function(e) {
                 try {
-                    const chunkRef = firestore.collection(collection).doc(docId).collection('chunks').doc('chunk_' + i);
-                    const chunkSnap = await chunkRef.get();
-                    if (!chunkSnap.exists) continue;
-                    const chunkData = chunkSnap.data();
-                    if (chunkData && chunkData.data) allData = allData.concat(chunkData.data);
-                } catch (err) { console.warn('Error loading chunk:', err); }
-            }
-            return allData;
-        }
+                    let data = null;
+                    if (ext === 'csv') {
+                        const text = e.target.result;
+                        const lines = text.split('\n').filter(line => line.trim());
+                        if (lines.length === 0) throw new Error('CSV kosong');
 
-        function getUploadMode() {
-            const selected = document.querySelector('input[name="uploadMode"]:checked');
-            return selected ? selected.value : 'continue';
-        }
-
-        function calculateTopProducts(data, limit = 10) {
-            const productSales = {};
-            data.forEach(d => {
-                if (!productSales[d.itemName]) productSales[d.itemName] = { qty: 0, amount: 0, department: d.department };
-                productSales[d.itemName].qty += d.qty;
-                productSales[d.itemName].amount += d.amount;
-            });
-            return Object.entries(productSales)
-                .sort((a, b) => b[1].amount - a[1].amount)
-                .slice(0, limit)
-                .map(([name, d]) => ({ name: name, amount: d.amount, qty: d.qty, department: d.department }));
-        }
-
-        function calculateDepartmentSales(data) {
-            const deptData = {};
-            data.forEach(d => {
-                if (!deptData[d.department]) deptData[d.department] = { amount: 0, qty: 0 };
-                deptData[d.department].amount += d.amount;
-                deptData[d.department].qty += d.qty;
-            });
-            return Object.entries(deptData)
-                .sort((a, b) => b[1].amount - a[1].amount)
-                .map(([department, d]) => ({ department: department, amount: d.amount, qty: d.qty }));
-        }
-
-        async function saveToFirebase(data, filename) {
-            if (!isFirebaseReady) { showToast('Firebase not connected.', 'warning'); return false; }
-            if (isSaving) return false;
-
-            try {
-                isSaving = true;
-                updateSyncStatus('syncing', 'Saving to Cloud...');
-
-                const collection = getCollectionName();
-                const period = getPeriod(data);
-                let mode = getUploadMode();
-
-                const docRef = firestore.collection(collection).doc(period);
-                const doc = await docRef.get();
-                const docExists = doc.exists;
-
-                if (!docExists) mode = 'new_period';
-
-                let finalData = data;
-                let existingRecordCount = 0;
-
-                if (docExists && mode === 'continue') {
-                    const existingDoc = doc.data();
-                    existingRecordCount = existingDoc.recordCount || 0;
-                    const existingData = await loadAllDataFromChunks(period, existingDoc.chunkCount || 1);
-                    finalData = removeDuplicates(existingData.concat(data));
-                }
-
-                if (docExists && mode === 'replace') {
-                    const chunkCount = doc.data().chunkCount || 0;
-                    for (let i = 0; i < chunkCount; i++) {
-                        try { await docRef.collection('chunks').doc('chunk_' + i).delete(); } catch (e) {}
+                        const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+                        data = [];
+                        for (let i = 1; i < lines.length; i++) {
+                            const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+                            const row = {};
+                            headers.forEach((h, idx) => { row[h] = values[idx] || ''; });
+                            data.push(row);
+                        }
+                    } else {
+                        const workbook = XLSX.read(e.target.result, { type: 'array' });
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        data = XLSX.utils.sheet_to_json(firstSheet);
                     }
+
+                    if (!data || data.length === 0) {
+                        throw new Error('Tidak ada data dalam file');
+                    }
+
+                    console.log('Data parsed, rows:', data.length);
+                    uploadStatus.textContent = '✅ Validasi Header...';
+                    progressFill.style.width = '25%';
+                    progressText.textContent = '25%';
+
+                    processData(data, file.name);
+
+                } catch (err) {
+                    console.error('Error processing file:', err);
+                    uploadLoading.classList.remove('active');
+                    uploadBtn.disabled = false;
+                    progressFill.style.width = '0%';
+                    progressText.textContent = '0%';
+                    showToast('Error: ' + err.message, 'warning');
                 }
+            };
 
-                const totalAmount = finalData.reduce((sum, d) => sum + d.amount, 0);
-                const totalQty = finalData.reduce((sum, d) => sum + d.qty, 0);
-                const departments = [...new Set(finalData.map(d => d.department))];
-                const chunks = splitDataForFirestore(finalData);
+            reader.onerror = function() {
+                uploadLoading.classList.remove('active');
+                uploadBtn.disabled = false;
+                progressFill.style.width = '0%';
+                progressText.textContent = '0%';
+                showToast('Gagal membaca file', 'warning');
+            };
 
-                const mainData = {
-                    filename: filename,
-                    period: period,
-                    uploadedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    recordCount: finalData.length,
-                    totalAmount: totalAmount,
-                    totalQty: totalQty,
-                    departments: departments,
-                    daysCount: new Set(finalData.map(d => d.dateStr)).size,
-                    status: "completed",
-                    chunkCount: chunks.length,
-                    uploadMode: mode
-                };
-
-                await docRef.set(mainData);
-
-                const batch = firestore.batch();
-                for (let i = 0; i < chunks.length; i++) {
-                    batch.set(docRef.collection('chunks').doc('chunk_' + i), { index: i, data: chunks[i], count: chunks[i]
-                            .length });
-                }
-                await batch.commit();
-
-                const topProducts = calculateTopProducts(finalData, 10);
-                const departmentSales = calculateDepartmentSales(finalData);
-
-                await firestore.collection('sales_summary').doc(period).set({
-                    period: period,
-                    totalAmount: totalAmount,
-                    totalQty: totalQty,
-                    recordCount: finalData.length,
-                    departments: departments,
-                    daysCount: mainData.daysCount,
-                    topProducts: topProducts,
-                    departmentSales: departmentSales,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    filename: filename,
-                    uploadMode: mode,
-                    status: "completed"
-                });
-
-                // Setelah save: reload period list
-                await loadAvailablePeriods();
-
-                // Pilih period yang baru disimpan
-                const periodFilter = document.getElementById('periodFilter');
-                if (periodFilter && availablePeriods.includes(period)) {
-                    periodFilter.value = period;
-                    await loadPeriod(period);
-                }
-
-                showToast(`✅ Data Berhasil disimpan untuk ${formatPeriodLabel(period)}!`, 'success');
-                updateSyncStatus('synced', 'Cloud Aktif');
-                return true;
-
-            } catch (err) {
-                console.error('Save error:', err);
-                updateSyncStatus('error', 'Save failed');
-                return false;
-            } finally {
-                isSaving = false;
+            if (ext === 'csv') {
+                reader.readAsText(file);
+            } else {
+                reader.readAsArrayBuffer(file);
             }
-        }
-
-        async function loadFromFirebase(docId = null) {
-            if (!isFirebaseReady) return false;
-            try {
-                updateSyncStatus('syncing', 'Loading data...');
-                const collection = getCollectionName();
-                if (docId) {
-                    const doc = await firestore.collection(collection).doc(docId).get();
-                    if (doc.exists) await restoreData(doc.data(), docId);
-                }
-                return true;
-            } catch (err) { return false; }
         }
 
         function processData(json, filename) {
+            const uploadLoading = document.getElementById('uploadLoading');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const uploadStatus = document.getElementById('uploadStatus');
+
             const headers = Object.keys(json[0] || {});
             const colMap = {
                 date: findColumn(headers, ['Date', 'date', 'Tanggal', 'Day']),
                 dept: findColumn(headers, ['Department', 'Dept', 'department', 'Department Desc']),
                 item: findColumn(headers, ['Item Name', 'Item', 'item', 'Product', 'Product Name']),
-                itemCode: findColumn(headers, ['Item', 'Item Code', 'code', 'Kode', 'SKU']),
+                itemCode: findColumn(headers, ['Item Code', 'code', 'Kode', 'SKU']),
                 category: findColumn(headers, ['Category', 'category', 'Kategori']),
                 qty: findColumn(headers, ['Sales Qty', 'Qty', 'Quantity', 'qty']),
                 amount: findColumn(headers, ['Sales Amount(Without VAT)', 'Amount', 'Sales Amount', 'amount', 'Total'])
@@ -1839,59 +1143,160 @@
             if (!colMap.amount && !colMap.qty) {
                 uploadLoading.classList.remove('active');
                 uploadBtn.disabled = false;
+                progressFill.style.width = '0%';
+                progressText.textContent = '0%';
                 showToast('Kolom Sales Qty atau Sales Amount tidak ditemukan', 'warning');
                 return;
             }
 
-            salesData = json.map(row => {
+            uploadStatus.textContent = '🔍 Filter Department...';
+            progressFill.style.width = '50%';
+            progressText.textContent = '50%';
+
+            let processedData = json.map(row => {
                 const dateVal = colMap.date ? row[colMap.date] : null;
                 let parsedDate = null;
-                let dateStr = 'Unknown';
+                let dateStr = '';
                 if (dateVal) {
                     if (typeof dateVal === 'number') parsedDate = new Date((dateVal - 25569) * 86400 * 1000);
                     else parsedDate = new Date(dateVal);
                     if (!isNaN(parsedDate.getTime())) dateStr = parsedDate.toISOString().split('T')[0];
                 }
+                const department = colMap.dept ? String(row[colMap.dept] || '').trim().replace(/^="|"$/g, '') : '';
                 return {
-                    date: parsedDate,
-                    dateStr: dateStr,
-                    department: colMap.dept ? String(row[colMap.dept] || '').trim().replace(/^="|"$/g, '') : 'Unknown',
+                    date: dateStr,
+                    period: dateStr ? dateStr.substring(0, 7) : '',
+                    department: department,
+                    sku: colMap.itemCode ? String(row[colMap.itemCode] || '').trim().replace(/^="|"$/g, '') : '',
+                    barcode: '',
                     itemName: colMap.item ? String(row[colMap.item] || '').trim().replace(/^="|"$/g, '') : 'Unknown Item',
-                    itemCode: colMap.itemCode ? String(row[colMap.itemCode] || '').trim().replace(/^="|"$/g, '') : '',
                     category: colMap.category ? String(row[colMap.category] || '').trim() : '',
                     qty: parseFloat(colMap.qty ? row[colMap.qty] : 0) || 0,
                     amount: parseFloat(colMap.amount ? row[colMap.amount] : 0) || 0,
-                    _raw: row
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
                 };
-            }).filter(d => d.amount > 0 || d.qty > 0);
+            }).filter(d => {
+                // Filter by valid departments
+                if (!VALID_DEPARTMENTS.includes(String(d.department))) {
+                    return false;
+                }
+                return d.amount > 0 || d.qty > 0;
+            });
 
-            if (salesData.length === 0) {
+            if (processedData.length === 0) {
                 uploadLoading.classList.remove('active');
                 uploadBtn.disabled = false;
-                showToast('Tidak ada data penjualan yang valid', 'warning');
+                progressFill.style.width = '0%';
+                progressText.textContent = '0%';
+                showToast('Tidak ada data untuk department 2039, 2040, 5214', 'warning');
                 return;
             }
 
-            const newData = [...salesData];
-            showUI(filename);
-            afterDataLoaded();
+            uploadStatus.textContent = '☁️ Upload Data...';
+            progressFill.style.width = '75%';
+            progressText.textContent = '75%';
 
-            if (isFirebaseReady && newData.length > 0) {
-                setTimeout(async () => {
-                    await saveToFirebase(newData, filename);
-                    uploadLoading.classList.remove('active');
-                    uploadBtn.disabled = false;
-                }, 500);
-            } else {
-                originalData = salesData;
-                updateStats();
-                populateFilters();
-                renderSummary();
-                renderProducts();
-                renderDeptSummary();
-                renderCharts();
+            // Upload to Firebase
+            uploadToFirebase(processedData, filename);
+        }
+
+        async function uploadToFirebase(data, filename) {
+            const uploadLoading = document.getElementById('uploadLoading');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const uploadStatus = document.getElementById('uploadStatus');
+
+            if (!isFirebaseReady) {
+                showToast('Firebase tidak terhubung', 'warning');
                 uploadLoading.classList.remove('active');
                 uploadBtn.disabled = false;
+                return;
+            }
+
+            try {
+                isSaving = true;
+                updateSyncStatus('syncing', 'Uploading...');
+
+                // Get all dates from data
+                const dates = [...new Set(data.map(d => d.date).filter(d => d))];
+
+                // Delete existing data for these dates
+                uploadStatus.textContent = '🗑️ Hapus data lama...';
+                let deletedCount = 0;
+                for (const date of dates) {
+                    const snapshot = await firestore.collection(COLLECTION)
+                        .where('date', '==', date)
+                        .get();
+                    
+                    const batch = firestore.batch();
+                    snapshot.forEach(doc => {
+                        batch.delete(doc.ref);
+                        deletedCount++;
+                    });
+                    if (!snapshot.empty) {
+                        await batch.commit();
+                    }
+                }
+                console.log(`🗑️ Deleted ${deletedCount} existing records`);
+
+                // Upload new data
+                uploadStatus.textContent = '📤 Upload data baru...';
+                const batch = firestore.batch();
+                const batchSize = 500;
+                let uploaded = 0;
+
+                for (let i = 0; i < data.length; i++) {
+                    const docRef = firestore.collection(COLLECTION).doc();
+                    batch.set(docRef, {
+                        ...data[i],
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    uploaded++;
+
+                    if (i % batchSize === 0 || i === data.length - 1) {
+                        await batch.commit();
+                        const pct = Math.min(100, Math.round((i + 1) / data.length * 100));
+                        progressFill.style.width = pct + '%';
+                        progressText.textContent = pct + '%';
+                        uploadStatus.textContent = `📤 Upload ${Math.round((i+1)/data.length*100)}% (${i+1}/${data.length})`;
+                    }
+                }
+
+                // Save upload log
+                const uniqueDates = [...new Set(data.map(d => d.date))];
+                await firestore.collection('upload_logs').add({
+                    filename: filename,
+                    uploadTime: firebase.firestore.FieldValue.serverTimestamp(),
+                    period: uniqueDates.map(d => d.substring(0, 7)),
+                    recordCount: data.length,
+                    dates: uniqueDates,
+                    departments: [...new Set(data.map(d => d.department))],
+                    division: '27'
+                });
+
+                progressFill.style.width = '100%';
+                progressText.textContent = '100%';
+                uploadStatus.textContent = '✅ Selesai!';
+
+                showToast(`✅ ${data.length} data berhasil diupload!`, 'success');
+
+                // Reload data
+                await loadData();
+
+                uploadLoading.classList.remove('active');
+                uploadBtn.disabled = false;
+
+            } catch (err) {
+                console.error('Upload error:', err);
+                showToast('❌ Gagal upload: ' + err.message, 'warning');
+                uploadLoading.classList.remove('active');
+                uploadBtn.disabled = false;
+            } finally {
+                isSaving = false;
+                updateSyncStatus('synced', 'Connected');
             }
         }
 
@@ -1901,64 +1306,46 @@
                 if (found) return found;
             }
             for (const c of candidates) {
-                const found = headers.find(h => h.toLowerCase().includes(c));
+                const found = headers.find(h => h.toLowerCase().includes(c.toLowerCase()));
                 if (found) return found;
             }
             return null;
         }
 
-        function showUI(filename) {
-            statsGrid.style.display = 'grid';
-            tabs.style.display = 'flex';
-            infoBar.style.display = 'flex';
+        // ============================================================
+        // DASHBOARD FUNCTIONS
+        // ============================================================
+        function renderDashboard() {
+            updateStats();
+            renderSummary();
+            renderProducts();
+            renderDeptSummary();
+            renderCharts();
         }
 
         function getFilteredData() {
             let data = [...originalData];
             const from = document.getElementById('filterDateFrom').value;
             const to = document.getElementById('filterDateTo').value;
-            if (from) data = data.filter(d => d.dateStr >= from);
-            if (to) data = data.filter(d => d.dateStr <= to);
-            const dept = document.getElementById('filterDept').value;
-            if (dept !== 'all') data = data.filter(d => d.department === dept);
+            if (from) data = data.filter(d => d.date >= from);
+            if (to) data = data.filter(d => d.date <= to);
             return data;
         }
 
         function updateStats() {
             const data = getFilteredData();
-            document.getElementById('totalSales').textContent = formatRupiah(data.reduce((s, d) => s + d.amount, 0));
-            document.getElementById('totalQty').textContent = Math.round(data.reduce((s, d) => s + d.qty, 0));
-            document.getElementById('totalItems').textContent = new Set(data.map(d => d.itemName + '|' + d.department)).size;
-            document.getElementById('totalDays').textContent = new Set(data.map(d => d.dateStr)).size || 'N/A';
+            document.getElementById('totalSales').textContent = formatRupiah(data.reduce((s, d) => s + (d.amount || 0), 0));
+            document.getElementById('totalQty').textContent = Math.round(data.reduce((s, d) => s + (d.qty || 0), 0));
+            document.getElementById('totalItems').textContent = new Set(data.map(d => d.sku || d.itemName)).size;
+            document.getElementById('totalDays').textContent = new Set(data.map(d => d.date)).size || 'N/A';
         }
 
-        function populateFilters() {
-            const depts = [...new Set(originalData.map(d => d.department))].sort();
-            ['filterDept', 'productFilterDept'].forEach(selId => {
-                const sel = document.getElementById(selId);
-                if (!sel) return;
-                const current = sel.value;
-                sel.innerHTML = '<option value="all">All Departments</option>';
-                depts.forEach(d => { const opt = document.createElement('option');
-                    opt.value = d;
-                    opt.textContent = d;
-                    sel.appendChild(opt); });
-                if (depts.includes(current)) sel.value = current;
-            });
-        }
-
-        function toggleSearch() {
-            const section = document.getElementById('searchSection');
-            const btn = document.querySelector('.search-toggle-btn');
-            if (section.style.display === 'none') {
-                section.style.display = 'block';
-                if (btn) btn.classList.add('active');
-                document.getElementById('searchInput').focus();
-            } else {
-                section.style.display = 'none';
-                if (btn) btn.classList.remove('active');
-                clearSearch();
-            }
+        function applyFilters() {
+            updateStats();
+            renderSummary();
+            renderProducts();
+            renderDeptSummary();
+            renderCharts();
         }
 
         function applySearch() {
@@ -1985,17 +1372,18 @@
 
             const productSales = {};
             data.forEach(d => {
-                if (!productSales[d.itemName]) productSales[d.itemName] = { qty: 0, amount: 0, dept: d.department,
-                    name: d.itemName, code: d.itemCode || '' };
-                productSales[d.itemName].qty += d.qty;
-                productSales[d.itemName].amount += d.amount;
+                const key = d.sku || d.itemName;
+                if (!productSales[key]) {
+                    productSales[key] = { qty: 0, amount: 0, dept: d.department, name: d.itemName, sku: d.sku || '' };
+                }
+                productSales[key].qty += d.qty || 0;
+                productSales[key].amount += d.amount || 0;
             });
 
             let productArray = Object.values(productSales);
             if (searchQuery) {
                 const q = searchQuery.toLowerCase();
-                productArray = productArray.filter(p => p.name.toLowerCase().includes(q) || p.code.toLowerCase()
-                .includes(q));
+                productArray = productArray.filter(p => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q));
             }
             productArray.sort((a, b) => b.amount - a.amount);
             const topProducts = productArray.slice(0, 10);
@@ -2012,15 +1400,13 @@
             `;
 
             if (topProducts.length === 0) {
-                html +=
-                    '<div class="empty-state" style="padding:12px;"><div class="icon">🔍</div><p style="font-size:12px;">Tidak ada item yang cocok dengan pencarian "' +
-                    searchQuery + '"</p></div>';
+                html += '<div class="empty-state" style="padding:12px;"><div class="icon">🔍</div><p style="font-size:12px;">Tidak ada item yang cocok dengan pencarian "' + searchQuery + '"</p></div>';
             } else {
                 topProducts.forEach((item, i) => {
                     html += `
                         <div class="product-item" onclick="showItemDetail('${escapeString(item.name)}', '${escapeString(item.dept)}')">
                             <span style="font-size:10px; color:#999; margin-right:4px; min-width:18px;">#${i+1}</span>
-                            <span class="name">${item.name} ${item.code ? '['+item.code+']' : ''}</span>
+                            <span class="name">${item.name} ${item.sku ? '['+item.sku+']' : ''}</span>
                             <span class="dept">${item.dept}</span>
                             <span style="display:flex; align-items:center; gap:3px;">
                                 <span class="qty">${Math.round(item.qty)}x</span>
@@ -2040,17 +1426,14 @@
             const container = document.getElementById('productList');
             if (data.length === 0) { container.innerHTML = '<div class="empty-state"><p style="font-size:12px;">No data</p></div>'; return; }
 
-            const deptFilter = document.getElementById('productFilterDept').value;
-            let filtered = data;
-            if (deptFilter !== 'all') filtered = filtered.filter(d => d.department === deptFilter);
-
             const productSales = {};
-            filtered.forEach(d => {
-                const key = d.itemName + '|' + d.department;
-                if (!productSales[key]) productSales[key] = { qty: 0, amount: 0, dept: d.department, name: d.itemName,
-                    code: d.itemCode || '' };
-                productSales[key].qty += d.qty;
-                productSales[key].amount += d.amount;
+            data.forEach(d => {
+                const key = d.sku || d.itemName;
+                if (!productSales[key]) {
+                    productSales[key] = { qty: 0, amount: 0, dept: d.department, name: d.itemName, sku: d.sku || '' };
+                }
+                productSales[key].qty += d.qty || 0;
+                productSales[key].amount += d.amount || 0;
             });
 
             const limit = parseInt(document.getElementById('productLimit').value) || 20;
@@ -2060,7 +1443,7 @@
             sorted.forEach(item => {
                 html += `
                     <div class="product-item" onclick="showItemDetail('${escapeString(item.name)}', '${escapeString(item.dept)}')">
-                        <span class="name">${item.name} ${item.code ? '['+item.code+']' : ''}</span>
+                        <span class="name">${item.name} ${item.sku ? '['+item.sku+']' : ''}</span>
                         <span class="dept">${item.dept}</span>
                         <span style="display:flex; align-items:center; gap:4px;">
                             <span class="qty">${Math.round(item.qty)}x</span>
@@ -2080,8 +1463,8 @@
             const deptData = {};
             data.forEach(d => {
                 if (!deptData[d.department]) deptData[d.department] = { amount: 0, qty: 0 };
-                deptData[d.department].amount += d.amount;
-                deptData[d.department].qty += d.qty;
+                deptData[d.department].amount += d.amount || 0;
+                deptData[d.department].qty += d.qty || 0;
             });
             let html = '';
             Object.entries(deptData).sort((a, b) => b[1].amount - a[1].amount).forEach(([dept, d]) => {
@@ -2094,15 +1477,12 @@
         function renderCharts() {
             const data = getFilteredData();
             if (data.length === 0) {
-                if (chartTrend) { chartTrend.destroy();
-                    chartTrend = null; }
-                if (chartDept) { chartDept.destroy();
-                    chartDept = null; }
+                if (chartTrend) { chartTrend.destroy(); chartTrend = null; }
+                if (chartDept) { chartDept.destroy(); chartDept = null; }
                 return;
             }
             const dailyData = {};
-            data.forEach(d => { if (!dailyData[d.dateStr]) dailyData[d.dateStr] = 0;
-                dailyData[d.dateStr] += d.amount; });
+            data.forEach(d => { if (!dailyData[d.date]) dailyData[d.date] = 0; dailyData[d.date] += d.amount || 0; });
             const sorted = Object.keys(dailyData).sort();
             const ctx = document.getElementById('trendChart').getContext('2d');
             if (chartTrend) chartTrend.destroy();
@@ -2118,8 +1498,7 @@
             });
 
             const deptData = {};
-            data.forEach(d => { if (!deptData[d.department]) deptData[d.department] = 0;
-                deptData[d.department] += d.amount; });
+            data.forEach(d => { if (!deptData[d.department]) deptData[d.department] = 0; deptData[d.department] += d.amount || 0; });
             const depts = Object.entries(deptData).sort((a, b) => b[1] - a[1]);
             const ctx2 = document.getElementById('deptChart').getContext('2d');
             if (chartDept) chartDept.destroy();
@@ -2135,6 +1514,9 @@
             });
         }
 
+        // ============================================================
+        // ITEM DETAIL
+        // ============================================================
         function showItemDetail(itemName, department) {
             currentDetailItem = { name: itemName, dept: department };
             document.getElementById('detailTitle').textContent = '📦 ' + itemName;
@@ -2154,17 +1536,19 @@
             const from = document.getElementById('detailDateFrom').value;
             const to = document.getElementById('detailDateTo').value;
 
-            let itemData = originalData.filter(d => d.itemName === currentDetailItem.name && d.department === currentDetailItem
-                .dept);
-            if (from) itemData = itemData.filter(d => d.dateStr >= from);
-            if (to) itemData = itemData.filter(d => d.dateStr <= to);
+            let itemData = originalData.filter(d => 
+                (d.itemName === currentDetailItem.name || d.sku === currentDetailItem.name) && 
+                d.department === currentDetailItem.dept
+            );
+            if (from) itemData = itemData.filter(d => d.date >= from);
+            if (to) itemData = itemData.filter(d => d.date <= to);
             detailDataCache = itemData;
 
             const dailyData = {};
             itemData.forEach(d => {
-                if (!dailyData[d.dateStr]) dailyData[d.dateStr] = { qty: 0, amount: 0 };
-                dailyData[d.dateStr].qty += d.qty;
-                dailyData[d.dateStr].amount += d.amount;
+                if (!dailyData[d.date]) dailyData[d.date] = { qty: 0, amount: 0 };
+                dailyData[d.date].qty += d.qty || 0;
+                dailyData[d.date].amount += d.amount || 0;
             });
 
             const dates = Object.keys(dailyData).sort();
@@ -2173,23 +1557,19 @@
             document.getElementById('detailTotalQty').textContent = Math.round(totalQty);
             document.getElementById('detailTotalAmount').textContent = formatRupiah(totalAmount);
 
-            if (dates.length === 0) { container.innerHTML = '<div class="detail-empty">📭 No data for this period</div>';
-                return; }
+            if (dates.length === 0) { container.innerHTML = '<div class="detail-empty">📭 No data for this period</div>'; return; }
 
-            let html =
-                '<table class="detail-table"><thead><tr><th>Date</th><th style="text-align:right;">Qty</th><th style="text-align:right;">Amount</th></tr></thead><tbody>';
+            let html = '<table class="detail-table"><thead><tr><th>Date</th><th style="text-align:right;">Qty</th><th style="text-align:right;">Amount</th></tr></thead><tbody>';
             dates.forEach(date => {
-                html += '<tr><td class="date-cell">' + formatDate(date) + '</td><td class="qty-cell">' + Math.round(
-                    dailyData[date].qty) + '</td><td class="amount-cell">' + formatRupiah(dailyData[date]
-                    .amount) + '</td></tr>';
+                html += '<tr><td class="date-cell">' + formatDate(date) + '</td><td class="qty-cell">' + Math.round(dailyData[date].qty) + '</td><td class="amount-cell">' + formatRupiah(dailyData[date].amount) + '</td></tr>';
             });
-            html +=
-                '<tr style="border-top:2px solid #e8eaf6;font-weight:600;"><td style="color:#1a237e;">TOTAL</td><td class="qty-cell">' +
-                Math.round(totalQty) + '</td><td class="amount-cell">' + formatRupiah(totalAmount) +
-                '</td></tr></tbody></table>';
+            html += '<tr style="border-top:2px solid #e8eaf6;font-weight:600;"><td style="color:#1a237e;">TOTAL</td><td class="qty-cell">' + Math.round(totalQty) + '</td><td class="amount-cell">' + formatRupiah(totalAmount) + '</td></tr></tbody></table>';
             container.innerHTML = html;
         }
 
+        // ============================================================
+        // UTILITY FUNCTIONS
+        // ============================================================
         function formatDate(dateStr) {
             if (!dateStr) return '-';
             const p = dateStr.split('-');
@@ -2208,8 +1588,12 @@
             return 'Rp ' + Math.round(num).toLocaleString('id-ID');
         }
 
+        function afterDataLoaded() {
+            isDataLoaded = true;
+        }
+
         // ============================================================
-        // FUNGSI EXPORT PDF - DENGAN AUTOTABLE
+        // EXPORT PDF
         // ============================================================
         function exportDetailPDF() {
             if (!currentDetailItem || detailDataCache.length === 0) {
@@ -2222,198 +1606,60 @@
                 const doc = new jsPDF('p', 'pt', 'a4');
 
                 const dailyData = {};
-
                 detailDataCache.forEach(d => {
-                    if (!dailyData[d.dateStr]) {
-                        dailyData[d.dateStr] = {
-                            qty: 0,
-                            amount: 0
-                        };
-                    }
-
-                    dailyData[d.dateStr].qty += d.qty;
-                    dailyData[d.dateStr].amount += d.amount;
+                    if (!dailyData[d.date]) { dailyData[d.date] = { qty: 0, amount: 0 }; }
+                    dailyData[d.date].qty += d.qty || 0;
+                    dailyData[d.date].amount += d.amount || 0;
                 });
 
                 const dates = Object.keys(dailyData).sort();
-
-                let totalQty = 0;
-                let totalAmount = 0;
-
+                let totalQty = 0, totalAmount = 0;
                 const rows = dates.map(date => {
                     const qty = Math.round(dailyData[date].qty);
                     const amount = dailyData[date].amount;
-
                     totalQty += qty;
                     totalAmount += amount;
-
-                    return [
-                        formatDate(date),
-                        qty.toString(),
-                        formatRupiah(amount)
-                    ];
+                    return [formatDate(date), qty.toString(), formatRupiah(amount)];
                 });
 
-                // HEADER
                 doc.setFontSize(24);
                 doc.setTextColor(33, 45, 120);
-                doc.text(
-                    'Detail Penjualan: ' + currentDetailItem.name,
-                    20,
-                    35
-                );
-
+                doc.text('Detail Penjualan: ' + currentDetailItem.name, 20, 35);
                 doc.setFontSize(11);
                 doc.setTextColor(80);
-
-                doc.text(
-                    'Department: ' + currentDetailItem.dept,
-                    20,
-                    70
-                );
-
-                doc.text(
-                    'Periode: Semua Tanggal',
-                    20,
-                    95
-                );
-
+                doc.text('Department: ' + currentDetailItem.dept, 20, 70);
+                doc.text('Periode: Semua Tanggal', 20, 95);
                 doc.setFontSize(13);
                 doc.setTextColor(33, 45, 120);
+                doc.text('Total Qty: ' + totalQty, 20, 135);
+                doc.text('Total Amount: ' + formatRupiah(totalAmount), 20, 165);
 
-                doc.text(
-                    'Total Qty: ' + totalQty,
-                    20,
-                    135
-                );
-
-                doc.text(
-                    'Total Amount: ' + formatRupiah(totalAmount),
-                    20,
-                    165
-                );
-
-                // TABEL
                 doc.autoTable({
                     startY: 205,
-
-                    head: [
-                        ['Tanggal', 'Qty', 'Amount']
-                    ],
-
+                    head: [['Tanggal', 'Qty', 'Amount']],
                     body: rows,
-
-                    foot: [[
-                        'TOTAL',
-                        totalQty.toString(),
-                        formatRupiah(totalAmount)
-                    ]],
-
+                    foot: [['TOTAL', totalQty.toString(), formatRupiah(totalAmount)]],
                     theme: 'grid',
-
-                    styles: {
-                        fontSize: 10,
-                        cellPadding: 8,
-                        lineWidth: 0.5
-                    },
-
-                    headStyles: {
-                        fillColor: [33, 45, 120],
-                        textColor: 255,
-                        fontStyle: 'bold'
-                    },
-
-                    footStyles: {
-                        fillColor: [235, 239, 248],
-                        textColor: [33, 45, 120],
-                        fontStyle: 'bold'
-                    },
-
-                    columnStyles: {
-                        0: {
-                            halign: 'left',
-                            cellWidth: 180
-                        },
-                        1: {
-                            halign: 'right',
-                            cellWidth: 100
-                        },
-                        2: {
-                            halign: 'right',
-                            cellWidth: 240
-                        }
-                    },
-
+                    styles: { fontSize: 10, cellPadding: 8, lineWidth: 0.5 },
+                    headStyles: { fillColor: [33, 45, 120], textColor: 255, fontStyle: 'bold' },
+                    footStyles: { fillColor: [235, 239, 248], textColor: [33, 45, 120], fontStyle: 'bold' },
+                    columnStyles: { 0: { halign: 'left', cellWidth: 180 }, 1: { halign: 'right', cellWidth: 100 }, 2: { halign: 'right', cellWidth: 240 } },
                     didDrawPage: function(data) {
-
                         const pageCount = doc.internal.getNumberOfPages();
                         const pageSize = doc.internal.pageSize;
-
                         doc.setFontSize(9);
                         doc.setTextColor(120);
-
-                        doc.text(
-                            'Generated: ' +
-                            new Date().toLocaleString('id-ID'),
-                            20,
-                            pageSize.height - 20
-                        );
-
-                        doc.text(
-                            'Halaman ' +
-                            data.pageNumber +
-                            ' dari ' +
-                            pageCount,
-                            pageSize.width - 100,
-                            pageSize.height - 20
-                        );
+                        doc.text('Generated: ' + new Date().toLocaleString('id-ID'), 20, pageSize.height - 20);
+                        doc.text('Halaman ' + data.pageNumber + ' dari ' + pageCount, pageSize.width - 100, pageSize.height - 20);
                     }
                 });
 
-                doc.save(
-                    'Detail_' +
-                    currentDetailItem.name.replace(/[^a-zA-Z0-9]/g, '_') +
-                    '.pdf'
-                );
-
-                showToast(
-                    '✅ PDF berhasil diexport!',
-                    'success'
-                );
-
+                doc.save('Detail_' + currentDetailItem.name.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf');
+                showToast('✅ PDF berhasil diexport!', 'success');
             } catch (e) {
                 console.error(e);
-                showToast(
-                    'Gagal export PDF: ' + e.message,
-                    'warning'
-                );
+                showToast('Gagal export PDF: ' + e.message, 'warning');
             }
-        }
-
-        function openConfig() {
-            const config = getFirebaseConfig();
-            document.getElementById('firebaseConfigInput').value = JSON.stringify(config, null, 2);
-            document.getElementById('collectionNameInput').value = getCollectionName();
-            document.getElementById('configOverlay').classList.add('active');
-        }
-
-        function closeConfig() { document.getElementById('configOverlay').classList.remove('active'); }
-
-        function saveFirebaseConfig() {
-            const input = document.getElementById('firebaseConfigInput');
-            const collection = document.getElementById('collectionNameInput').value.trim() || 'sales_data';
-            try {
-                const config = JSON.parse(input.value);
-                localStorage.setItem('firebaseConfig', JSON.stringify(config));
-                localStorage.setItem('firebaseCollection', collection);
-                closeConfig();
-                isFirebaseReady = false;
-                initFirebase();
-            } catch (err) { alert('Format JSON salah'); }
-        }
-
-        function afterDataLoaded() {
-            isDataLoaded = true;
         }
 
         // ============================================================
@@ -2427,8 +1673,6 @@
             uploadBtn = document.getElementById('uploadBtn');
             fileInput = document.getElementById('fileInput');
             const uploadArea = document.getElementById('uploadArea');
-            const loadFromFirebaseBtn = document.getElementById('loadFromFirebaseBtn');
-            const configBtn = document.getElementById('configBtn');
 
             if (uploadBtn) {
                 uploadBtn.addEventListener('click', function(e) {
@@ -2474,18 +1718,6 @@
                 });
             }
 
-            if (loadFromFirebaseBtn) {
-                loadFromFirebaseBtn.addEventListener('click', function() {
-                    loadFromFirebase();
-                });
-            }
-
-            if (configBtn) {
-                configBtn.addEventListener('click', function() {
-                    openConfig();
-                });
-            }
-
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.addEventListener('click', function() {
                     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -2501,100 +1733,7 @@
             });
         });
 
-        // ============================================================
-        // FUNGSI HANDLE FILE
-        // ============================================================
-        function handleFile(file) {
-            console.log('Handling file:', file.name);
-            const uploadLoading = document.getElementById('uploadLoading');
-            const uploadBtn = document.getElementById('uploadBtn');
-
-            if (!file) {
-                showToast('No file selected', 'warning');
-                return;
-            }
-
-            const ext = file.name.split('.').pop().toLowerCase();
-            if (!['xlsx', 'xls', 'csv'].includes(ext)) {
-                showToast('Format file tidak didukung. Gunakan .xlsx, .xls, atau .csv', 'warning');
-                return;
-            }
-
-            uploadLoading.classList.add('active');
-            uploadBtn.disabled = true;
-
-            const reader = new FileReader();
-
-            reader.onload = function(e) {
-                try {
-                    let data = null;
-                    if (ext === 'csv') {
-                        const text = e.target.result;
-                        const lines = text.split('\n').filter(line => line.trim());
-                        if (lines.length === 0) throw new Error('CSV kosong');
-
-                        const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-                        data = [];
-                        for (let i = 1; i < lines.length; i++) {
-                            const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-                            const row = {};
-                            headers.forEach((h, idx) => { row[h] = values[idx] || ''; });
-                            data.push(row);
-                        }
-                    } else {
-                        const workbook = XLSX.read(e.target.result, { type: 'array' });
-                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                        data = XLSX.utils.sheet_to_json(firstSheet);
-                    }
-
-                    if (!data || data.length === 0) {
-                        throw new Error('Tidak ada data dalam file');
-                    }
-
-                    console.log('Data parsed, rows:', data.length);
-                    document.getElementById('uploadProgress').textContent = `📊 ${data.length} baris data ditemukan`;
-                    processData(data, file.name);
-
-                } catch (err) {
-                    console.error('Error processing file:', err);
-                    uploadLoading.classList.remove('active');
-                    uploadBtn.disabled = false;
-                    showToast('Error: ' + err.message, 'warning');
-                }
-            };
-
-            reader.onerror = function() {
-                uploadLoading.classList.remove('active');
-                uploadBtn.disabled = false;
-                showToast('Gagal membaca file', 'warning');
-            };
-
-            if (ext === 'csv') {
-                reader.readAsText(file);
-            } else {
-                reader.readAsArrayBuffer(file);
-            }
-        }
-
-        function restoreData(docData, docId) {
-            console.log('Restoring data from:', docId);
-        }
-
         console.log('🚀 Sales Data Analyzer ready!');
-    </script>
-
-    <!-- ===== SERVICE WORKER REGISTRATION ===== -->
-    <script>
-        if ("serviceWorker" in navigator) {
-            window.addEventListener("load", async () => {
-                try {
-                    const registration = await navigator.serviceWorker.register("./service-worker.js");
-                    console.log("✅ Service Worker berhasil didaftarkan:", registration.scope);
-                } catch (error) {
-                    console.error("❌ Gagal mendaftarkan Service Worker:", error);
-                }
-            });
-        }
     </script>
 
 </body>
