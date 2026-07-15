@@ -458,6 +458,20 @@
             color: #888;
             margin-top: 4px;
         }
+        .empty-state .upload-btn-empty {
+            margin-top: 12px;
+            padding: 8px 24px;
+            background: #283593;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .empty-state .upload-btn-empty:active {
+            transform: scale(.95);
+        }
         .info-bar {
             background: #fff;
             border-radius: 8px;
@@ -536,6 +550,46 @@
         .summary-header h4 {
             font-size: 12px;
             color: #333;
+        }
+
+        /* ===== UPLOAD HISTORY ===== */
+        .upload-history {
+            background: #fff;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-bottom: 6px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
+        }
+        .upload-history h4 {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        .upload-history .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10px;
+            padding: 4px 0;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .upload-history .history-item:last-child {
+            border-bottom: none;
+        }
+        .upload-history .history-item .status-success {
+            color: #4caf50;
+            font-weight: 600;
+        }
+        .upload-history .history-item .status-failed {
+            color: #f44336;
+            font-weight: 600;
+        }
+        .upload-history .history-item .date {
+            color: #888;
+        }
+        .upload-history .history-item .records {
+            color: #1a237e;
+            font-weight: 600;
         }
 
         /* ===== OVERLAY & TOAST ===== */
@@ -733,6 +787,7 @@
             .info-bar { font-size: 8px; padding: 4px 8px; }
             .header .sync-status { position: static; margin-top: 2px; justify-content: center; }
             .chart-wrapper { height: 130px; }
+            .upload-history .history-item { font-size: 9px; flex-wrap: wrap; gap: 2px; }
         }
     </style>
 </head>
@@ -754,7 +809,7 @@
             <h3>Upload File</h3>
             <span class="format">.xlsx .xls .csv</span>
         </div>
-        <div class="sub-text">Klik tombol untuk upload file</div>
+        <div class="sub-text">Klik atau drag & drop file</div>
 
         <div class="upload-controls">
             <button class="upload-btn" id="uploadBtn">📂 Pilih File</button>
@@ -764,13 +819,19 @@
 
         <div class="upload-loading" id="uploadLoading">
             <div class="spinner"></div>
-            <p id="uploadStatus">Membaca File...</p>
+            <p id="uploadStatus">📖 Membaca File...</p>
             <div class="progress-bar">
                 <div class="progress-fill" id="progressFill"></div>
             </div>
             <span class="progress-text" id="progressText">0%</span>
             <span class="sub" id="uploadProgress">Memproses data</span>
         </div>
+    </div>
+
+    <!-- ===== UPLOAD HISTORY ===== -->
+    <div class="upload-history" id="uploadHistory" style="display:none;">
+        <h4>📋 Upload Terakhir</h4>
+        <div id="historyContent"></div>
     </div>
 
     <div class="stats-grid" id="statsGrid" style="display:none;">
@@ -807,9 +868,7 @@
 
         <div class="tab-content" id="tab-products">
             <div class="filter-section">
-                <div style="display:flex; gap:4px;">
-                    <input type="number" id="productLimit" value="20" style="flex:1;" placeholder="Limit" onchange="renderProducts()">
-                </div>
+                <!-- Product Limit dihapus, langsung top 20 -->
             </div>
             <div class="product-list" id="productList"><div class="loading"><div class="spinner"></div></div></div>
         </div>
@@ -922,8 +981,15 @@
         function updateSyncStatus(status, text) {
             const dot = document.getElementById('syncDot');
             const label = document.getElementById('syncText');
-            if (dot) dot.className = 'dot ' + status;
-            if (label) label.textContent = text || status;
+            if (dot) {
+                dot.className = 'dot ' + status;
+            }
+            if (label) {
+                if (status === 'synced') label.textContent = '🟢 Connected';
+                else if (status === 'syncing') label.textContent = '🔄 Uploading';
+                else if (status === 'error') label.textContent = '🔴 Error';
+                else label.textContent = text || status;
+            }
         }
 
         async function initFirebase() {
@@ -944,6 +1010,7 @@
                 console.log('✅ Firebase connected');
 
                 await loadData();
+                await loadUploadHistory();
 
                 return true;
             } catch (err) {
@@ -955,13 +1022,56 @@
         }
 
         // ============================================================
+        // LOAD UPLOAD HISTORY
+        // ============================================================
+        async function loadUploadHistory() {
+            if (!isFirebaseReady) return;
+
+            try {
+                const snapshot = await firestore.collection('upload_logs')
+                    .orderBy('uploadTime', 'desc')
+                    .limit(1)
+                    .get();
+
+                const container = document.getElementById('uploadHistory');
+                const content = document.getElementById('historyContent');
+
+                if (snapshot.empty) {
+                    container.style.display = 'none';
+                    return;
+                }
+
+                container.style.display = 'block';
+                let html = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const status = data.status || 'SUCCESS';
+                    const statusClass = status === 'SUCCESS' ? 'status-success' : 'status-failed';
+                    const date = data.uploadTime?.toDate?.() || new Date();
+                    html += `
+                        <div class="history-item">
+                            <span class="date">${date.toLocaleDateString('id-ID')} ${date.toLocaleTimeString('id-ID')}</span>
+                            <span class="records">${data.recordCount || 0} records</span>
+                            <span class="${statusClass}">${status}</span>
+                            <span style="color:#888;font-size:9px;">${data.filename || ''}</span>
+                        </div>
+                    `;
+                });
+                content.innerHTML = html;
+
+            } catch (err) {
+                console.error('Error loading upload history:', err);
+            }
+        }
+
+        // ============================================================
         // LOAD DATA
         // ============================================================
         async function loadData() {
             if (!isFirebaseReady) return;
 
             try {
-                updateSyncStatus('syncing', 'Loading data...');
+                updateSyncStatus('syncing', 'Loading...');
                 const snapshot = await firestore.collection(COLLECTION)
                     .orderBy('date', 'desc')
                     .get();
@@ -1027,6 +1137,7 @@
                     <div class="icon">📭</div>
                     <div class="title">Belum Ada Data</div>
                     <div class="sub">Silakan upload file Sales untuk memulai</div>
+                    <button class="upload-btn-empty" onclick="document.getElementById('fileInput').click()">📂 Upload Sales File</button>
                 </div>
             `;
             statsGrid.style.display = 'none';
@@ -1044,6 +1155,7 @@
             const progressFill = document.getElementById('progressFill');
             const progressText = document.getElementById('progressText');
             const uploadStatus = document.getElementById('uploadStatus');
+            const uploadProgress = document.getElementById('uploadProgress');
 
             if (!file) {
                 showToast('No file selected', 'warning');
@@ -1061,6 +1173,7 @@
             progressFill.style.width = '0%';
             progressText.textContent = '0%';
             uploadStatus.textContent = '📖 Membaca File...';
+            uploadProgress.textContent = 'Memproses data';
 
             const reader = new FileReader();
 
@@ -1092,8 +1205,8 @@
 
                     console.log('Data parsed, rows:', data.length);
                     uploadStatus.textContent = '✅ Validasi Header...';
-                    progressFill.style.width = '25%';
-                    progressText.textContent = '25%';
+                    progressFill.style.width = '20%';
+                    progressText.textContent = '20%';
 
                     processData(data, file.name);
 
@@ -1128,6 +1241,7 @@
             const progressFill = document.getElementById('progressFill');
             const progressText = document.getElementById('progressText');
             const uploadStatus = document.getElementById('uploadStatus');
+            const uploadProgress = document.getElementById('uploadProgress');
 
             const headers = Object.keys(json[0] || {});
             const colMap = {
@@ -1135,6 +1249,7 @@
                 dept: findColumn(headers, ['Department', 'Dept', 'department', 'Department Desc']),
                 item: findColumn(headers, ['Item Name', 'Item', 'item', 'Product', 'Product Name']),
                 itemCode: findColumn(headers, ['Item Code', 'code', 'Kode', 'SKU']),
+                barcode: findColumn(headers, ['BU 10 Barcode', 'Barcode', 'BU Barcode']),
                 category: findColumn(headers, ['Category', 'category', 'Kategori']),
                 qty: findColumn(headers, ['Sales Qty', 'Qty', 'Quantity', 'qty']),
                 amount: findColumn(headers, ['Sales Amount(Without VAT)', 'Amount', 'Sales Amount', 'amount', 'Total'])
@@ -1150,8 +1265,8 @@
             }
 
             uploadStatus.textContent = '🔍 Filter Department...';
-            progressFill.style.width = '50%';
-            progressText.textContent = '50%';
+            progressFill.style.width = '40%';
+            progressText.textContent = '40%';
 
             let processedData = json.map(row => {
                 const dateVal = colMap.date ? row[colMap.date] : null;
@@ -1163,18 +1278,17 @@
                     if (!isNaN(parsedDate.getTime())) dateStr = parsedDate.toISOString().split('T')[0];
                 }
                 const department = colMap.dept ? String(row[colMap.dept] || '').trim().replace(/^="|"$/g, '') : '';
+                const barcodeVal = colMap.barcode ? String(row[colMap.barcode] || '').trim().replace(/^="|"$/g, '') : '';
                 return {
                     date: dateStr,
                     period: dateStr ? dateStr.substring(0, 7) : '',
                     department: department,
                     sku: colMap.itemCode ? String(row[colMap.itemCode] || '').trim().replace(/^="|"$/g, '') : '',
-                    barcode: '',
+                    barcode: barcodeVal,
                     itemName: colMap.item ? String(row[colMap.item] || '').trim().replace(/^="|"$/g, '') : 'Unknown Item',
                     category: colMap.category ? String(row[colMap.category] || '').trim() : '',
                     qty: parseFloat(colMap.qty ? row[colMap.qty] : 0) || 0,
-                    amount: parseFloat(colMap.amount ? row[colMap.amount] : 0) || 0,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
+                    amount: parseFloat(colMap.amount ? row[colMap.amount] : 0) || 0
                 };
             }).filter(d => {
                 // Filter by valid departments
@@ -1194,8 +1308,8 @@
             }
 
             uploadStatus.textContent = '☁️ Upload Data...';
-            progressFill.style.width = '75%';
-            progressText.textContent = '75%';
+            progressFill.style.width = '60%';
+            progressText.textContent = '60%';
 
             // Upload to Firebase
             uploadToFirebase(processedData, filename);
@@ -1207,6 +1321,7 @@
             const progressFill = document.getElementById('progressFill');
             const progressText = document.getElementById('progressText');
             const uploadStatus = document.getElementById('uploadStatus');
+            const uploadProgress = document.getElementById('uploadProgress');
 
             if (!isFirebaseReady) {
                 showToast('Firebase tidak terhubung', 'warning');
@@ -1219,54 +1334,47 @@
                 isSaving = true;
                 updateSyncStatus('syncing', 'Uploading...');
 
-                // Get all dates from data
-                const dates = [...new Set(data.map(d => d.date).filter(d => d))];
-
-                // Delete existing data for these dates
-                uploadStatus.textContent = '🗑️ Hapus data lama...';
-                let deletedCount = 0;
-                for (const date of dates) {
-                    const snapshot = await firestore.collection(COLLECTION)
-                        .where('date', '==', date)
-                        .get();
-                    
-                    const batch = firestore.batch();
-                    snapshot.forEach(doc => {
-                        batch.delete(doc.ref);
-                        deletedCount++;
-                    });
-                    if (!snapshot.empty) {
-                        await batch.commit();
-                    }
-                }
-                console.log(`🗑️ Deleted ${deletedCount} existing records`);
-
-                // Upload new data
                 uploadStatus.textContent = '📤 Upload data baru...';
-                const batch = firestore.batch();
-                const batchSize = 500;
                 let uploaded = 0;
+                let batch = firestore.batch();
+                const batchSize = 500;
+                let batchCount = 0;
 
                 for (let i = 0; i < data.length; i++) {
-                    const docRef = firestore.collection(COLLECTION).doc();
+                    const row = data[i];
+                    const docId = `${row.date}_${row.department}_${row.sku}`;
+                    const docRef = firestore.collection(COLLECTION).doc(docId);
+                    
                     batch.set(docRef, {
-                        ...data[i],
+                        ...row,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     uploaded++;
+                    batchCount++;
 
-                    if (i % batchSize === 0 || i === data.length - 1) {
+                    // Commit batch when reaching batchSize or end of data
+                    if (batchCount >= batchSize || i === data.length - 1) {
                         await batch.commit();
-                        const pct = Math.min(100, Math.round((i + 1) / data.length * 100));
+                        // Create new batch after commit
+                        if (i < data.length - 1) {
+                            batch = firestore.batch();
+                            batchCount = 0;
+                        }
+                        const pct = Math.min(95, Math.round((i + 1) / data.length * 100));
                         progressFill.style.width = pct + '%';
                         progressText.textContent = pct + '%';
                         uploadStatus.textContent = `📤 Upload ${Math.round((i+1)/data.length*100)}% (${i+1}/${data.length})`;
                     }
                 }
 
-                // Save upload log
+                // Calculate totals for upload log
+                const totalSales = data.reduce((s, d) => s + (d.amount || 0), 0);
+                const totalQty = data.reduce((s, d) => s + (d.qty || 0), 0);
+                const uniqueSku = new Set(data.map(d => d.sku)).size;
                 const uniqueDates = [...new Set(data.map(d => d.date))];
+
+                // Save upload log - SUCCESS
                 await firestore.collection('upload_logs').add({
                     filename: filename,
                     uploadTime: firebase.firestore.FieldValue.serverTimestamp(),
@@ -1274,23 +1382,48 @@
                     recordCount: data.length,
                     dates: uniqueDates,
                     departments: [...new Set(data.map(d => d.department))],
-                    division: '27'
+                    totalSales: totalSales,
+                    totalQty: totalQty,
+                    totalSKU: uniqueSku,
+                    days: uniqueDates.length,
+                    status: "SUCCESS"
                 });
 
                 progressFill.style.width = '100%';
                 progressText.textContent = '100%';
-                uploadStatus.textContent = '✅ Selesai!';
+                uploadStatus.textContent = '📊 Refresh Dashboard...';
+                progressFill.style.width = '98%';
+                progressText.textContent = '98%';
 
                 showToast(`✅ ${data.length} data berhasil diupload!`, 'success');
 
-                // Reload data
+                // Reload data and history
                 await loadData();
+                await loadUploadHistory();
+
+                progressFill.style.width = '100%';
+                progressText.textContent = '100%';
+                uploadStatus.textContent = '✅ Selesai!';
+                uploadProgress.textContent = 'Upload selesai';
 
                 uploadLoading.classList.remove('active');
                 uploadBtn.disabled = false;
 
             } catch (err) {
                 console.error('Upload error:', err);
+                
+                // Save upload log - FAILED
+                try {
+                    await firestore.collection('upload_logs').add({
+                        filename: filename,
+                        uploadTime: firebase.firestore.FieldValue.serverTimestamp(),
+                        status: "FAILED",
+                        error: err.message
+                    });
+                } catch (logErr) {
+                    console.error('Failed to save upload log:', logErr);
+                }
+
                 showToast('❌ Gagal upload: ' + err.message, 'warning');
                 uploadLoading.classList.remove('active');
                 uploadBtn.disabled = false;
@@ -1436,8 +1569,8 @@
                 productSales[key].amount += d.amount || 0;
             });
 
-            const limit = parseInt(document.getElementById('productLimit').value) || 20;
-            const sorted = Object.values(productSales).sort((a, b) => b.amount - a.amount).slice(0, limit);
+            // Top 20 langsung
+            const sorted = Object.values(productSales).sort((a, b) => b.amount - a.amount).slice(0, 20);
 
             let html = '';
             sorted.forEach(item => {
