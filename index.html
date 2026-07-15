@@ -1048,6 +1048,10 @@
                     const status = data.status || 'SUCCESS';
                     const statusClass = status === 'SUCCESS' ? 'status-success' : 'status-failed';
                     const date = data.uploadTime?.toDate?.() || new Date();
+                    
+                    // Update info bar with upload time
+                    document.getElementById('infoUpdate').textContent = date.toLocaleDateString('id-ID') + ' ' + date.toLocaleTimeString('id-ID');
+                    
                     html += `
                         <div class="history-item">
                             <span class="date">${date.toLocaleDateString('id-ID')} ${date.toLocaleTimeString('id-ID')}</span>
@@ -1113,7 +1117,6 @@
                 document.getElementById('infoPeriod').textContent = periods + ' bulan';
                 document.getElementById('infoDays').textContent = uniqueDays + ' hari';
                 document.getElementById('infoSku').textContent = uniqueSku + ' SKU';
-                document.getElementById('infoUpdate').textContent = new Date().toLocaleDateString('id-ID');
 
                 statsGrid.style.display = 'grid';
                 tabs.style.display = 'flex';
@@ -1205,8 +1208,8 @@
 
                     console.log('Data parsed, rows:', data.length);
                     uploadStatus.textContent = '✅ Validasi Header...';
-                    progressFill.style.width = '20%';
-                    progressText.textContent = '20%';
+                    progressFill.style.width = '15%';
+                    progressText.textContent = '15%';
 
                     processData(data, file.name);
 
@@ -1255,18 +1258,26 @@
                 amount: findColumn(headers, ['Sales Amount(Without VAT)', 'Amount', 'Sales Amount', 'amount', 'Total'])
             };
 
-            if (!colMap.amount && !colMap.qty) {
+            // Validasi header - semua kolom wajib ada
+            if (
+                !colMap.date ||
+                !colMap.dept ||
+                !colMap.item ||
+                !colMap.itemCode ||
+                !colMap.qty ||
+                !colMap.amount
+            ) {
                 uploadLoading.classList.remove('active');
                 uploadBtn.disabled = false;
                 progressFill.style.width = '0%';
                 progressText.textContent = '0%';
-                showToast('Kolom Sales Qty atau Sales Amount tidak ditemukan', 'warning');
+                showToast('File bukan format Sales AEON', 'warning');
                 return;
             }
 
             uploadStatus.textContent = '🔍 Filter Department...';
-            progressFill.style.width = '40%';
-            progressText.textContent = '40%';
+            progressFill.style.width = '30%';
+            progressText.textContent = '30%';
 
             let processedData = json.map(row => {
                 const dateVal = colMap.date ? row[colMap.date] : null;
@@ -1308,8 +1319,8 @@
             }
 
             uploadStatus.textContent = '☁️ Upload Data...';
-            progressFill.style.width = '60%';
-            progressText.textContent = '60%';
+            progressFill.style.width = '50%';
+            progressText.textContent = '50%';
 
             // Upload to Firebase
             uploadToFirebase(processedData, filename);
@@ -1334,7 +1345,53 @@
                 isSaving = true;
                 updateSyncStatus('syncing', 'Uploading...');
 
-                uploadStatus.textContent = '📤 Upload data baru...';
+                // ==============================
+                // HAPUS DATA LAMA BERDASARKAN TANGGAL
+                // ==============================
+                uploadStatus.textContent = '🗑 Menghapus Data Lama...';
+                progressFill.style.width = '55%';
+                progressText.textContent = '55%';
+
+                const uploadDates = [...new Set(data.map(r => r.date))];
+                let totalDeleted = 0;
+
+                for (const uploadDate of uploadDates) {
+                    const snapshot = await firestore
+                        .collection(COLLECTION)
+                        .where("date", "==", uploadDate)
+                        .get();
+
+                    if (!snapshot.empty) {
+                        let deleteBatch = firestore.batch();
+                        let deleteCount = 0;
+
+                        for (const doc of snapshot.docs) {
+                            deleteBatch.delete(doc.ref);
+                            deleteCount++;
+                            totalDeleted++;
+
+                            if (deleteCount >= 500) {
+                                await deleteBatch.commit();
+                                deleteBatch = firestore.batch();
+                                deleteCount = 0;
+                            }
+                        }
+
+                        if (deleteCount > 0) {
+                            await deleteBatch.commit();
+                        }
+                    }
+                }
+
+                console.log(`🗑️ Deleted ${totalDeleted} existing records`);
+
+                // ==============================
+                // UPLOAD DATA BARU
+                // ==============================
+                uploadStatus.textContent = '☁️ Upload ke Firebase...';
+                progressFill.style.width = '60%';
+                progressText.textContent = '60%';
+
                 let uploaded = 0;
                 let batch = firestore.batch();
                 const batchSize = 500;
@@ -1361,7 +1418,7 @@
                             batch = firestore.batch();
                             batchCount = 0;
                         }
-                        const pct = Math.min(95, Math.round((i + 1) / data.length * 100));
+                        const pct = Math.min(90, 60 + Math.round((i + 1) / data.length * 30));
                         progressFill.style.width = pct + '%';
                         progressText.textContent = pct + '%';
                         uploadStatus.textContent = `📤 Upload ${Math.round((i+1)/data.length*100)}% (${i+1}/${data.length})`;
@@ -1389,11 +1446,9 @@
                     status: "SUCCESS"
                 });
 
-                progressFill.style.width = '100%';
-                progressText.textContent = '100%';
+                progressFill.style.width = '95%';
+                progressText.textContent = '95%';
                 uploadStatus.textContent = '📊 Refresh Dashboard...';
-                progressFill.style.width = '98%';
-                progressText.textContent = '98%';
 
                 showToast(`✅ ${data.length} data berhasil diupload!`, 'success');
 
