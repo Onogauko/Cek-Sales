@@ -99,57 +99,72 @@
         .upload-area {
             background: #fff;
             border-radius: 8px;
-            padding: 8px 12px;
+            padding: 10px 16px;
+            min-height: 60px;
             text-align: center;
             border: 2px dashed #c5cae9;
             transition: all .3s;
             margin-bottom: 6px;
             box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
             position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
         }
         .upload-area.dragover {
             border-color: #283593;
             background: #e8eaf6;
         }
-        .upload-area .icon {
+        .upload-area .upload-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 0;
+        }
+        .upload-area .upload-left .icon {
             font-size: 22px;
             display: inline-block;
-            margin-right: 6px;
+            flex-shrink: 0;
         }
-        .upload-area .title-row {
+        .upload-area .upload-left .upload-info {
             display: flex;
             align-items: center;
-            justify-content: center;
             gap: 6px;
             flex-wrap: wrap;
-            margin-bottom: 0;
+            min-width: 0;
         }
-        .upload-area .title-row h3 {
-            color: #1a237e;
-            font-size: 13px;
+        .upload-area .upload-left .upload-info .upload-title {
+            font-size: 16px;
             font-weight: 600;
+            color: #1a237e;
+            white-space: nowrap;
         }
-        .upload-area .title-row .format {
-            font-size: 10px;
+        .upload-area .upload-left .upload-info .upload-formats {
+            font-size: 11px;
             color: #999;
+            white-space: nowrap;
         }
-        .upload-area .sub-text {
-            color: #888;
-            font-size: 10px;
-            margin-bottom: 4px;
+        .upload-area .upload-left .upload-info .file-name {
+            font-size: 12px;
+            color: #4caf50;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
         }
-
-        .upload-controls {
+        .upload-area .upload-right {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 6px;
-            background: #f5f6fa;
-            border-radius: 8px;
-            padding: 3px 8px;
+            gap: 8px;
+            flex-shrink: 0;
         }
-        .upload-controls .upload-btn {
-            padding: 6px 16px;
+        .upload-area .upload-right .upload-btn {
+            padding: 8px 18px;
+            height: 36px;
             font-size: 12px;
             border-radius: 6px;
             border: none;
@@ -159,13 +174,20 @@
             background: #283593;
             color: #fff;
             white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
-        .upload-controls .upload-btn:active {
+        .upload-area .upload-right .upload-btn:active {
             transform: scale(.95);
         }
-        .upload-controls .upload-btn:disabled {
+        .upload-area .upload-right .upload-btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+        }
+        .upload-area .upload-right .upload-btn.secondary {
+            background: #e8eaf6;
+            color: #283593;
         }
 
         #fileInput {
@@ -231,6 +253,53 @@
         }
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+
+        @media (max-width:480px) {
+            .upload-area {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 10px 14px;
+                min-height: 70px;
+            }
+            .upload-area .upload-left {
+                flex-wrap: wrap;
+            }
+            .upload-area .upload-left .upload-info .file-name {
+                max-width: 120px;
+            }
+            .upload-area .upload-right {
+                justify-content: flex-start;
+            }
+        }
+
+        /* ===== FILTER SECTION ===== */
+        .filter-section {
+            background: #fff;
+            border-radius: 8px;
+            padding: 6px 10px;
+            margin-bottom: 6px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
+        }
+        .filter-section select,
+        .filter-section input {
+            width: 100%;
+            padding: 5px 8px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 11px;
+            margin-bottom: 4px;
+            background: #fafafa;
+        }
+        .filter-section select:focus,
+        .filter-section input:focus {
+            outline: none;
+            border-color: #283593;
+        }
+        .filter-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
         }
 
         /* ===== STATS GRID & TAB ===== */
@@ -373,31 +442,6 @@
         .chart-wrapper {
             position: relative;
             height: 145px;
-        }
-        .filter-section {
-            background: #fff;
-            border-radius: 8px;
-            padding: 6px 10px;
-            margin-bottom: 6px;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
-        }
-        .filter-section input {
-            width: 100%;
-            padding: 5px 8px;
-            border: 1px solid #e0e0e0;
-            border-radius: 6px;
-            font-size: 11px;
-            margin-bottom: 4px;
-            background: #fafafa;
-        }
-        .filter-section input:focus {
-            outline: none;
-            border-color: #283593;
-        }
-        .filter-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4px;
         }
         .dept-summary {
             background: #fff;
@@ -775,11 +819,10 @@
             .header { padding: 8px 10px; }
             .header h1 { font-size: 14px; }
             .header p { font-size: 10px; }
-            .upload-area { padding: 8px 10px 10px; }
-            .upload-area .icon { font-size: 18px; }
-            .upload-area .title-row h3 { font-size: 12px; }
-            .upload-controls { flex-wrap: wrap; padding: 4px 6px; }
-            .upload-controls .upload-btn { font-size: 10px; padding: 4px 12px; }
+            .upload-area { padding: 10px 14px; min-height: 70px; flex-direction: column; align-items: stretch; }
+            .upload-area .upload-left { flex-wrap: wrap; }
+            .upload-area .upload-left .upload-info .file-name { max-width: 120px; }
+            .upload-area .upload-right { justify-content: flex-start; }
             .stats-grid { gap: 6px; }
             .stat-card .number { font-size: 15px; }
             .detail-panel { padding: 10px; margin: 4px; }
@@ -804,14 +847,15 @@
 
     <!-- ===== UPLOAD AREA ===== -->
     <div class="upload-area" id="uploadArea">
-        <div class="title-row">
+        <div class="upload-left">
             <span class="icon">📁</span>
-            <h3>Upload File</h3>
-            <span class="format">.xlsx .xls .csv</span>
+            <div class="upload-info">
+                <span class="upload-title">Upload File</span>
+                <span class="upload-formats">(.xlsx, .xls, .csv)</span>
+                <span class="file-name" id="fileNameDisplay"></span>
+            </div>
         </div>
-        <div class="sub-text">Klik atau drag & drop file</div>
-
-        <div class="upload-controls">
+        <div class="upload-right">
             <button class="upload-btn" id="uploadBtn">📂 Pilih File</button>
         </div>
 
@@ -851,6 +895,20 @@
     <div id="tabContent">
         <div class="tab-content active" id="tab-summary">
             <div class="filter-section">
+                <!-- PERIODE DROPDOWN -->
+                <select id="periodFilter" onchange="onPeriodChange()">
+                    <option value="">Loading...</option>
+                </select>
+
+                <!-- DEPARTMENT DROPDOWN -->
+                <select id="departmentFilter" onchange="onDepartmentChange()">
+                    <option value="ALL">Semua Department</option>
+                    <option value="2039">2039</option>
+                    <option value="2040">2040</option>
+                    <option value="5214">5214</option>
+                </select>
+
+                <!-- DATE FILTERS -->
                 <div class="filter-row">
                     <input type="date" id="filterDateFrom" onchange="applyFilters()">
                     <input type="date" id="filterDateTo" onchange="applyFilters()">
@@ -977,6 +1035,8 @@
         let chartDept = null;
         let uploadBtn = null;
         let fileInput = null;
+        let currentPeriod = null;
+        let availablePeriods = [];
 
         function updateSyncStatus(status, text) {
             const dot = document.getElementById('syncDot');
@@ -1049,12 +1109,11 @@
                     const statusClass = status === 'SUCCESS' ? 'status-success' : 'status-failed';
                     const date = data.uploadTime?.toDate?.() || new Date();
                     
-                    // Update info bar with upload time
-                    document.getElementById('infoUpdate').textContent = date.toLocaleDateString('id-ID') + ' ' + date.toLocaleTimeString('id-ID');
+                    document.getElementById('infoUpdate').textContent = date.toLocaleDateString('en-GB') + ' ' + date.toLocaleTimeString('en-GB');
                     
                     html += `
                         <div class="history-item">
-                            <span class="date">${date.toLocaleDateString('id-ID')} ${date.toLocaleTimeString('id-ID')}</span>
+                            <span class="date">${date.toLocaleDateString('en-GB')} ${date.toLocaleTimeString('en-GB')}</span>
                             <span class="records">${data.recordCount || 0} records</span>
                             <span class="${statusClass}">${status}</span>
                             <span style="color:#888;font-size:9px;">${data.filename || ''}</span>
@@ -1069,7 +1128,7 @@
         }
 
         // ============================================================
-        // LOAD DATA
+        // LOAD DATA & PERIODS
         // ============================================================
         async function loadData() {
             if (!isFirebaseReady) return;
@@ -1094,34 +1153,40 @@
                 originalData = data;
                 salesData = [...data];
 
-                // Update stats
-                const totalAmount = data.reduce((s, d) => s + (d.amount || 0), 0);
-                const totalQty = data.reduce((s, d) => s + (d.qty || 0), 0);
-                const uniqueSku = new Set(data.map(d => d.sku || d.itemName)).size;
-                const uniqueDays = new Set(data.map(d => d.date)).size;
+                // Extract unique periods
+                const periods = [...new Set(data.map(d => d.period).filter(p => p))];
+                periods.sort((a, b) => b.localeCompare(a));
+                availablePeriods = periods;
 
-                document.getElementById('totalSales').textContent = formatRupiah(totalAmount);
-                document.getElementById('totalQty').textContent = Math.round(totalQty);
-                document.getElementById('totalItems').textContent = uniqueSku;
-                document.getElementById('totalDays').textContent = uniqueDays;
+                // Populate period dropdown
+                const periodFilter = document.getElementById('periodFilter');
+                periodFilter.innerHTML = '';
+                
+                // Add empty option
+                const emptyOpt = document.createElement('option');
+                emptyOpt.value = '';
+                emptyOpt.textContent = 'Pilih Periode';
+                periodFilter.appendChild(emptyOpt);
 
-                // Set date range
-                const dates = data.map(d => d.date).filter(d => d).sort();
-                if (dates.length > 0) {
-                    document.getElementById('filterDateFrom').value = dates[0];
-                    document.getElementById('filterDateTo').value = dates[dates.length - 1];
+                // Add period options
+                periods.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p;
+                    const [year, month] = p.split('-');
+                    const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                    opt.textContent = monthNames[parseInt(month) - 1] + ' ' + year;
+                    periodFilter.appendChild(opt);
+                });
+
+                // Set default period (latest)
+                if (periods.length > 0) {
+                    currentPeriod = periods[0];
+                    periodFilter.value = currentPeriod;
+                    setPeriodDate(currentPeriod);
                 }
 
-                // Update info bar
-                const periods = new Set(data.map(d => d.period)).size;
-                document.getElementById('infoPeriod').textContent = periods + ' bulan';
-                document.getElementById('infoDays').textContent = uniqueDays + ' hari';
-                document.getElementById('infoSku').textContent = uniqueSku + ' SKU';
-
-                statsGrid.style.display = 'grid';
-                tabs.style.display = 'flex';
-                infoBar.style.display = 'flex';
-
+                // Initial render
                 renderDashboard();
                 afterDataLoaded();
                 updateSyncStatus('synced', 'Connected');
@@ -1131,6 +1196,39 @@
                 updateSyncStatus('error', 'Load failed');
                 showEmptyState();
             }
+        }
+
+        // ============================================================
+        // SET PERIOD DATE
+        // ============================================================
+        function setPeriodDate(period) {
+            if (!period) {
+                document.getElementById('filterDateFrom').value = '';
+                document.getElementById('filterDateTo').value = '';
+                return;
+            }
+
+            const periodData = originalData.filter(d => d.period === period);
+
+            if (periodData.length === 0) {
+                document.getElementById('filterDateFrom').value = '';
+                document.getElementById('filterDateTo').value = '';
+                return;
+            }
+
+            const dates = periodData
+                .map(d => d.date)
+                .filter(d => d)
+                .sort();
+
+            if (dates.length === 0) {
+                document.getElementById('filterDateFrom').value = '';
+                document.getElementById('filterDateTo').value = '';
+                return;
+            }
+
+            document.getElementById('filterDateFrom').value = dates[0];
+            document.getElementById('filterDateTo').value = dates[dates.length - 1];
         }
 
         function showEmptyState() {
@@ -1149,6 +1247,302 @@
         }
 
         // ============================================================
+        // PERIOD & DEPARTMENT CHANGE HANDLERS
+        // ============================================================
+        function onPeriodChange() {
+            const periodFilter = document.getElementById('periodFilter');
+            currentPeriod = periodFilter.value;
+            if (currentPeriod) {
+                setPeriodDate(currentPeriod);
+            } else {
+                document.getElementById('filterDateFrom').value = '';
+                document.getElementById('filterDateTo').value = '';
+            }
+            renderDashboard();
+        }
+
+        function onDepartmentChange() {
+            renderDashboard();
+        }
+
+        // ============================================================
+        // FILTER FUNCTIONS
+        // ============================================================
+        function getFilteredData() {
+            let data = [...originalData];
+
+            // 1. Filter Period
+            if (currentPeriod) {
+                data = data.filter(d => d.period === currentPeriod);
+            }
+
+            // 2. Filter Department
+            const deptFilter = document.getElementById('departmentFilter').value;
+            if (deptFilter !== 'ALL') {
+                data = data.filter(d => d.department === deptFilter);
+            }
+
+            // 3. Filter Date
+            const from = document.getElementById('filterDateFrom').value;
+            const to = document.getElementById('filterDateTo').value;
+            if (from) data = data.filter(d => d.date >= from);
+            if (to) data = data.filter(d => d.date <= to);
+
+            // 4. Search
+            if (searchQuery) {
+                const q = searchQuery.toLowerCase();
+                data = data.filter(d => 
+                    (d.itemName || '').toLowerCase().includes(q) || 
+                    (d.sku || '').toLowerCase().includes(q)
+                );
+            }
+
+            return data;
+        }
+
+        function applyFilters() {
+            renderDashboard();
+        }
+
+        function applySearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                searchQuery = document.getElementById('searchInput').value.trim();
+                renderDashboard();
+            }, 300);
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            searchQuery = '';
+            renderDashboard();
+        }
+
+        // ============================================================
+        // DASHBOARD FUNCTIONS
+        // ============================================================
+        function renderDashboard() {
+            const filteredData = getFilteredData();
+            updateStats(filteredData);
+            renderSummary(filteredData);
+            renderProducts(filteredData);
+            renderDeptSummary(filteredData);
+            renderCharts(filteredData);
+        }
+
+        function updateStats(data) {
+            document.getElementById('totalSales').textContent = formatRupiah(data.reduce((s, d) => s + (d.amount || 0), 0));
+            document.getElementById('totalQty').textContent = Math.round(data.reduce((s, d) => s + (d.qty || 0), 0));
+            document.getElementById('totalItems').textContent = new Set(data.map(d => d.sku || d.itemName)).size;
+            document.getElementById('totalDays').textContent = new Set(data.map(d => d.date)).size || 'N/A';
+
+            const periods = new Set(data.map(d => d.period)).size;
+            document.getElementById('infoPeriod').textContent = currentPeriod || (periods + ' bulan');
+            document.getElementById('infoDays').textContent = new Set(data.map(d => d.date)).size + ' hari';
+            document.getElementById('infoSku').textContent = new Set(data.map(d => d.sku || d.itemName)).size + ' SKU';
+
+            statsGrid.style.display = 'grid';
+            tabs.style.display = 'flex';
+            infoBar.style.display = 'flex';
+        }
+
+        function renderSummary(data) {
+            const container = document.getElementById('summaryContent');
+            if (data.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p style="font-size:12px;">No data matching filters</p></div>';
+                return;
+            }
+
+            const productSales = {};
+            data.forEach(d => {
+                const key = d.sku || d.itemName;
+                if (!productSales[key]) {
+                    productSales[key] = { qty: 0, amount: 0, dept: d.department, name: d.itemName, sku: d.sku || '' };
+                }
+                productSales[key].qty += d.qty || 0;
+                productSales[key].amount += d.amount || 0;
+            });
+
+            let productArray = Object.values(productSales);
+            productArray.sort((a, b) => b.amount - a.amount);
+            const topProducts = productArray.slice(0, 10);
+
+            let html = `
+                <div style="background:white; border-radius:8px; padding:10px 12px; box-shadow:0 1px 4px rgba(0,0,0,0.05); margin-bottom:8px;">
+                    <div class="summary-header">
+                        <h4>🏆 Top 10 Products</h4>
+                    </div>
+                    ${searchQuery ? '<p style="font-size:9px; color:#666; margin-top:2px;">Hasil pencarian: <strong>"' + searchQuery + '"</strong> • ' + productArray.length + ' item ditemukan</p>' : ''}
+                    <p style="font-size:9px; color:#999; margin-top:1px;">Klik item untuk melihat detail penjualan per tanggal</p>
+                </div>
+                <div class="product-list">
+            `;
+
+            if (topProducts.length === 0) {
+                html += '<div class="empty-state" style="padding:12px;"><div class="icon">🔍</div><p style="font-size:12px;">Tidak ada item yang cocok dengan pencarian "' + searchQuery + '"</p></div>';
+            } else {
+                topProducts.forEach((item, i) => {
+                    html += `
+                        <div class="product-item" onclick="showItemDetail('${escapeString(item.name)}', '${escapeString(item.dept)}')">
+                            <span style="font-size:10px; color:#999; margin-right:4px; min-width:18px;">#${i+1}</span>
+                            <span class="name">${item.name} ${item.sku ? '['+item.sku+']' : ''}</span>
+                            <span class="dept">${item.dept}</span>
+                            <span style="display:flex; align-items:center; gap:3px;">
+                                <span class="qty">${Math.round(item.qty)}x</span>
+                                <span class="amount">${formatRupiah(item.amount)}</span>
+                                <span class="click-hint">👉</span>
+                            </span>
+                        </div>
+                    `;
+                });
+            }
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function renderProducts(data) {
+            const container = document.getElementById('productList');
+            if (data.length === 0) { container.innerHTML = '<div class="empty-state"><p style="font-size:12px;">No data</p></div>'; return; }
+
+            const productSales = {};
+            data.forEach(d => {
+                const key = d.sku || d.itemName;
+                if (!productSales[key]) {
+                    productSales[key] = { qty: 0, amount: 0, dept: d.department, name: d.itemName, sku: d.sku || '' };
+                }
+                productSales[key].qty += d.qty || 0;
+                productSales[key].amount += d.amount || 0;
+            });
+
+            const sorted = Object.values(productSales).sort((a, b) => b.amount - a.amount).slice(0, 20);
+
+            let html = '';
+            sorted.forEach(item => {
+                html += `
+                    <div class="product-item" onclick="showItemDetail('${escapeString(item.name)}', '${escapeString(item.dept)}')">
+                        <span class="name">${item.name} ${item.sku ? '['+item.sku+']' : ''}</span>
+                        <span class="dept">${item.dept}</span>
+                        <span style="display:flex; align-items:center; gap:4px;">
+                            <span class="qty">${Math.round(item.qty)}x</span>
+                            <span class="amount">${formatRupiah(item.amount)}</span>
+                            <span class="click-hint">👉</span>
+                        </span>
+                    </div>
+                `;
+            });
+            container.innerHTML = html || '<div class="empty-state"><p style="font-size:12px;">No products found</p></div>';
+        }
+
+        function renderDeptSummary(data) {
+            const container = document.getElementById('deptSummary');
+            if (data.length === 0) { container.innerHTML = '<div class="empty-state"><p style="font-size:12px;">No data</p></div>'; return; }
+            const deptData = {};
+            data.forEach(d => {
+                if (!deptData[d.department]) deptData[d.department] = { amount: 0, qty: 0 };
+                deptData[d.department].amount += d.amount || 0;
+                deptData[d.department].qty += d.qty || 0;
+            });
+            let html = '';
+            Object.entries(deptData).sort((a, b) => b[1].amount - a[1].amount).forEach(([dept, d]) => {
+                html += '<div class="dept-row"><span class="name">' + dept + '</span><span class="value">' +
+                    formatRupiah(d.amount) + ' (' + Math.round(d.qty) + ' pcs)</span></div>';
+            });
+            container.innerHTML = html;
+        }
+
+        function renderCharts(data) {
+            if (data.length === 0) {
+                if (chartTrend) { chartTrend.destroy(); chartTrend = null; }
+                if (chartDept) { chartDept.destroy(); chartDept = null; }
+                return;
+            }
+            const dailyData = {};
+            data.forEach(d => { if (!dailyData[d.date]) dailyData[d.date] = 0; dailyData[d.date] += d.amount || 0; });
+            const sorted = Object.keys(dailyData).sort();
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            if (chartTrend) chartTrend.destroy();
+            chartTrend = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: sorted.map(d => d.substring(5)),
+                    datasets: [{ label: 'Daily Sales (Rp)', data: sorted.map(d => dailyData[d]), borderColor: '#283593',
+                        backgroundColor: 'rgba(40,53,147,0.1)', fill: true, tension: 0.4 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { callback: v => formatRupiah(v, true) } } } }
+            });
+
+            const deptData = {};
+            data.forEach(d => { if (!deptData[d.department]) deptData[d.department] = 0; deptData[d.department] += d.amount || 0; });
+            const depts = Object.entries(deptData).sort((a, b) => b[1] - a[1]);
+            const ctx2 = document.getElementById('deptChart').getContext('2d');
+            if (chartDept) chartDept.destroy();
+            chartDept = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: depts.map(d => d[0]),
+                    datasets: [{ label: 'Sales by Department', data: depts.map(d => d[1]),
+                        backgroundColor: ['#283593', '#1a237e', '#3f51b5', '#5c6bc0', '#7986cb'], borderRadius: 4 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { callback: v => formatRupiah(v, true) } } } }
+            });
+        }
+
+        // ============================================================
+        // ITEM DETAIL
+        // ============================================================
+        function showItemDetail(itemName, department) {
+            currentDetailItem = { name: itemName, dept: department };
+            document.getElementById('detailTitle').textContent = '📦 ' + itemName;
+            document.getElementById('detailOverlay').classList.add('active');
+            renderDetailTable();
+        }
+
+        function closeDetail(e) {
+            if (e && e.target !== e.currentTarget) return;
+            document.getElementById('detailOverlay').classList.remove('active');
+            currentDetailItem = null;
+        }
+
+        function renderDetailTable() {
+            if (!currentDetailItem) return;
+            const container = document.getElementById('detailTableContainer');
+            const from = document.getElementById('detailDateFrom').value;
+            const to = document.getElementById('detailDateTo').value;
+
+            let itemData = getFilteredData().filter(d => 
+                (d.itemName === currentDetailItem.name || d.sku === currentDetailItem.name) && 
+                d.department === currentDetailItem.dept
+            );
+            if (from) itemData = itemData.filter(d => d.date >= from);
+            if (to) itemData = itemData.filter(d => d.date <= to);
+            detailDataCache = itemData;
+
+            const dailyData = {};
+            itemData.forEach(d => {
+                if (!dailyData[d.date]) dailyData[d.date] = { qty: 0, amount: 0 };
+                dailyData[d.date].qty += d.qty || 0;
+                dailyData[d.date].amount += d.amount || 0;
+            });
+
+            const dates = Object.keys(dailyData).sort();
+            const totalQty = dates.reduce((s, d) => s + dailyData[d].qty, 0);
+            const totalAmount = dates.reduce((s, d) => s + dailyData[d].amount, 0);
+            document.getElementById('detailTotalQty').textContent = Math.round(totalQty);
+            document.getElementById('detailTotalAmount').textContent = formatRupiah(totalAmount);
+
+            if (dates.length === 0) { container.innerHTML = '<div class="detail-empty">📭 No data for this period</div>'; return; }
+
+            let html = '<table class="detail-table"><thead><tr><th>Date</th><th style="text-align:right;">Qty</th><th style="text-align:right;">Amount</th></tr></thead><tbody>';
+            dates.forEach(date => {
+                html += '<tr><td class="date-cell">' + formatDate(date) + '</td><td class="qty-cell">' + Math.round(dailyData[date].qty) + '</td><td class="amount-cell">' + formatRupiah(dailyData[date].amount) + '</td></tr>';
+            });
+            html += '<tr style="border-top:2px solid #e8eaf6;font-weight:600;"><td style="color:#1a237e;">TOTAL</td><td class="qty-cell">' + Math.round(totalQty) + '</td><td class="amount-cell">' + formatRupiah(totalAmount) + '</td></tr></tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // ============================================================
         // UPLOAD FILE
         // ============================================================
         function handleFile(file) {
@@ -1159,6 +1553,7 @@
             const progressText = document.getElementById('progressText');
             const uploadStatus = document.getElementById('uploadStatus');
             const uploadProgress = document.getElementById('uploadProgress');
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
 
             if (!file) {
                 showToast('No file selected', 'warning');
@@ -1170,6 +1565,10 @@
                 showToast('Format file tidak didukung. Gunakan .xlsx, .xls, atau .csv', 'warning');
                 return;
             }
+
+            // Tampilkan nama file
+            fileNameDisplay.textContent = file.name;
+            uploadBtn.textContent = '📂 Ganti File';
 
             uploadLoading.classList.add('active');
             uploadBtn.disabled = true;
@@ -1258,7 +1657,6 @@
                 amount: findColumn(headers, ['Sales Amount(Without VAT)', 'Amount', 'Sales Amount', 'amount', 'Total'])
             };
 
-            // Validasi header - semua kolom wajib ada
             if (
                 !colMap.date ||
                 !colMap.dept ||
@@ -1302,7 +1700,6 @@
                     amount: parseFloat(colMap.amount ? row[colMap.amount] : 0) || 0
                 };
             }).filter(d => {
-                // Filter by valid departments
                 if (!VALID_DEPARTMENTS.includes(String(d.department))) {
                     return false;
                 }
@@ -1322,7 +1719,6 @@
             progressFill.style.width = '50%';
             progressText.textContent = '50%';
 
-            // Upload to Firebase
             uploadToFirebase(processedData, filename);
         }
 
@@ -1345,9 +1741,6 @@
                 isSaving = true;
                 updateSyncStatus('syncing', 'Uploading...');
 
-                // ==============================
-                // HAPUS DATA LAMA BERDASARKAN TANGGAL
-                // ==============================
                 uploadStatus.textContent = '🗑 Menghapus Data Lama...';
                 progressFill.style.width = '55%';
                 progressText.textContent = '55%';
@@ -1385,9 +1778,6 @@
 
                 console.log(`🗑️ Deleted ${totalDeleted} existing records`);
 
-                // ==============================
-                // UPLOAD DATA BARU
-                // ==============================
                 uploadStatus.textContent = '☁️ Upload ke Firebase...';
                 progressFill.style.width = '60%';
                 progressText.textContent = '60%';
@@ -1410,10 +1800,8 @@
                     uploaded++;
                     batchCount++;
 
-                    // Commit batch when reaching batchSize or end of data
                     if (batchCount >= batchSize || i === data.length - 1) {
                         await batch.commit();
-                        // Create new batch after commit
                         if (i < data.length - 1) {
                             batch = firestore.batch();
                             batchCount = 0;
@@ -1425,13 +1813,11 @@
                     }
                 }
 
-                // Calculate totals for upload log
                 const totalSales = data.reduce((s, d) => s + (d.amount || 0), 0);
                 const totalQty = data.reduce((s, d) => s + (d.qty || 0), 0);
                 const uniqueSku = new Set(data.map(d => d.sku)).size;
                 const uniqueDates = [...new Set(data.map(d => d.date))];
 
-                // Save upload log - SUCCESS
                 await firestore.collection('upload_logs').add({
                     filename: filename,
                     uploadTime: firebase.firestore.FieldValue.serverTimestamp(),
@@ -1452,7 +1838,6 @@
 
                 showToast(`✅ ${data.length} data berhasil diupload!`, 'success');
 
-                // Reload data and history
                 await loadData();
                 await loadUploadHistory();
 
@@ -1467,7 +1852,6 @@
             } catch (err) {
                 console.error('Upload error:', err);
                 
-                // Save upload log - FAILED
                 try {
                     await firestore.collection('upload_logs').add({
                         filename: filename,
@@ -1501,267 +1885,12 @@
         }
 
         // ============================================================
-        // DASHBOARD FUNCTIONS
-        // ============================================================
-        function renderDashboard() {
-            updateStats();
-            renderSummary();
-            renderProducts();
-            renderDeptSummary();
-            renderCharts();
-        }
-
-        function getFilteredData() {
-            let data = [...originalData];
-            const from = document.getElementById('filterDateFrom').value;
-            const to = document.getElementById('filterDateTo').value;
-            if (from) data = data.filter(d => d.date >= from);
-            if (to) data = data.filter(d => d.date <= to);
-            return data;
-        }
-
-        function updateStats() {
-            const data = getFilteredData();
-            document.getElementById('totalSales').textContent = formatRupiah(data.reduce((s, d) => s + (d.amount || 0), 0));
-            document.getElementById('totalQty').textContent = Math.round(data.reduce((s, d) => s + (d.qty || 0), 0));
-            document.getElementById('totalItems').textContent = new Set(data.map(d => d.sku || d.itemName)).size;
-            document.getElementById('totalDays').textContent = new Set(data.map(d => d.date)).size || 'N/A';
-        }
-
-        function applyFilters() {
-            updateStats();
-            renderSummary();
-            renderProducts();
-            renderDeptSummary();
-            renderCharts();
-        }
-
-        function applySearch() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                searchQuery = document.getElementById('searchInput').value.trim();
-                renderSummary();
-            }, 300);
-        }
-
-        function clearSearch() {
-            document.getElementById('searchInput').value = '';
-            searchQuery = '';
-            renderSummary();
-        }
-
-        function renderSummary() {
-            const data = getFilteredData();
-            const container = document.getElementById('summaryContent');
-            if (data.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p style="font-size:12px;">No data matching filters</p></div>';
-                return;
-            }
-
-            const productSales = {};
-            data.forEach(d => {
-                const key = d.sku || d.itemName;
-                if (!productSales[key]) {
-                    productSales[key] = { qty: 0, amount: 0, dept: d.department, name: d.itemName, sku: d.sku || '' };
-                }
-                productSales[key].qty += d.qty || 0;
-                productSales[key].amount += d.amount || 0;
-            });
-
-            let productArray = Object.values(productSales);
-            if (searchQuery) {
-                const q = searchQuery.toLowerCase();
-                productArray = productArray.filter(p => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q));
-            }
-            productArray.sort((a, b) => b.amount - a.amount);
-            const topProducts = productArray.slice(0, 10);
-
-            let html = `
-                <div style="background:white; border-radius:8px; padding:10px 12px; box-shadow:0 1px 4px rgba(0,0,0,0.05); margin-bottom:8px;">
-                    <div class="summary-header">
-                        <h4>🏆 Top 10 Products</h4>
-                    </div>
-                    ${searchQuery ? '<p style="font-size:9px; color:#666; margin-top:2px;">Hasil pencarian: <strong>"' + searchQuery + '"</strong> • ' + productArray.length + ' item ditemukan</p>' : ''}
-                    <p style="font-size:9px; color:#999; margin-top:1px;">Klik item untuk melihat detail penjualan per tanggal</p>
-                </div>
-                <div class="product-list">
-            `;
-
-            if (topProducts.length === 0) {
-                html += '<div class="empty-state" style="padding:12px;"><div class="icon">🔍</div><p style="font-size:12px;">Tidak ada item yang cocok dengan pencarian "' + searchQuery + '"</p></div>';
-            } else {
-                topProducts.forEach((item, i) => {
-                    html += `
-                        <div class="product-item" onclick="showItemDetail('${escapeString(item.name)}', '${escapeString(item.dept)}')">
-                            <span style="font-size:10px; color:#999; margin-right:4px; min-width:18px;">#${i+1}</span>
-                            <span class="name">${item.name} ${item.sku ? '['+item.sku+']' : ''}</span>
-                            <span class="dept">${item.dept}</span>
-                            <span style="display:flex; align-items:center; gap:3px;">
-                                <span class="qty">${Math.round(item.qty)}x</span>
-                                <span class="amount">${formatRupiah(item.amount)}</span>
-                                <span class="click-hint">👉</span>
-                            </span>
-                        </div>
-                    `;
-                });
-            }
-            html += '</div>';
-            container.innerHTML = html;
-        }
-
-        function renderProducts() {
-            const data = getFilteredData();
-            const container = document.getElementById('productList');
-            if (data.length === 0) { container.innerHTML = '<div class="empty-state"><p style="font-size:12px;">No data</p></div>'; return; }
-
-            const productSales = {};
-            data.forEach(d => {
-                const key = d.sku || d.itemName;
-                if (!productSales[key]) {
-                    productSales[key] = { qty: 0, amount: 0, dept: d.department, name: d.itemName, sku: d.sku || '' };
-                }
-                productSales[key].qty += d.qty || 0;
-                productSales[key].amount += d.amount || 0;
-            });
-
-            // Top 20 langsung
-            const sorted = Object.values(productSales).sort((a, b) => b.amount - a.amount).slice(0, 20);
-
-            let html = '';
-            sorted.forEach(item => {
-                html += `
-                    <div class="product-item" onclick="showItemDetail('${escapeString(item.name)}', '${escapeString(item.dept)}')">
-                        <span class="name">${item.name} ${item.sku ? '['+item.sku+']' : ''}</span>
-                        <span class="dept">${item.dept}</span>
-                        <span style="display:flex; align-items:center; gap:4px;">
-                            <span class="qty">${Math.round(item.qty)}x</span>
-                            <span class="amount">${formatRupiah(item.amount)}</span>
-                            <span class="click-hint">👉</span>
-                        </span>
-                    </div>
-                `;
-            });
-            container.innerHTML = html || '<div class="empty-state"><p style="font-size:12px;">No products found</p></div>';
-        }
-
-        function renderDeptSummary() {
-            const data = getFilteredData();
-            const container = document.getElementById('deptSummary');
-            if (data.length === 0) { container.innerHTML = '<div class="empty-state"><p style="font-size:12px;">No data</p></div>'; return; }
-            const deptData = {};
-            data.forEach(d => {
-                if (!deptData[d.department]) deptData[d.department] = { amount: 0, qty: 0 };
-                deptData[d.department].amount += d.amount || 0;
-                deptData[d.department].qty += d.qty || 0;
-            });
-            let html = '';
-            Object.entries(deptData).sort((a, b) => b[1].amount - a[1].amount).forEach(([dept, d]) => {
-                html += '<div class="dept-row"><span class="name">' + dept + '</span><span class="value">' +
-                    formatRupiah(d.amount) + ' (' + Math.round(d.qty) + ' pcs)</span></div>';
-            });
-            container.innerHTML = html;
-        }
-
-        function renderCharts() {
-            const data = getFilteredData();
-            if (data.length === 0) {
-                if (chartTrend) { chartTrend.destroy(); chartTrend = null; }
-                if (chartDept) { chartDept.destroy(); chartDept = null; }
-                return;
-            }
-            const dailyData = {};
-            data.forEach(d => { if (!dailyData[d.date]) dailyData[d.date] = 0; dailyData[d.date] += d.amount || 0; });
-            const sorted = Object.keys(dailyData).sort();
-            const ctx = document.getElementById('trendChart').getContext('2d');
-            if (chartTrend) chartTrend.destroy();
-            chartTrend = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: sorted.map(d => d.substring(5)),
-                    datasets: [{ label: 'Daily Sales (Rp)', data: sorted.map(d => dailyData[d]), borderColor: '#283593',
-                        backgroundColor: 'rgba(40,53,147,0.1)', fill: true, tension: 0.4 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { callback: v => formatRupiah(v, true) } } } }
-            });
-
-            const deptData = {};
-            data.forEach(d => { if (!deptData[d.department]) deptData[d.department] = 0; deptData[d.department] += d.amount || 0; });
-            const depts = Object.entries(deptData).sort((a, b) => b[1] - a[1]);
-            const ctx2 = document.getElementById('deptChart').getContext('2d');
-            if (chartDept) chartDept.destroy();
-            chartDept = new Chart(ctx2, {
-                type: 'bar',
-                data: {
-                    labels: depts.map(d => d[0]),
-                    datasets: [{ label: 'Sales by Department', data: depts.map(d => d[1]),
-                        backgroundColor: ['#283593', '#1a237e', '#3f51b5', '#5c6bc0', '#7986cb'], borderRadius: 4 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { callback: v => formatRupiah(v, true) } } } }
-            });
-        }
-
-        // ============================================================
-        // ITEM DETAIL
-        // ============================================================
-        function showItemDetail(itemName, department) {
-            currentDetailItem = { name: itemName, dept: department };
-            document.getElementById('detailTitle').textContent = '📦 ' + itemName;
-            document.getElementById('detailOverlay').classList.add('active');
-            renderDetailTable();
-        }
-
-        function closeDetail(e) {
-            if (e && e.target !== e.currentTarget) return;
-            document.getElementById('detailOverlay').classList.remove('active');
-            currentDetailItem = null;
-        }
-
-        function renderDetailTable() {
-            if (!currentDetailItem) return;
-            const container = document.getElementById('detailTableContainer');
-            const from = document.getElementById('detailDateFrom').value;
-            const to = document.getElementById('detailDateTo').value;
-
-            let itemData = originalData.filter(d => 
-                (d.itemName === currentDetailItem.name || d.sku === currentDetailItem.name) && 
-                d.department === currentDetailItem.dept
-            );
-            if (from) itemData = itemData.filter(d => d.date >= from);
-            if (to) itemData = itemData.filter(d => d.date <= to);
-            detailDataCache = itemData;
-
-            const dailyData = {};
-            itemData.forEach(d => {
-                if (!dailyData[d.date]) dailyData[d.date] = { qty: 0, amount: 0 };
-                dailyData[d.date].qty += d.qty || 0;
-                dailyData[d.date].amount += d.amount || 0;
-            });
-
-            const dates = Object.keys(dailyData).sort();
-            const totalQty = dates.reduce((s, d) => s + dailyData[d].qty, 0);
-            const totalAmount = dates.reduce((s, d) => s + dailyData[d].amount, 0);
-            document.getElementById('detailTotalQty').textContent = Math.round(totalQty);
-            document.getElementById('detailTotalAmount').textContent = formatRupiah(totalAmount);
-
-            if (dates.length === 0) { container.innerHTML = '<div class="detail-empty">📭 No data for this period</div>'; return; }
-
-            let html = '<table class="detail-table"><thead><tr><th>Date</th><th style="text-align:right;">Qty</th><th style="text-align:right;">Amount</th></tr></thead><tbody>';
-            dates.forEach(date => {
-                html += '<tr><td class="date-cell">' + formatDate(date) + '</td><td class="qty-cell">' + Math.round(dailyData[date].qty) + '</td><td class="amount-cell">' + formatRupiah(dailyData[date].amount) + '</td></tr>';
-            });
-            html += '<tr style="border-top:2px solid #e8eaf6;font-weight:600;"><td style="color:#1a237e;">TOTAL</td><td class="qty-cell">' + Math.round(totalQty) + '</td><td class="amount-cell">' + formatRupiah(totalAmount) + '</td></tr></tbody></table>';
-            container.innerHTML = html;
-        }
-
-        // ============================================================
         // UTILITY FUNCTIONS
         // ============================================================
         function formatDate(dateStr) {
             if (!dateStr) return '-';
-            const p = dateStr.split('-');
-            return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0].substring(2) : dateStr;
+            const date = new Date(dateStr + 'T00:00:00');
+            return date.toLocaleDateString('en-GB');
         }
 
         function escapeString(str) { return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
@@ -1837,7 +1966,7 @@
                         const pageSize = doc.internal.pageSize;
                         doc.setFontSize(9);
                         doc.setTextColor(120);
-                        doc.text('Generated: ' + new Date().toLocaleString('id-ID'), 20, pageSize.height - 20);
+                        doc.text('Generated: ' + new Date().toLocaleString('en-GB'), 20, pageSize.height - 20);
                         doc.text('Halaman ' + data.pageNumber + ' dari ' + pageCount, pageSize.width - 100, pageSize.height - 20);
                     }
                 });
@@ -1914,8 +2043,8 @@
                     document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
                     const targetContent = document.getElementById('tab-' + target);
                     if (targetContent) targetContent.classList.add('active');
-                    if (target === 'trend' && originalData.length > 0) {
-                        setTimeout(renderCharts, 100);
+                    if (target === 'trend') {
+                        setTimeout(() => renderCharts(getFilteredData()), 100);
                     }
                 });
             });
