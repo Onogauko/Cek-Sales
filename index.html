@@ -914,12 +914,10 @@
     <div id="tabContent">
         <div class="tab-content active" id="tab-summary">
             <div class="filter-section">
-                <!-- PERIODE DROPDOWN -->
                 <select id="periodFilter" onchange="onPeriodChange()">
                     <option value="">Loading...</option>
                 </select>
 
-                <!-- DEPARTMENT DROPDOWN -->
                 <select id="departmentFilter" onchange="onDepartmentChange()">
                     <option value="ALL">Semua Department</option>
                     <option value="2039">2039</option>
@@ -927,7 +925,6 @@
                     <option value="5214">5214</option>
                 </select>
 
-                <!-- DATE FILTERS -->
                 <div class="filter-row">
                     <input type="date" id="filterDateFrom" onchange="applyFilters()">
                     <input type="date" id="filterDateTo" onchange="applyFilters()">
@@ -944,9 +941,7 @@
         </div>
 
         <div class="tab-content" id="tab-products">
-            <div class="filter-section">
-                <!-- Product Limit dihapus, langsung top 20 -->
-            </div>
+            <div class="filter-section"></div>
             <div class="product-list" id="productList"><div class="loading"><div class="spinner"></div></div></div>
         </div>
 
@@ -999,7 +994,7 @@
         const VALID_DEPARTMENTS = ["2039", "2040", "5214"];
 
         // ============================================================
-        // FIREBASE CONFIG - HARDCODED
+        // FIREBASE CONFIG
         // ============================================================
         const HARDCODED_CONFIG = {
             apiKey: "AIzaSyCAgWNNhOj7bX4quVvk-K6f_vencaoAVI8",
@@ -1015,11 +1010,9 @@
                 const saved = localStorage.getItem('firebaseConfig');
                 if (saved) {
                     const parsed = JSON.parse(saved);
-                    if (parsed.apiKey && parsed.projectId) {
-                        return parsed;
-                    }
+                    if (parsed.apiKey && parsed.projectId) return parsed;
                 }
-            } catch (e) { /* ignore */ }
+            } catch (e) {}
             return HARDCODED_CONFIG;
         }
 
@@ -1060,9 +1053,7 @@
         function updateSyncStatus(status, text) {
             const dot = document.getElementById('syncDot');
             const label = document.getElementById('syncText');
-            if (dot) {
-                dot.className = 'dot ' + status;
-            }
+            if (dot) dot.className = 'dot ' + status;
             if (label) {
                 if (status === 'synced') label.textContent = '🟢 Connected';
                 else if (status === 'syncing') label.textContent = '🔄 Uploading';
@@ -1083,6 +1074,8 @@
                     firebaseApp = firebase.initializeApp(config);
                 }
                 firestore = firebase.firestore();
+                
+                // Test koneksi saja, tanpa enablePersistence
                 await firestore.collection(COLLECTION).limit(1).get();
                 isFirebaseReady = true;
                 updateSyncStatus('synced', 'Connected');
@@ -1107,7 +1100,6 @@
         // ============================================================
         async function loadUploadHistory() {
             if (!isFirebaseReady) return;
-
             try {
                 const snapshot = await firestore.collection('upload_logs')
                     .orderBy('uploadTime', 'desc')
@@ -1142,7 +1134,6 @@
                     `;
                 });
                 content.innerHTML = html;
-
             } catch (err) {
                 console.error('Error loading upload history:', err);
             }
@@ -1153,7 +1144,6 @@
         // ============================================================
         async function loadBudgetHistory() {
             if (!isFirebaseReady) return;
-
             try {
                 const snapshot = await firestore.collection('budget_logs')
                     .orderBy('uploadTime', 'desc')
@@ -1186,18 +1176,16 @@
                     `;
                 });
                 content.innerHTML = html;
-
             } catch (err) {
                 console.error('Error loading budget history:', err);
             }
         }
 
         // ============================================================
-        // LOAD DATA & PERIODS
+        // LOAD DATA
         // ============================================================
         async function loadData() {
             if (!isFirebaseReady) return;
-
             try {
                 updateSyncStatus('syncing', 'Loading...');
                 const snapshot = await firestore.collection(COLLECTION)
@@ -1218,22 +1206,18 @@
                 originalData = data;
                 salesData = [...data];
 
-                // Extract unique periods
                 const periods = [...new Set(data.map(d => d.period).filter(p => p))];
                 periods.sort((a, b) => b.localeCompare(a));
                 availablePeriods = periods;
 
-                // Populate period dropdown
                 const periodFilter = document.getElementById('periodFilter');
                 periodFilter.innerHTML = '';
                 
-                // Add empty option
                 const emptyOpt = document.createElement('option');
                 emptyOpt.value = '';
                 emptyOpt.textContent = 'Pilih Periode';
                 periodFilter.appendChild(emptyOpt);
 
-                // Add period options
                 periods.forEach(p => {
                     const opt = document.createElement('option');
                     opt.value = p;
@@ -1244,18 +1228,15 @@
                     periodFilter.appendChild(opt);
                 });
 
-                // Set default period (latest)
                 if (periods.length > 0) {
                     currentPeriod = periods[0];
                     periodFilter.value = currentPeriod;
                     setPeriodDate(currentPeriod);
                 }
 
-                // Initial render
                 renderDashboard();
                 afterDataLoaded();
                 updateSyncStatus('synced', 'Connected');
-
             } catch (err) {
                 console.error('Error loading data:', err);
                 updateSyncStatus('error', 'Load failed');
@@ -1267,9 +1248,13 @@
         // LOAD BUDGET
         // ============================================================
         async function loadBudget() {
-            if (!isFirebaseReady) return;
+            if (!isFirebaseReady) {
+                console.warn('Firebase not ready, cannot load budget');
+                return;
+            }
 
             try {
+                console.log('📊 Loading budget from Firebase...');
                 const snapshot = await firestore.collection(BUDGET_COLLECTION)
                     .orderBy('date', 'desc')
                     .get();
@@ -1279,10 +1264,32 @@
                     budgetData.push(doc.data());
                 });
 
-                console.log('✅ Budget loaded:', budgetData.length, 'records');
+                console.log('✅ Budget loaded from Firebase:', budgetData.length, 'records');
+                
+                if (budgetData.length > 0) {
+                    localStorage.setItem('budgetCache', JSON.stringify(budgetData));
+                    localStorage.setItem('budgetCacheTime', Date.now().toString());
+                }
 
             } catch (err) {
-                console.error('Error loading budget:', err);
+                console.error('❌ Error loading budget from Firebase:', err);
+                
+                try {
+                    const cached = localStorage.getItem('budgetCache');
+                    const cacheTime = localStorage.getItem('budgetCacheTime');
+                    
+                    if (cached && cacheTime) {
+                        const hoursSinceCache = (Date.now() - parseInt(cacheTime)) / (1000 * 60 * 60);
+                        if (hoursSinceCache < 24) {
+                            budgetData = JSON.parse(cached);
+                            console.log('📦 Budget loaded from cache:', budgetData.length, 'records');
+                            return;
+                        }
+                    }
+                } catch (cacheErr) {
+                    console.error('Cache fallback failed:', cacheErr);
+                }
+                
                 budgetData = [];
             }
         }
@@ -1298,18 +1305,13 @@
             }
 
             const periodData = originalData.filter(d => d.period === period);
-
             if (periodData.length === 0) {
                 document.getElementById('filterDateFrom').value = '';
                 document.getElementById('filterDateTo').value = '';
                 return;
             }
 
-            const dates = periodData
-                .map(d => d.date)
-                .filter(d => d)
-                .sort();
-
+            const dates = periodData.map(d => d.date).filter(d => d).sort();
             if (dates.length === 0) {
                 document.getElementById('filterDateFrom').value = '';
                 document.getElementById('filterDateTo').value = '';
@@ -1359,25 +1361,13 @@
         // ============================================================
         function getFilteredData() {
             let data = [...originalData];
-
-            // 1. Filter Period
-            if (currentPeriod) {
-                data = data.filter(d => d.period === currentPeriod);
-            }
-
-            // 2. Filter Department
+            if (currentPeriod) data = data.filter(d => d.period === currentPeriod);
             const deptFilter = document.getElementById('departmentFilter').value;
-            if (deptFilter !== 'ALL') {
-                data = data.filter(d => d.department === deptFilter);
-            }
-
-            // 3. Filter Date
+            if (deptFilter !== 'ALL') data = data.filter(d => d.department === deptFilter);
             const from = document.getElementById('filterDateFrom').value;
             const to = document.getElementById('filterDateTo').value;
             if (from) data = data.filter(d => d.date >= from);
             if (to) data = data.filter(d => d.date <= to);
-
-            // 4. Search
             if (searchQuery) {
                 const q = searchQuery.toLowerCase();
                 data = data.filter(d => 
@@ -1385,30 +1375,18 @@
                     (d.sku || '').toLowerCase().includes(q)
                 );
             }
-
             return data;
         }
 
         function getFilteredBudget() {
             let data = [...budgetData];
-
-            // 1. Filter Period
-            if (currentPeriod) {
-                data = data.filter(d => d.period === currentPeriod);
-            }
-
-            // 2. Filter Department
+            if (currentPeriod) data = data.filter(d => d.period === currentPeriod);
             const deptFilter = document.getElementById('departmentFilter').value;
-            if (deptFilter !== 'ALL') {
-                data = data.filter(d => d.department === deptFilter);
-            }
-
-            // 3. Filter Date
+            if (deptFilter !== 'ALL') data = data.filter(d => d.department === deptFilter);
             const from = document.getElementById('filterDateFrom').value;
             const to = document.getElementById('filterDateTo').value;
             if (from) data = data.filter(d => d.date >= from);
             if (to) data = data.filter(d => d.date <= to);
-
             return data;
         }
 
@@ -1447,39 +1425,32 @@
             const totalSales = data.reduce((s, d) => s + (d.amount || 0), 0);
             const totalQty = data.reduce((s, d) => s + (d.qty || 0), 0);
             
-            // Budget: default total budget bulan (sesuai filter periode)
             let totalBudget = 0;
             let mtdBudget = 0;
             let mtdSales = 0;
             let mtdAchievement = 0;
             
             if (filteredBudget.length > 0) {
-                // Total budget = seluruh budget dalam periode
                 totalBudget = filteredBudget.reduce((sum, x) => sum + (x.budget || 0), 0);
                 
-                // MTD Budget = budget dari tanggal 1 sampai tanggal terakhir data sales
                 const salesDates = [...new Set(data.map(d => d.date))].sort();
                 const lastSalesDate = salesDates.length > 0 ? salesDates[salesDates.length - 1] : null;
                 
                 if (lastSalesDate) {
                     const firstDayOfMonth = lastSalesDate.substring(0, 8) + '01';
                     
-                    // MTD Budget (1 sampai tanggal terakhir sales)
                     mtdBudget = filteredBudget
                         .filter(d => d.date >= firstDayOfMonth && d.date <= lastSalesDate)
                         .reduce((sum, x) => sum + (x.budget || 0), 0);
                     
-                    // MTD Sales (1 sampai tanggal terakhir sales)
                     mtdSales = data
                         .filter(d => d.date >= firstDayOfMonth && d.date <= lastSalesDate)
                         .reduce((s, d) => s + (d.amount || 0), 0);
                     
-                    // MTD Achievement = MTD Sales / MTD Budget * 100
                     mtdAchievement = mtdBudget > 0 ? (mtdSales / mtdBudget) * 100 : 0;
                 }
             }
             
-            // Achievement = Total Sales / Total Budget * 100
             const achievement = totalBudget > 0 ? (totalSales / totalBudget) * 100 : 0;
 
             document.getElementById('totalBudget').textContent = formatRupiah(totalBudget);
@@ -1522,9 +1493,7 @@
 
             let html = `
                 <div style="background:white; border-radius:8px; padding:10px 12px; box-shadow:0 1px 4px rgba(0,0,0,0.05); margin-bottom:8px;">
-                    <div class="summary-header">
-                        <h4>🏆 Top 10 Products</h4>
-                    </div>
+                    <div class="summary-header"><h4>🏆 Top 10 Products</h4></div>
                     ${searchQuery ? '<p style="font-size:9px; color:#666; margin-top:2px;">Hasil pencarian: <strong>"' + searchQuery + '"</strong> • ' + productArray.length + ' item ditemukan</p>' : ''}
                     <p style="font-size:9px; color:#999; margin-top:1px;">Klik item untuk melihat detail penjualan per tanggal</p>
                 </div>
@@ -1532,7 +1501,7 @@
             `;
 
             if (topProducts.length === 0) {
-                html += '<div class="empty-state" style="padding:12px;"><div class="icon">🔍</div><p style="font-size:12px;">Tidak ada item yang cocok dengan pencarian "' + searchQuery + '"</p></div>';
+                html += '<div class="empty-state" style="padding:12px;"><div class="icon">🔍</div><p style="font-size:12px;">Tidak ada item yang cocok</p></div>';
             } else {
                 topProducts.forEach((item, i) => {
                     html += `
@@ -1720,9 +1689,7 @@
                 return;
             }
 
-            // Tampilkan nama file
             fileNameDisplay.textContent = file.name;
-
             uploadLoading.classList.add('active');
             uploadSalesBtn.disabled = true;
             uploadBudgetBtn.disabled = true;
@@ -1740,7 +1707,6 @@
                         const text = e.target.result;
                         const lines = text.split('\n').filter(line => line.trim());
                         if (lines.length === 0) throw new Error('CSV kosong');
-
                         const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
                         data = [];
                         for (let i = 1; i < lines.length; i++) {
@@ -1755,24 +1721,18 @@
                         data = XLSX.utils.sheet_to_json(firstSheet);
                     }
 
-                    if (!data || data.length === 0) {
-                        throw new Error('Tidak ada data dalam file');
-                    }
+                    if (!data || data.length === 0) throw new Error('Tidak ada data dalam file');
 
                     console.log('Sales data parsed, rows:', data.length);
                     uploadStatus.textContent = '✅ Validasi Header...';
                     progressFill.style.width = '15%';
                     progressText.textContent = '15%';
-
                     processSalesData(data, file.name);
-
                 } catch (err) {
                     console.error('Error processing sales file:', err);
                     uploadLoading.classList.remove('active');
                     uploadSalesBtn.disabled = false;
                     uploadBudgetBtn.disabled = false;
-                    progressFill.style.width = '0%';
-                    progressText.textContent = '0%';
                     showToast('Error: ' + err.message, 'warning');
                 }
             };
@@ -1781,8 +1741,6 @@
                 uploadLoading.classList.remove('active');
                 uploadSalesBtn.disabled = false;
                 uploadBudgetBtn.disabled = false;
-                progressFill.style.width = '0%';
-                progressText.textContent = '0%';
                 showToast('Gagal membaca file', 'warning');
             };
 
@@ -1794,14 +1752,6 @@
         }
 
         function processSalesData(json, filename) {
-            const uploadLoading = document.getElementById('uploadLoading');
-            const uploadSalesBtn = document.getElementById('uploadSalesBtn');
-            const uploadBudgetBtn = document.getElementById('uploadBudgetBtn');
-            const progressFill = document.getElementById('progressFill');
-            const progressText = document.getElementById('progressText');
-            const uploadStatus = document.getElementById('uploadStatus');
-            const uploadProgress = document.getElementById('uploadProgress');
-
             const headers = Object.keys(json[0] || {});
             const colMap = {
                 date: findColumn(headers, ['Date', 'date', 'Tanggal', 'Day']),
@@ -1814,26 +1764,17 @@
                 amount: findColumn(headers, ['Sales Amount(Without VAT)', 'Amount', 'Sales Amount', 'amount', 'Total'])
             };
 
-            if (
-                !colMap.date ||
-                !colMap.dept ||
-                !colMap.item ||
-                !colMap.itemCode ||
-                !colMap.qty ||
-                !colMap.amount
-            ) {
-                uploadLoading.classList.remove('active');
-                uploadSalesBtn.disabled = false;
-                uploadBudgetBtn.disabled = false;
-                progressFill.style.width = '0%';
-                progressText.textContent = '0%';
+            if (!colMap.date || !colMap.dept || !colMap.item || !colMap.itemCode || !colMap.qty || !colMap.amount) {
+                document.getElementById('uploadLoading').classList.remove('active');
+                document.getElementById('uploadSalesBtn').disabled = false;
+                document.getElementById('uploadBudgetBtn').disabled = false;
                 showToast('File bukan format Sales AEON', 'warning');
                 return;
             }
 
-            uploadStatus.textContent = '🔍 Filter Department...';
-            progressFill.style.width = '30%';
-            progressText.textContent = '30%';
+            document.getElementById('uploadStatus').textContent = '🔍 Filter Department...';
+            document.getElementById('progressFill').style.width = '30%';
+            document.getElementById('progressText').textContent = '30%';
 
             let processedData = json.map(row => {
                 const dateVal = colMap.date ? row[colMap.date] : null;
@@ -1858,26 +1799,21 @@
                     amount: parseFloat(colMap.amount ? row[colMap.amount] : 0) || 0
                 };
             }).filter(d => {
-                if (!VALID_DEPARTMENTS.includes(String(d.department))) {
-                    return false;
-                }
+                if (!VALID_DEPARTMENTS.includes(String(d.department))) return false;
                 return d.amount > 0 || d.qty > 0;
             });
 
             if (processedData.length === 0) {
-                uploadLoading.classList.remove('active');
-                uploadSalesBtn.disabled = false;
-                uploadBudgetBtn.disabled = false;
-                progressFill.style.width = '0%';
-                progressText.textContent = '0%';
+                document.getElementById('uploadLoading').classList.remove('active');
+                document.getElementById('uploadSalesBtn').disabled = false;
+                document.getElementById('uploadBudgetBtn').disabled = false;
                 showToast('Tidak ada data untuk department 2039, 2040, 5214', 'warning');
                 return;
             }
 
-            uploadStatus.textContent = '☁️ Upload Data Sales...';
-            progressFill.style.width = '50%';
-            progressText.textContent = '50%';
-
+            document.getElementById('uploadStatus').textContent = '☁️ Upload Data Sales...';
+            document.getElementById('progressFill').style.width = '50%';
+            document.getElementById('progressText').textContent = '50%';
             uploadSalesToFirebase(processedData, filename);
         }
 
@@ -1910,30 +1846,21 @@
                 let totalDeleted = 0;
 
                 for (const uploadDate of uploadDates) {
-                    const snapshot = await firestore
-                        .collection(COLLECTION)
-                        .where("date", "==", uploadDate)
-                        .get();
-
+                    const snapshot = await firestore.collection(COLLECTION).where("date", "==", uploadDate).get();
                     if (!snapshot.empty) {
                         let deleteBatch = firestore.batch();
                         let deleteCount = 0;
-
                         for (const doc of snapshot.docs) {
                             deleteBatch.delete(doc.ref);
                             deleteCount++;
                             totalDeleted++;
-
                             if (deleteCount >= 500) {
                                 await deleteBatch.commit();
                                 deleteBatch = firestore.batch();
                                 deleteCount = 0;
                             }
                         }
-
-                        if (deleteCount > 0) {
-                            await deleteBatch.commit();
-                        }
+                        if (deleteCount > 0) await deleteBatch.commit();
                     }
                 }
 
@@ -2013,7 +1940,6 @@
 
             } catch (err) {
                 console.error('Upload sales error:', err);
-                
                 try {
                     await firestore.collection('upload_logs').add({
                         filename: filename,
@@ -2021,10 +1947,7 @@
                         status: "FAILED",
                         error: err.message
                     });
-                } catch (logErr) {
-                    console.error('Failed to save upload log:', logErr);
-                }
-
+                } catch (logErr) {}
                 showToast('❌ Gagal upload sales: ' + err.message, 'warning');
                 uploadLoading.classList.remove('active');
                 uploadSalesBtn.disabled = false;
@@ -2061,7 +1984,6 @@
             }
 
             fileNameDisplay.textContent = file.name;
-
             uploadLoading.classList.add('active');
             uploadSalesBtn.disabled = true;
             uploadBudgetBtn.disabled = true;
@@ -2079,7 +2001,6 @@
                         const text = e.target.result;
                         const lines = text.split('\n').filter(line => line.trim());
                         if (lines.length === 0) throw new Error('CSV kosong');
-
                         const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
                         data = [];
                         for (let i = 1; i < lines.length; i++) {
@@ -2094,24 +2015,18 @@
                         data = XLSX.utils.sheet_to_json(firstSheet);
                     }
 
-                    if (!data || data.length === 0) {
-                        throw new Error('Tidak ada data dalam file');
-                    }
+                    if (!data || data.length === 0) throw new Error('Tidak ada data dalam file');
 
                     console.log('Budget data parsed, rows:', data.length);
                     uploadStatus.textContent = '✅ Validasi Header Budget...';
                     progressFill.style.width = '15%';
                     progressText.textContent = '15%';
-
                     processBudgetData(data, file.name);
-
                 } catch (err) {
                     console.error('Error processing budget file:', err);
                     uploadLoading.classList.remove('active');
                     uploadSalesBtn.disabled = false;
                     uploadBudgetBtn.disabled = false;
-                    progressFill.style.width = '0%';
-                    progressText.textContent = '0%';
                     showToast('Error: ' + err.message, 'warning');
                 }
             };
@@ -2120,8 +2035,6 @@
                 uploadLoading.classList.remove('active');
                 uploadSalesBtn.disabled = false;
                 uploadBudgetBtn.disabled = false;
-                progressFill.style.width = '0%';
-                progressText.textContent = '0%';
                 showToast('Gagal membaca file', 'warning');
             };
 
@@ -2133,35 +2046,19 @@
         }
 
         function processBudgetData(json, filename) {
-            const uploadLoading = document.getElementById('uploadLoading');
-            const uploadSalesBtn = document.getElementById('uploadSalesBtn');
-            const uploadBudgetBtn = document.getElementById('uploadBudgetBtn');
-            const progressFill = document.getElementById('progressFill');
-            const progressText = document.getElementById('progressText');
-            const uploadStatus = document.getElementById('uploadStatus');
-            const uploadProgress = document.getElementById('uploadProgress');
-
             const headers = Object.keys(json[0] || {});
             
-            // Validasi header: harus ada Date, 2039, 2040, 5214
-            if (
-                !headers.includes("Date") ||
-                !headers.includes("2039") ||
-                !headers.includes("2040") ||
-                !headers.includes("5214")
-            ) {
-                uploadLoading.classList.remove('active');
-                uploadSalesBtn.disabled = false;
-                uploadBudgetBtn.disabled = false;
-                progressFill.style.width = '0%';
-                progressText.textContent = '0%';
+            if (!headers.includes("Date") || !headers.includes("2039") || !headers.includes("2040") || !headers.includes("5214")) {
+                document.getElementById('uploadLoading').classList.remove('active');
+                document.getElementById('uploadSalesBtn').disabled = false;
+                document.getElementById('uploadBudgetBtn').disabled = false;
                 showToast('Format Budget salah (perlu kolom: Date, 2039, 2040, 5214)', 'warning');
                 return;
             }
 
-            uploadStatus.textContent = '🔍 Memproses Budget...';
-            progressFill.style.width = '30%';
-            progressText.textContent = '30%';
+            document.getElementById('uploadStatus').textContent = '🔍 Memproses Budget...';
+            document.getElementById('progressFill').style.width = '30%';
+            document.getElementById('progressText').textContent = '30%';
 
             let processedData = [];
             
@@ -2176,7 +2073,6 @@
                     if (!isNaN(parsedDate.getTime())) dateStr = parsedDate.toISOString().split('T')[0];
                 }
 
-                // Untuk setiap department (2039, 2040, 5214)
                 ['2039', '2040', '5214'].forEach(dept => {
                     processedData.push({
                         date: dateStr,
@@ -2187,23 +2083,19 @@
                 });
             }
 
-            // Filter hanya yang memiliki budget > 0 dan date valid
             processedData = processedData.filter(d => d.budget > 0 && d.date);
 
             if (processedData.length === 0) {
-                uploadLoading.classList.remove('active');
-                uploadSalesBtn.disabled = false;
-                uploadBudgetBtn.disabled = false;
-                progressFill.style.width = '0%';
-                progressText.textContent = '0%';
+                document.getElementById('uploadLoading').classList.remove('active');
+                document.getElementById('uploadSalesBtn').disabled = false;
+                document.getElementById('uploadBudgetBtn').disabled = false;
                 showToast('Tidak ada data budget valid', 'warning');
                 return;
             }
 
-            uploadStatus.textContent = '☁️ Upload Budget...';
-            progressFill.style.width = '50%';
-            progressText.textContent = '50%';
-
+            document.getElementById('uploadStatus').textContent = '☁️ Upload Budget...';
+            document.getElementById('progressFill').style.width = '50%';
+            document.getElementById('progressText').textContent = '50%';
             uploadBudgetToFirebase(processedData, filename);
         }
 
@@ -2228,7 +2120,6 @@
                 isSaving = true;
                 updateSyncStatus('syncing', 'Uploading Budget...');
 
-                // Hapus data lama berdasarkan period
                 const periods = [...new Set(data.map(r => r.period))];
                 
                 uploadStatus.textContent = '🗑 Menghapus Budget Lama...';
@@ -2236,29 +2127,20 @@
                 progressText.textContent = '55%';
 
                 for (const period of periods) {
-                    const snapshot = await firestore
-                        .collection(BUDGET_COLLECTION)
-                        .where("period", "==", period)
-                        .get();
-
+                    const snapshot = await firestore.collection(BUDGET_COLLECTION).where("period", "==", period).get();
                     if (!snapshot.empty) {
                         let deleteBatch = firestore.batch();
                         let deleteCount = 0;
-
                         for (const doc of snapshot.docs) {
                             deleteBatch.delete(doc.ref);
                             deleteCount++;
-
                             if (deleteCount >= 500) {
                                 await deleteBatch.commit();
                                 deleteBatch = firestore.batch();
                                 deleteCount = 0;
                             }
                         }
-
-                        if (deleteCount > 0) {
-                            await deleteBatch.commit();
-                        }
+                        if (deleteCount > 0) await deleteBatch.commit();
                     }
                 }
 
@@ -2318,6 +2200,9 @@
 
                 showToast(`✅ ${data.length} data budget berhasil diupload!`, 'success');
 
+                localStorage.setItem('budgetCache', JSON.stringify(data));
+                localStorage.setItem('budgetCacheTime', Date.now().toString());
+
                 await loadBudget();
                 await loadBudgetHistory();
                 renderDashboard();
@@ -2333,7 +2218,6 @@
 
             } catch (err) {
                 console.error('Upload budget error:', err);
-                
                 try {
                     await firestore.collection('budget_logs').add({
                         filename: filename,
@@ -2341,10 +2225,7 @@
                         status: "FAILED",
                         error: err.message
                     });
-                } catch (logErr) {
-                    console.error('Failed to save budget log:', logErr);
-                }
-
+                } catch (logErr) {}
                 showToast('❌ Gagal upload budget: ' + err.message, 'warning');
                 uploadLoading.classList.remove('active');
                 uploadSalesBtn.disabled = false;
@@ -2407,7 +2288,7 @@
 
                 const dailyData = {};
                 detailDataCache.forEach(d => {
-                    if (!dailyData[d.date]) { dailyData[d.date] = { qty: 0, amount: 0 }; }
+                    if (!dailyData[d.date]) dailyData[d.date] = { qty: 0, amount: 0 };
                     dailyData[d.date].qty += d.qty || 0;
                     dailyData[d.date].amount += d.amount || 0;
                 });
@@ -2480,12 +2361,7 @@
                 uploadSalesBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('Upload Sales button clicked');
-                    if (fileInput) {
-                        fileInput.click();
-                    } else {
-                        console.error('File input not found');
-                    }
+                    if (fileInput) fileInput.click();
                 });
             }
 
@@ -2493,31 +2369,20 @@
                 uploadBudgetBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('Upload Budget button clicked');
-                    if (budgetInput) {
-                        budgetInput.click();
-                    } else {
-                        console.error('Budget input not found');
-                    }
+                    if (budgetInput) budgetInput.click();
                 });
             }
 
             if (fileInput) {
                 fileInput.addEventListener('change', function(e) {
-                    console.log('Sales file selected:', this.files.length);
-                    if (this.files.length > 0) {
-                        handleFile(this.files[0]);
-                    }
+                    if (this.files.length > 0) handleFile(this.files[0]);
                     this.value = '';
                 });
             }
 
             if (budgetInput) {
                 budgetInput.addEventListener('change', function(e) {
-                    console.log('Budget file selected:', this.files.length);
-                    if (this.files.length > 0) {
-                        handleBudgetFile(this.files[0]);
-                    }
+                    if (this.files.length > 0) handleBudgetFile(this.files[0]);
                     this.value = '';
                 });
             }
@@ -2536,11 +2401,7 @@
                 uploadArea.addEventListener('drop', function(e) {
                     e.preventDefault();
                     this.classList.remove('dragover');
-                    const files = e.dataTransfer.files;
-                    if (files.length > 0) {
-                        // Default: treat as sales file
-                        handleFile(files[0]);
-                    }
+                    if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
                 });
             }
 
