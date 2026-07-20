@@ -189,8 +189,11 @@
             background: #e8eaf6;
             color: #283593;
         }
+        .upload-area .upload-right .upload-btn.budget-btn {
+            background: #e65100;
+        }
 
-        #fileInput {
+        #fileInput, #budgetInput {
             display: none;
         }
         .upload-loading {
@@ -305,7 +308,7 @@
         /* ===== STATS GRID & TAB ===== */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 6px;
             margin-bottom: 6px;
         }
@@ -317,7 +320,7 @@
             text-align: center;
         }
         .stat-card .number {
-            font-size: 17px;
+            font-size: 15px;
             font-weight: 700;
             color: #1a237e;
         }
@@ -325,6 +328,12 @@
             font-size: 9px;
             color: #888;
             margin-top: 1px;
+        }
+        .stat-card.achievement .number {
+            color: #e65100;
+        }
+        .stat-card.mtd .number {
+            color: #2e7d32;
         }
         .tabs {
             display: flex;
@@ -824,7 +833,7 @@
             .upload-area .upload-left .upload-info .file-name { max-width: 120px; }
             .upload-area .upload-right { justify-content: flex-start; }
             .stats-grid { gap: 6px; }
-            .stat-card .number { font-size: 15px; }
+            .stat-card .number { font-size: 13px; }
             .detail-panel { padding: 10px; margin: 4px; }
             .toast { font-size: 10px; padding: 6px 12px; bottom: 8px; }
             .info-bar { font-size: 8px; padding: 4px 8px; }
@@ -856,10 +865,12 @@
             </div>
         </div>
         <div class="upload-right">
-            <button class="upload-btn" id="uploadBtn">📂 Pilih File</button>
+            <button class="upload-btn" id="uploadSalesBtn">📂 Upload Sales</button>
+            <button class="upload-btn budget-btn" id="uploadBudgetBtn">📊 Upload Budget</button>
         </div>
 
         <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+        <input type="file" id="budgetInput" accept=".xlsx,.xls,.csv" style="display:none">
 
         <div class="upload-loading" id="uploadLoading">
             <div class="spinner"></div>
@@ -878,11 +889,19 @@
         <div id="historyContent"></div>
     </div>
 
+    <!-- ===== BUDGET HISTORY ===== -->
+    <div class="upload-history" id="budgetHistory" style="display:none;">
+        <h4>📊 Budget Upload Terakhir</h4>
+        <div id="budgetHistoryContent"></div>
+    </div>
+
     <div class="stats-grid" id="statsGrid" style="display:none;">
-        <div class="stat-card"><div class="number" id="totalSales">0</div><div class="label">Total Sales (Rp)</div></div>
+        <div class="stat-card"><div class="number" id="totalBudget">0</div><div class="label">Budget (Rp)</div></div>
         <div class="stat-card"><div class="number" id="totalQty">0</div><div class="label">Total Qty Sold</div></div>
-        <div class="stat-card"><div class="number" id="totalItems">0</div><div class="label">Total SKU</div></div>
+        <div class="stat-card"><div class="number" id="totalSales">0</div><div class="label">Total Sales (Rp)</div></div>
         <div class="stat-card"><div class="number" id="totalDays">0</div><div class="label">Days of Data</div></div>
+        <div class="stat-card mtd"><div class="number" id="mtdBudget">0%</div><div class="label">MTD %</div></div>
+        <div class="stat-card achievement"><div class="number" id="achievement">0%</div><div class="label">Achievement</div></div>
     </div>
 
     <div class="tabs" id="tabs" style="display:none;">
@@ -976,6 +995,7 @@
         // CONSTANTS
         // ============================================================
         const COLLECTION = "sales";
+        const BUDGET_COLLECTION = "budget";
         const VALID_DEPARTMENTS = ["2039", "2040", "5214"];
 
         // ============================================================
@@ -1027,14 +1047,13 @@
         let isDataLoaded = false;
         let originalData = [];
         let salesData = [];
+        let budgetData = [];
         let searchQuery = '';
         let searchTimeout;
         let currentDetailItem = null;
         let detailDataCache = [];
         let chartTrend = null;
         let chartDept = null;
-        let uploadBtn = null;
-        let fileInput = null;
         let currentPeriod = null;
         let availablePeriods = [];
 
@@ -1070,7 +1089,9 @@
                 console.log('✅ Firebase connected');
 
                 await loadData();
+                await loadBudget();
                 await loadUploadHistory();
+                await loadBudgetHistory();
 
                 return true;
             } catch (err) {
@@ -1124,6 +1145,50 @@
 
             } catch (err) {
                 console.error('Error loading upload history:', err);
+            }
+        }
+
+        // ============================================================
+        // LOAD BUDGET HISTORY
+        // ============================================================
+        async function loadBudgetHistory() {
+            if (!isFirebaseReady) return;
+
+            try {
+                const snapshot = await firestore.collection('budget_logs')
+                    .orderBy('uploadTime', 'desc')
+                    .limit(1)
+                    .get();
+
+                const container = document.getElementById('budgetHistory');
+                const content = document.getElementById('budgetHistoryContent');
+
+                if (snapshot.empty) {
+                    container.style.display = 'none';
+                    return;
+                }
+
+                container.style.display = 'block';
+                let html = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const status = data.status || 'SUCCESS';
+                    const statusClass = status === 'SUCCESS' ? 'status-success' : 'status-failed';
+                    const date = data.uploadTime?.toDate?.() || new Date();
+                    
+                    html += `
+                        <div class="history-item">
+                            <span class="date">${date.toLocaleDateString('en-GB')} ${date.toLocaleTimeString('en-GB')}</span>
+                            <span class="records">${data.recordCount || 0} records</span>
+                            <span class="${statusClass}">${status}</span>
+                            <span style="color:#888;font-size:9px;">${data.filename || ''}</span>
+                        </div>
+                    `;
+                });
+                content.innerHTML = html;
+
+            } catch (err) {
+                console.error('Error loading budget history:', err);
             }
         }
 
@@ -1199,6 +1264,30 @@
         }
 
         // ============================================================
+        // LOAD BUDGET
+        // ============================================================
+        async function loadBudget() {
+            if (!isFirebaseReady) return;
+
+            try {
+                const snapshot = await firestore.collection(BUDGET_COLLECTION)
+                    .orderBy('date', 'desc')
+                    .get();
+
+                budgetData = [];
+                snapshot.forEach(doc => {
+                    budgetData.push(doc.data());
+                });
+
+                console.log('✅ Budget loaded:', budgetData.length, 'records');
+
+            } catch (err) {
+                console.error('Error loading budget:', err);
+                budgetData = [];
+            }
+        }
+
+        // ============================================================
         // SET PERIOD DATE
         // ============================================================
         function setPeriodDate(period) {
@@ -1241,9 +1330,9 @@
                     <button class="upload-btn-empty" onclick="document.getElementById('fileInput').click()">📂 Upload Sales File</button>
                 </div>
             `;
-            statsGrid.style.display = 'none';
-            tabs.style.display = 'none';
-            infoBar.style.display = 'none';
+            document.getElementById('statsGrid').style.display = 'none';
+            document.getElementById('tabs').style.display = 'none';
+            document.getElementById('infoBar').style.display = 'none';
         }
 
         // ============================================================
@@ -1300,6 +1389,29 @@
             return data;
         }
 
+        function getFilteredBudget() {
+            let data = [...budgetData];
+
+            // 1. Filter Period
+            if (currentPeriod) {
+                data = data.filter(d => d.period === currentPeriod);
+            }
+
+            // 2. Filter Department
+            const deptFilter = document.getElementById('departmentFilter').value;
+            if (deptFilter !== 'ALL') {
+                data = data.filter(d => d.department === deptFilter);
+            }
+
+            // 3. Filter Date
+            const from = document.getElementById('filterDateFrom').value;
+            const to = document.getElementById('filterDateTo').value;
+            if (from) data = data.filter(d => d.date >= from);
+            if (to) data = data.filter(d => d.date <= to);
+
+            return data;
+        }
+
         function applyFilters() {
             renderDashboard();
         }
@@ -1323,27 +1435,68 @@
         // ============================================================
         function renderDashboard() {
             const filteredData = getFilteredData();
-            updateStats(filteredData);
+            const filteredBudget = getFilteredBudget();
+            updateStats(filteredData, filteredBudget);
             renderSummary(filteredData);
             renderProducts(filteredData);
             renderDeptSummary(filteredData);
             renderCharts(filteredData);
         }
 
-        function updateStats(data) {
-            document.getElementById('totalSales').textContent = formatRupiah(data.reduce((s, d) => s + (d.amount || 0), 0));
-            document.getElementById('totalQty').textContent = Math.round(data.reduce((s, d) => s + (d.qty || 0), 0));
-            document.getElementById('totalItems').textContent = new Set(data.map(d => d.sku || d.itemName)).size;
+        function updateStats(data, filteredBudget) {
+            const totalSales = data.reduce((s, d) => s + (d.amount || 0), 0);
+            const totalQty = data.reduce((s, d) => s + (d.qty || 0), 0);
+            
+            // Budget: default total budget bulan (sesuai filter periode)
+            let totalBudget = 0;
+            let mtdBudget = 0;
+            let mtdSales = 0;
+            let mtdAchievement = 0;
+            
+            if (filteredBudget.length > 0) {
+                // Total budget = seluruh budget dalam periode
+                totalBudget = filteredBudget.reduce((sum, x) => sum + (x.budget || 0), 0);
+                
+                // MTD Budget = budget dari tanggal 1 sampai tanggal terakhir data sales
+                const salesDates = [...new Set(data.map(d => d.date))].sort();
+                const lastSalesDate = salesDates.length > 0 ? salesDates[salesDates.length - 1] : null;
+                
+                if (lastSalesDate) {
+                    const firstDayOfMonth = lastSalesDate.substring(0, 8) + '01';
+                    
+                    // MTD Budget (1 sampai tanggal terakhir sales)
+                    mtdBudget = filteredBudget
+                        .filter(d => d.date >= firstDayOfMonth && d.date <= lastSalesDate)
+                        .reduce((sum, x) => sum + (x.budget || 0), 0);
+                    
+                    // MTD Sales (1 sampai tanggal terakhir sales)
+                    mtdSales = data
+                        .filter(d => d.date >= firstDayOfMonth && d.date <= lastSalesDate)
+                        .reduce((s, d) => s + (d.amount || 0), 0);
+                    
+                    // MTD Achievement = MTD Sales / MTD Budget * 100
+                    mtdAchievement = mtdBudget > 0 ? (mtdSales / mtdBudget) * 100 : 0;
+                }
+            }
+            
+            // Achievement = Total Sales / Total Budget * 100
+            const achievement = totalBudget > 0 ? (totalSales / totalBudget) * 100 : 0;
+
+            document.getElementById('totalBudget').textContent = formatRupiah(totalBudget);
+            document.getElementById('totalSales').textContent = formatRupiah(totalSales);
+            document.getElementById('totalQty').textContent = Math.round(totalQty);
             document.getElementById('totalDays').textContent = new Set(data.map(d => d.date)).size || 'N/A';
+            document.getElementById('mtdBudget').textContent = mtdAchievement.toFixed(2) + '%';
+            document.getElementById('achievement').textContent = achievement.toFixed(2) + '%';
 
             const periods = new Set(data.map(d => d.period)).size;
             document.getElementById('infoPeriod').textContent = currentPeriod || (periods + ' bulan');
             document.getElementById('infoDays').textContent = new Set(data.map(d => d.date)).size + ' hari';
             document.getElementById('infoSku').textContent = new Set(data.map(d => d.sku || d.itemName)).size + ' SKU';
 
-            statsGrid.style.display = 'grid';
-            tabs.style.display = 'flex';
-            infoBar.style.display = 'flex';
+            document.getElementById('statsGrid').style.display = 'grid';
+            document.getElementById('tabs').style.display = 'flex';
+            document.getElementById('infoBar').style.display = 'flex';
         }
 
         function renderSummary(data) {
@@ -1543,12 +1696,13 @@
         }
 
         // ============================================================
-        // UPLOAD FILE
+        // UPLOAD SALES FILE
         // ============================================================
         function handleFile(file) {
-            console.log('Handling file:', file.name);
+            console.log('Handling sales file:', file.name);
             const uploadLoading = document.getElementById('uploadLoading');
-            const uploadBtn = document.getElementById('uploadBtn');
+            const uploadSalesBtn = document.getElementById('uploadSalesBtn');
+            const uploadBudgetBtn = document.getElementById('uploadBudgetBtn');
             const progressFill = document.getElementById('progressFill');
             const progressText = document.getElementById('progressText');
             const uploadStatus = document.getElementById('uploadStatus');
@@ -1568,14 +1722,14 @@
 
             // Tampilkan nama file
             fileNameDisplay.textContent = file.name;
-            uploadBtn.textContent = '📂 Ganti File';
 
             uploadLoading.classList.add('active');
-            uploadBtn.disabled = true;
+            uploadSalesBtn.disabled = true;
+            uploadBudgetBtn.disabled = true;
             progressFill.style.width = '0%';
             progressText.textContent = '0%';
             uploadStatus.textContent = '📖 Membaca File...';
-            uploadProgress.textContent = 'Memproses data';
+            uploadProgress.textContent = 'Memproses data sales';
 
             const reader = new FileReader();
 
@@ -1605,17 +1759,18 @@
                         throw new Error('Tidak ada data dalam file');
                     }
 
-                    console.log('Data parsed, rows:', data.length);
+                    console.log('Sales data parsed, rows:', data.length);
                     uploadStatus.textContent = '✅ Validasi Header...';
                     progressFill.style.width = '15%';
                     progressText.textContent = '15%';
 
-                    processData(data, file.name);
+                    processSalesData(data, file.name);
 
                 } catch (err) {
-                    console.error('Error processing file:', err);
+                    console.error('Error processing sales file:', err);
                     uploadLoading.classList.remove('active');
-                    uploadBtn.disabled = false;
+                    uploadSalesBtn.disabled = false;
+                    uploadBudgetBtn.disabled = false;
                     progressFill.style.width = '0%';
                     progressText.textContent = '0%';
                     showToast('Error: ' + err.message, 'warning');
@@ -1624,7 +1779,8 @@
 
             reader.onerror = function() {
                 uploadLoading.classList.remove('active');
-                uploadBtn.disabled = false;
+                uploadSalesBtn.disabled = false;
+                uploadBudgetBtn.disabled = false;
                 progressFill.style.width = '0%';
                 progressText.textContent = '0%';
                 showToast('Gagal membaca file', 'warning');
@@ -1637,9 +1793,10 @@
             }
         }
 
-        function processData(json, filename) {
+        function processSalesData(json, filename) {
             const uploadLoading = document.getElementById('uploadLoading');
-            const uploadBtn = document.getElementById('uploadBtn');
+            const uploadSalesBtn = document.getElementById('uploadSalesBtn');
+            const uploadBudgetBtn = document.getElementById('uploadBudgetBtn');
             const progressFill = document.getElementById('progressFill');
             const progressText = document.getElementById('progressText');
             const uploadStatus = document.getElementById('uploadStatus');
@@ -1666,7 +1823,8 @@
                 !colMap.amount
             ) {
                 uploadLoading.classList.remove('active');
-                uploadBtn.disabled = false;
+                uploadSalesBtn.disabled = false;
+                uploadBudgetBtn.disabled = false;
                 progressFill.style.width = '0%';
                 progressText.textContent = '0%';
                 showToast('File bukan format Sales AEON', 'warning');
@@ -1708,23 +1866,25 @@
 
             if (processedData.length === 0) {
                 uploadLoading.classList.remove('active');
-                uploadBtn.disabled = false;
+                uploadSalesBtn.disabled = false;
+                uploadBudgetBtn.disabled = false;
                 progressFill.style.width = '0%';
                 progressText.textContent = '0%';
                 showToast('Tidak ada data untuk department 2039, 2040, 5214', 'warning');
                 return;
             }
 
-            uploadStatus.textContent = '☁️ Upload Data...';
+            uploadStatus.textContent = '☁️ Upload Data Sales...';
             progressFill.style.width = '50%';
             progressText.textContent = '50%';
 
-            uploadToFirebase(processedData, filename);
+            uploadSalesToFirebase(processedData, filename);
         }
 
-        async function uploadToFirebase(data, filename) {
+        async function uploadSalesToFirebase(data, filename) {
             const uploadLoading = document.getElementById('uploadLoading');
-            const uploadBtn = document.getElementById('uploadBtn');
+            const uploadSalesBtn = document.getElementById('uploadSalesBtn');
+            const uploadBudgetBtn = document.getElementById('uploadBudgetBtn');
             const progressFill = document.getElementById('progressFill');
             const progressText = document.getElementById('progressText');
             const uploadStatus = document.getElementById('uploadStatus');
@@ -1733,13 +1893,14 @@
             if (!isFirebaseReady) {
                 showToast('Firebase tidak terhubung', 'warning');
                 uploadLoading.classList.remove('active');
-                uploadBtn.disabled = false;
+                uploadSalesBtn.disabled = false;
+                uploadBudgetBtn.disabled = false;
                 return;
             }
 
             try {
                 isSaving = true;
-                updateSyncStatus('syncing', 'Uploading...');
+                updateSyncStatus('syncing', 'Uploading Sales...');
 
                 uploadStatus.textContent = '🗑 Menghapus Data Lama...';
                 progressFill.style.width = '55%';
@@ -1836,7 +1997,7 @@
                 progressText.textContent = '95%';
                 uploadStatus.textContent = '📊 Refresh Dashboard...';
 
-                showToast(`✅ ${data.length} data berhasil diupload!`, 'success');
+                showToast(`✅ ${data.length} data sales berhasil diupload!`, 'success');
 
                 await loadData();
                 await loadUploadHistory();
@@ -1844,13 +2005,14 @@
                 progressFill.style.width = '100%';
                 progressText.textContent = '100%';
                 uploadStatus.textContent = '✅ Selesai!';
-                uploadProgress.textContent = 'Upload selesai';
+                uploadProgress.textContent = 'Upload sales selesai';
 
                 uploadLoading.classList.remove('active');
-                uploadBtn.disabled = false;
+                uploadSalesBtn.disabled = false;
+                uploadBudgetBtn.disabled = false;
 
             } catch (err) {
-                console.error('Upload error:', err);
+                console.error('Upload sales error:', err);
                 
                 try {
                     await firestore.collection('upload_logs').add({
@@ -1863,9 +2025,330 @@
                     console.error('Failed to save upload log:', logErr);
                 }
 
-                showToast('❌ Gagal upload: ' + err.message, 'warning');
+                showToast('❌ Gagal upload sales: ' + err.message, 'warning');
                 uploadLoading.classList.remove('active');
-                uploadBtn.disabled = false;
+                uploadSalesBtn.disabled = false;
+                uploadBudgetBtn.disabled = false;
+            } finally {
+                isSaving = false;
+                updateSyncStatus('synced', 'Connected');
+            }
+        }
+
+        // ============================================================
+        // UPLOAD BUDGET FILE
+        // ============================================================
+        function handleBudgetFile(file) {
+            console.log('Handling budget file:', file.name);
+            const uploadLoading = document.getElementById('uploadLoading');
+            const uploadSalesBtn = document.getElementById('uploadSalesBtn');
+            const uploadBudgetBtn = document.getElementById('uploadBudgetBtn');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const uploadStatus = document.getElementById('uploadStatus');
+            const uploadProgress = document.getElementById('uploadProgress');
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
+
+            if (!file) {
+                showToast('No file selected', 'warning');
+                return;
+            }
+
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (!['xlsx', 'xls', 'csv'].includes(ext)) {
+                showToast('Format file tidak didukung. Gunakan .xlsx, .xls, atau .csv', 'warning');
+                return;
+            }
+
+            fileNameDisplay.textContent = file.name;
+
+            uploadLoading.classList.add('active');
+            uploadSalesBtn.disabled = true;
+            uploadBudgetBtn.disabled = true;
+            progressFill.style.width = '0%';
+            progressText.textContent = '0%';
+            uploadStatus.textContent = '📖 Membaca File Budget...';
+            uploadProgress.textContent = 'Memproses data budget';
+
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                try {
+                    let data = null;
+                    if (ext === 'csv') {
+                        const text = e.target.result;
+                        const lines = text.split('\n').filter(line => line.trim());
+                        if (lines.length === 0) throw new Error('CSV kosong');
+
+                        const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+                        data = [];
+                        for (let i = 1; i < lines.length; i++) {
+                            const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+                            const row = {};
+                            headers.forEach((h, idx) => { row[h] = values[idx] || ''; });
+                            data.push(row);
+                        }
+                    } else {
+                        const workbook = XLSX.read(e.target.result, { type: 'array' });
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        data = XLSX.utils.sheet_to_json(firstSheet);
+                    }
+
+                    if (!data || data.length === 0) {
+                        throw new Error('Tidak ada data dalam file');
+                    }
+
+                    console.log('Budget data parsed, rows:', data.length);
+                    uploadStatus.textContent = '✅ Validasi Header Budget...';
+                    progressFill.style.width = '15%';
+                    progressText.textContent = '15%';
+
+                    processBudgetData(data, file.name);
+
+                } catch (err) {
+                    console.error('Error processing budget file:', err);
+                    uploadLoading.classList.remove('active');
+                    uploadSalesBtn.disabled = false;
+                    uploadBudgetBtn.disabled = false;
+                    progressFill.style.width = '0%';
+                    progressText.textContent = '0%';
+                    showToast('Error: ' + err.message, 'warning');
+                }
+            };
+
+            reader.onerror = function() {
+                uploadLoading.classList.remove('active');
+                uploadSalesBtn.disabled = false;
+                uploadBudgetBtn.disabled = false;
+                progressFill.style.width = '0%';
+                progressText.textContent = '0%';
+                showToast('Gagal membaca file', 'warning');
+            };
+
+            if (ext === 'csv') {
+                reader.readAsText(file);
+            } else {
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        function processBudgetData(json, filename) {
+            const uploadLoading = document.getElementById('uploadLoading');
+            const uploadSalesBtn = document.getElementById('uploadSalesBtn');
+            const uploadBudgetBtn = document.getElementById('uploadBudgetBtn');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const uploadStatus = document.getElementById('uploadStatus');
+            const uploadProgress = document.getElementById('uploadProgress');
+
+            const headers = Object.keys(json[0] || {});
+            
+            // Validasi header: harus ada Date, 2039, 2040, 5214
+            if (
+                !headers.includes("Date") ||
+                !headers.includes("2039") ||
+                !headers.includes("2040") ||
+                !headers.includes("5214")
+            ) {
+                uploadLoading.classList.remove('active');
+                uploadSalesBtn.disabled = false;
+                uploadBudgetBtn.disabled = false;
+                progressFill.style.width = '0%';
+                progressText.textContent = '0%';
+                showToast('Format Budget salah (perlu kolom: Date, 2039, 2040, 5214)', 'warning');
+                return;
+            }
+
+            uploadStatus.textContent = '🔍 Memproses Budget...';
+            progressFill.style.width = '30%';
+            progressText.textContent = '30%';
+
+            let processedData = [];
+            
+            for (const row of json) {
+                const dateVal = row["Date"];
+                let parsedDate = null;
+                let dateStr = '';
+                
+                if (dateVal) {
+                    if (typeof dateVal === 'number') parsedDate = new Date((dateVal - 25569) * 86400 * 1000);
+                    else parsedDate = new Date(dateVal);
+                    if (!isNaN(parsedDate.getTime())) dateStr = parsedDate.toISOString().split('T')[0];
+                }
+
+                // Untuk setiap department (2039, 2040, 5214)
+                ['2039', '2040', '5214'].forEach(dept => {
+                    processedData.push({
+                        date: dateStr,
+                        period: dateStr ? dateStr.substring(0, 7) : '',
+                        department: dept,
+                        budget: Number(row[dept]) || 0
+                    });
+                });
+            }
+
+            // Filter hanya yang memiliki budget > 0 dan date valid
+            processedData = processedData.filter(d => d.budget > 0 && d.date);
+
+            if (processedData.length === 0) {
+                uploadLoading.classList.remove('active');
+                uploadSalesBtn.disabled = false;
+                uploadBudgetBtn.disabled = false;
+                progressFill.style.width = '0%';
+                progressText.textContent = '0%';
+                showToast('Tidak ada data budget valid', 'warning');
+                return;
+            }
+
+            uploadStatus.textContent = '☁️ Upload Budget...';
+            progressFill.style.width = '50%';
+            progressText.textContent = '50%';
+
+            uploadBudgetToFirebase(processedData, filename);
+        }
+
+        async function uploadBudgetToFirebase(data, filename) {
+            const uploadLoading = document.getElementById('uploadLoading');
+            const uploadSalesBtn = document.getElementById('uploadSalesBtn');
+            const uploadBudgetBtn = document.getElementById('uploadBudgetBtn');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const uploadStatus = document.getElementById('uploadStatus');
+            const uploadProgress = document.getElementById('uploadProgress');
+
+            if (!isFirebaseReady) {
+                showToast('Firebase tidak terhubung', 'warning');
+                uploadLoading.classList.remove('active');
+                uploadSalesBtn.disabled = false;
+                uploadBudgetBtn.disabled = false;
+                return;
+            }
+
+            try {
+                isSaving = true;
+                updateSyncStatus('syncing', 'Uploading Budget...');
+
+                // Hapus data lama berdasarkan period
+                const periods = [...new Set(data.map(r => r.period))];
+                
+                uploadStatus.textContent = '🗑 Menghapus Budget Lama...';
+                progressFill.style.width = '55%';
+                progressText.textContent = '55%';
+
+                for (const period of periods) {
+                    const snapshot = await firestore
+                        .collection(BUDGET_COLLECTION)
+                        .where("period", "==", period)
+                        .get();
+
+                    if (!snapshot.empty) {
+                        let deleteBatch = firestore.batch();
+                        let deleteCount = 0;
+
+                        for (const doc of snapshot.docs) {
+                            deleteBatch.delete(doc.ref);
+                            deleteCount++;
+
+                            if (deleteCount >= 500) {
+                                await deleteBatch.commit();
+                                deleteBatch = firestore.batch();
+                                deleteCount = 0;
+                            }
+                        }
+
+                        if (deleteCount > 0) {
+                            await deleteBatch.commit();
+                        }
+                    }
+                }
+
+                uploadStatus.textContent = '☁️ Upload Budget ke Firebase...';
+                progressFill.style.width = '60%';
+                progressText.textContent = '60%';
+
+                let uploaded = 0;
+                let batch = firestore.batch();
+                const batchSize = 500;
+                let batchCount = 0;
+
+                for (let i = 0; i < data.length; i++) {
+                    const row = data[i];
+                    const docId = `${row.date}_${row.department}`;
+                    const docRef = firestore.collection(BUDGET_COLLECTION).doc(docId);
+                    
+                    batch.set(docRef, {
+                        ...row,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    uploaded++;
+                    batchCount++;
+
+                    if (batchCount >= batchSize || i === data.length - 1) {
+                        await batch.commit();
+                        if (i < data.length - 1) {
+                            batch = firestore.batch();
+                            batchCount = 0;
+                        }
+                        const pct = Math.min(90, 60 + Math.round((i + 1) / data.length * 30));
+                        progressFill.style.width = pct + '%';
+                        progressText.textContent = pct + '%';
+                        uploadStatus.textContent = `📤 Upload Budget ${Math.round((i+1)/data.length*100)}% (${i+1}/${data.length})`;
+                    }
+                }
+
+                const totalBudget = data.reduce((s, d) => s + (d.budget || 0), 0);
+                const uniqueDates = [...new Set(data.map(d => d.date))];
+
+                await firestore.collection('budget_logs').add({
+                    filename: filename,
+                    uploadTime: firebase.firestore.FieldValue.serverTimestamp(),
+                    period: [...new Set(data.map(d => d.period))],
+                    recordCount: data.length,
+                    dates: uniqueDates,
+                    departments: [...new Set(data.map(d => d.department))],
+                    totalBudget: totalBudget,
+                    days: uniqueDates.length,
+                    status: "SUCCESS"
+                });
+
+                progressFill.style.width = '95%';
+                progressText.textContent = '95%';
+                uploadStatus.textContent = '📊 Refresh Dashboard...';
+
+                showToast(`✅ ${data.length} data budget berhasil diupload!`, 'success');
+
+                await loadBudget();
+                await loadBudgetHistory();
+                renderDashboard();
+
+                progressFill.style.width = '100%';
+                progressText.textContent = '100%';
+                uploadStatus.textContent = '✅ Selesai!';
+                uploadProgress.textContent = 'Upload budget selesai';
+
+                uploadLoading.classList.remove('active');
+                uploadSalesBtn.disabled = false;
+                uploadBudgetBtn.disabled = false;
+
+            } catch (err) {
+                console.error('Upload budget error:', err);
+                
+                try {
+                    await firestore.collection('budget_logs').add({
+                        filename: filename,
+                        uploadTime: firebase.firestore.FieldValue.serverTimestamp(),
+                        status: "FAILED",
+                        error: err.message
+                    });
+                } catch (logErr) {
+                    console.error('Failed to save budget log:', logErr);
+                }
+
+                showToast('❌ Gagal upload budget: ' + err.message, 'warning');
+                uploadLoading.classList.remove('active');
+                uploadSalesBtn.disabled = false;
+                uploadBudgetBtn.disabled = false;
             } finally {
                 isSaving = false;
                 updateSyncStatus('synced', 'Connected');
@@ -1987,15 +2470,17 @@
 
             initFirebase();
 
-            uploadBtn = document.getElementById('uploadBtn');
-            fileInput = document.getElementById('fileInput');
+            const uploadSalesBtn = document.getElementById('uploadSalesBtn');
+            const uploadBudgetBtn = document.getElementById('uploadBudgetBtn');
+            const fileInput = document.getElementById('fileInput');
+            const budgetInput = document.getElementById('budgetInput');
             const uploadArea = document.getElementById('uploadArea');
 
-            if (uploadBtn) {
-                uploadBtn.addEventListener('click', function(e) {
+            if (uploadSalesBtn) {
+                uploadSalesBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('Upload button clicked');
+                    console.log('Upload Sales button clicked');
                     if (fileInput) {
                         fileInput.click();
                     } else {
@@ -2004,11 +2489,34 @@
                 });
             }
 
+            if (uploadBudgetBtn) {
+                uploadBudgetBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Upload Budget button clicked');
+                    if (budgetInput) {
+                        budgetInput.click();
+                    } else {
+                        console.error('Budget input not found');
+                    }
+                });
+            }
+
             if (fileInput) {
                 fileInput.addEventListener('change', function(e) {
-                    console.log('File selected:', this.files.length);
+                    console.log('Sales file selected:', this.files.length);
                     if (this.files.length > 0) {
                         handleFile(this.files[0]);
+                    }
+                    this.value = '';
+                });
+            }
+
+            if (budgetInput) {
+                budgetInput.addEventListener('change', function(e) {
+                    console.log('Budget file selected:', this.files.length);
+                    if (this.files.length > 0) {
+                        handleBudgetFile(this.files[0]);
                     }
                     this.value = '';
                 });
@@ -2030,6 +2538,7 @@
                     this.classList.remove('dragover');
                     const files = e.dataTransfer.files;
                     if (files.length > 0) {
+                        // Default: treat as sales file
                         handleFile(files[0]);
                     }
                 });
