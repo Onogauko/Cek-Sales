@@ -992,6 +992,11 @@
         const COLLECTION = "sales";
         const BUDGET_COLLECTION = "budget";
         const VALID_DEPARTMENTS = ["2039", "2040", "5214"];
+        const CACHE_KEY = "sales_cache";
+        const CACHE_TIME_KEY = "sales_cache_time";
+        const CACHE_VERSION = "sales_cache_v2";
+        const BUDGET_CACHE_KEY = "budget_cache";
+        const BUDGET_CACHE_TIME_KEY = "budget_cache_time";
 
         // ============================================================
         // FIREBASE CONFIG
@@ -1028,6 +1033,20 @@
             toast.classList.add('show');
             if (toastTimeout) clearTimeout(toastTimeout);
             toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, duration);
+        }
+
+        // ============================================================
+        // CHECK CACHE VERSION
+        // ============================================================
+        function checkCacheVersion() {
+            if (localStorage.getItem("cache_version") !== CACHE_VERSION) {
+                localStorage.removeItem(CACHE_KEY);
+                localStorage.removeItem(CACHE_TIME_KEY);
+                localStorage.removeItem(BUDGET_CACHE_KEY);
+                localStorage.removeItem(BUDGET_CACHE_TIME_KEY);
+                localStorage.setItem("cache_version", CACHE_VERSION);
+                console.log('🔄 Cache version updated, old cache cleared');
+            }
         }
 
         // ============================================================
@@ -1075,16 +1094,15 @@
                 }
                 firestore = firebase.firestore();
                 
-                // Test koneksi saja, tanpa enablePersistence
-                await firestore.collection(COLLECTION).limit(1).get();
                 isFirebaseReady = true;
-                updateSyncStatus('synced', 'Connected');
-                console.log('✅ Firebase connected');
+                console.log('✅ Firebase initialized');
 
                 await loadData();
                 await loadBudget();
                 await loadUploadHistory();
                 await loadBudgetHistory();
+
+                updateSyncStatus('synced', 'Connected');
 
                 return true;
             } catch (err) {
@@ -1182,12 +1200,106 @@
         }
 
         // ============================================================
-        // LOAD DATA
+        // SETUP PERIODS FROM DATA
         // ============================================================
-        async function loadData() {
+        function setupPeriodsFromData(data) {
+            const periods = [...new Set(data.map(d => d.period).filter(p => p))];
+            periods.sort((a, b) => b.localeCompare(a));
+            availablePeriods = periods;
+
+            const periodFilter = document.getElementById('periodFilter');
+            periodFilter.innerHTML = '';
+            
+            const emptyOpt = document.createElement('option');
+            emptyOpt.value = '';
+            emptyOpt.textContent = 'Pilih Periode';
+            periodFilter.appendChild(emptyOpt);
+
+            periods.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p;
+                const [year, month] = p.split('-');
+                const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                opt.textContent = monthNames[parseInt(month) - 1] + ' ' + year;
+                periodFilter.appendChild(opt);
+            });
+
+            if (periods.length > 0) {
+                currentPeriod = periods[0];
+                periodFilter.value = currentPeriod;
+                setPeriodDate(currentPeriod);
+            }
+        }
+
+        // ============================================================
+        // CHECK FOR NEW UPLOADS (SALES)
+        // ============================================================
+        async function checkForNewUploads(cacheTime) {
             if (!isFirebaseReady) return;
+            
             try {
-                updateSyncStatus('syncing', 'Loading...');
+                console.log('🔍 Checking for new sales uploads...');
+                const snapshot = await firestore.collection('upload_logs')
+                    .orderBy('uploadTime', 'desc')
+                    .limit(1)
+                    .get();
+                
+                if (!snapshot.empty) {
+                    const latestUpload = snapshot.docs[0].data();
+                    const uploadTime = latestUpload.uploadTime?.toDate?.() || new Date(latestUpload.uploadTime);
+                    const cacheTimestamp = cacheTime ? parseInt(cacheTime) : 0;
+                    
+                    console.log('📊 Cache time:', new Date(cacheTimestamp));
+                    console.log('📊 Upload time:', uploadTime);
+                    
+                    if (uploadTime.getTime() > cacheTimestamp) {
+                        console.log('🔄 New upload detected, reloading from Firestore...');
+                        await loadFromFirestore();
+                    } else {
+                        console.log('✅ Sales cache is up to date');
+                    }
+                }
+            } catch (err) {
+                console.error('Error checking uploads:', err);
+            }
+        }
+
+        // ============================================================
+        // CHECK BUDGET UPDATES
+        // ============================================================
+        async function checkBudgetUpdates(cacheTime) {
+            if (!isFirebaseReady) return;
+            
+            try {
+                console.log('🔍 Checking for new budget uploads...');
+                const snapshot = await firestore.collection('budget_logs')
+                    .orderBy('uploadTime', 'desc')
+                    .limit(1)
+                    .get();
+                
+                if (snapshot.empty) return;
+                
+                const latest = snapshot.docs[0].data();
+                const uploadTime = latest.uploadTime?.toDate?.() || new Date(latest.uploadTime);
+                
+                if (uploadTime.getTime() > Number(cacheTime || 0)) {
+                    console.log('🔄 New budget upload detected, reloading...');
+                    await loadBudgetFromFirestore();
+                    localStorage.setItem(BUDGET_CACHE_TIME_KEY, uploadTime.getTime().toString());
+                } else {
+                    console.log('✅ Budget cache is up to date');
+                }
+            } catch (err) {
+                console.error('Error checking budget updates:', err);
+            }
+        }
+
+        // ============================================================
+        // LOAD FROM FIRESTORE (SALES)
+        // ============================================================
+        async function loadFromFirestore() {
+            try {
                 const snapshot = await firestore.collection(COLLECTION)
                     .orderBy('date', 'desc')
                     .get();
@@ -1203,58 +1315,44 @@
                     data.push(doc.data());
                 });
 
+                // Simpan ke cache
+                localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+                
+                // Ambil timestamp dari upload_logs untuk cache time
+                const uploadSnapshot = await firestore.collection('upload_logs')
+                    .orderBy('uploadTime', 'desc')
+                    .limit(1)
+                    .get();
+                
+                if (!uploadSnapshot.empty) {
+                    const uploadTime = uploadSnapshot.docs[0].data().uploadTime?.toDate?.() || new Date();
+                    localStorage.setItem(CACHE_TIME_KEY, uploadTime.getTime().toString());
+                }
+                
+                console.log('💾 Sales data saved to cache, records:', data.length);
+
                 originalData = data;
                 salesData = [...data];
 
-                const periods = [...new Set(data.map(d => d.period).filter(p => p))];
-                periods.sort((a, b) => b.localeCompare(a));
-                availablePeriods = periods;
-
-                const periodFilter = document.getElementById('periodFilter');
-                periodFilter.innerHTML = '';
-                
-                const emptyOpt = document.createElement('option');
-                emptyOpt.value = '';
-                emptyOpt.textContent = 'Pilih Periode';
-                periodFilter.appendChild(emptyOpt);
-
-                periods.forEach(p => {
-                    const opt = document.createElement('option');
-                    opt.value = p;
-                    const [year, month] = p.split('-');
-                    const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-                        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-                    opt.textContent = monthNames[parseInt(month) - 1] + ' ' + year;
-                    periodFilter.appendChild(opt);
-                });
-
-                if (periods.length > 0) {
-                    currentPeriod = periods[0];
-                    periodFilter.value = currentPeriod;
-                    setPeriodDate(currentPeriod);
-                }
-
+                setupPeriodsFromData(data);
                 renderDashboard();
                 afterDataLoaded();
                 updateSyncStatus('synced', 'Connected');
+
             } catch (err) {
-                console.error('Error loading data:', err);
-                updateSyncStatus('error', 'Load failed');
-                showEmptyState();
+                console.error('Error loading from Firestore:', err);
+                throw err;
             }
         }
 
         // ============================================================
-        // LOAD BUDGET
+        // LOAD BUDGET FROM FIRESTORE
         // ============================================================
-        async function loadBudget() {
-            if (!isFirebaseReady) {
-                console.warn('Firebase not ready, cannot load budget');
-                return;
-            }
-
+        async function loadBudgetFromFirestore() {
+            if (!isFirebaseReady) return;
+            
             try {
-                console.log('📊 Loading budget from Firebase...');
+                console.log('📥 Loading budget from Firestore...');
                 const snapshot = await firestore.collection(BUDGET_COLLECTION)
                     .orderBy('date', 'desc')
                     .get();
@@ -1264,32 +1362,94 @@
                     budgetData.push(doc.data());
                 });
 
-                console.log('✅ Budget loaded from Firebase:', budgetData.length, 'records');
+                localStorage.setItem(BUDGET_CACHE_KEY, JSON.stringify(budgetData));
                 
-                if (budgetData.length > 0) {
-                    localStorage.setItem('budgetCache', JSON.stringify(budgetData));
-                    localStorage.setItem('budgetCacheTime', Date.now().toString());
+                // Ambil timestamp dari budget_logs
+                const budgetLogSnapshot = await firestore.collection('budget_logs')
+                    .orderBy('uploadTime', 'desc')
+                    .limit(1)
+                    .get();
+                
+                if (!budgetLogSnapshot.empty) {
+                    const budgetUploadTime = budgetLogSnapshot.docs[0].data().uploadTime?.toDate?.() || new Date();
+                    localStorage.setItem(BUDGET_CACHE_TIME_KEY, budgetUploadTime.getTime().toString());
                 }
-
+                
+                console.log('💾 Budget data saved to cache, records:', budgetData.length);
             } catch (err) {
-                console.error('❌ Error loading budget from Firebase:', err);
+                console.error('❌ Error loading budget from Firestore:', err);
+            }
+        }
+
+        // ============================================================
+        // LOAD DATA (With Cache Support)
+        // ============================================================
+        async function loadData() {
+            if (!isFirebaseReady) return;
+            
+            try {
+                updateSyncStatus('syncing', 'Loading...');
                 
-                try {
-                    const cached = localStorage.getItem('budgetCache');
-                    const cacheTime = localStorage.getItem('budgetCacheTime');
+                // 1. Cek cache dulu
+                const cache = localStorage.getItem(CACHE_KEY);
+                const cacheTime = localStorage.getItem(CACHE_TIME_KEY);
+                
+                if (cache) {
+                    console.log('📦 Loading data from cache...');
+                    const cachedData = JSON.parse(cache);
+                    originalData = cachedData;
+                    salesData = [...cachedData];
                     
-                    if (cached && cacheTime) {
-                        const hoursSinceCache = (Date.now() - parseInt(cacheTime)) / (1000 * 60 * 60);
-                        if (hoursSinceCache < 24) {
-                            budgetData = JSON.parse(cached);
-                            console.log('📦 Budget loaded from cache:', budgetData.length, 'records');
-                            return;
-                        }
-                    }
-                } catch (cacheErr) {
-                    console.error('Cache fallback failed:', cacheErr);
+                    // Setup periods dari cache
+                    setupPeriodsFromData(cachedData);
+                    
+                    // Render dashboard dari cache
+                    renderDashboard();
+                    afterDataLoaded();
+                    updateSyncStatus('synced', 'Connected (Cache)');
+                    
+                    // 2. Cek apakah ada upload baru
+                    await checkForNewUploads(cacheTime);
+                } else {
+                    console.log('📥 No cache found, loading from Firestore...');
+                    // Ambil dari Firestore
+                    await loadFromFirestore();
                 }
                 
+            } catch (err) {
+                console.error('Error loading data:', err);
+                updateSyncStatus('error', 'Load failed');
+                showEmptyState();
+            }
+        }
+
+        // ============================================================
+        // LOAD BUDGET (With Cache Support)
+        // ============================================================
+        async function loadBudget() {
+            if (!isFirebaseReady) {
+                console.warn('Firebase not ready, cannot load budget');
+                return;
+            }
+
+            try {
+                const cache = localStorage.getItem(BUDGET_CACHE_KEY);
+                const cacheTime = localStorage.getItem(BUDGET_CACHE_TIME_KEY);
+                
+                if (cache) {
+                    console.log('📦 Loading budget from cache...');
+                    budgetData = JSON.parse(cache);
+                    console.log('✅ Budget loaded from cache:', budgetData.length, 'records');
+                    
+                    // Cek update di background
+                    await checkBudgetUpdates(cacheTime);
+                } else {
+                    console.log('📥 No budget cache found, loading from Firestore...');
+                    await loadBudgetFromFirestore();
+                    console.log('✅ Budget loaded from Firestore:', budgetData.length, 'records');
+                }
+            } catch (err) {
+                console.error('❌ Error in loadBudget:', err);
                 budgetData = [];
             }
         }
@@ -1926,6 +2086,10 @@
 
                 showToast(`✅ ${data.length} data sales berhasil diupload!`, 'success');
 
+                // Update cache
+                localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+                
+                // uploadTime akan diperbarui otomatis setelah loadData()
                 await loadData();
                 await loadUploadHistory();
 
@@ -2200,9 +2364,10 @@
 
                 showToast(`✅ ${data.length} data budget berhasil diupload!`, 'success');
 
-                localStorage.setItem('budgetCache', JSON.stringify(data));
-                localStorage.setItem('budgetCacheTime', Date.now().toString());
-
+                // Update budget cache
+                localStorage.setItem(BUDGET_CACHE_KEY, JSON.stringify(data));
+                
+                // Biarkan loadBudget() mengambil uploadTime dari budget_logs
                 await loadBudget();
                 await loadBudgetHistory();
                 renderDashboard();
@@ -2348,6 +2513,9 @@
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Cek Data Sales starting...');
+
+            // Check cache version before init
+            checkCacheVersion();
 
             initFirebase();
 
