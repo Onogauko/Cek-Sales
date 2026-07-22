@@ -992,11 +992,142 @@
         const COLLECTION = "sales";
         const BUDGET_COLLECTION = "budget";
         const VALID_DEPARTMENTS = ["2039", "2040", "5214"];
-        const CACHE_KEY = "sales_cache";
-        const CACHE_TIME_KEY = "sales_cache_time";
         const CACHE_VERSION = "sales_cache_v2";
-        const BUDGET_CACHE_KEY = "budget_cache";
-        const BUDGET_CACHE_TIME_KEY = "budget_cache_time";
+        const DB_NAME = "SalesAnalyzerDB";
+        const DB_VERSION = 1;
+        const STORE_NAME = "cache";
+
+        // ============================================================
+        // INDEXEDDB HELPERS
+        // ============================================================
+        function openDatabase() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME);
+                    }
+                };
+                
+                request.onsuccess = (event) => {
+                    resolve(event.target.result);
+                };
+                
+                request.onerror = (event) => {
+                    reject(event.target.error);
+                };
+            });
+        }
+
+        async function saveCache(key, value) {
+            try {
+                const db = await openDatabase();
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction([STORE_NAME], 'readwrite');
+                    const store = transaction.objectStore(STORE_NAME);
+                    const request = store.put(value, key);
+                    
+                    request.onsuccess = () => {
+                        console.log(`💾 Cache saved: ${key}`);
+                        resolve();
+                    };
+                    
+                    request.onerror = () => {
+                        console.warn(`⚠️ Failed to save cache: ${key}`, request.error);
+                        reject(request.error);
+                    };
+                    
+                    transaction.oncomplete = () => {
+                        db.close();
+                    };
+                });
+            } catch (err) {
+                console.warn(`⚠️ Error saving cache ${key}:`, err);
+            }
+        }
+
+        async function getCache(key) {
+            try {
+                const db = await openDatabase();
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction([STORE_NAME], 'readonly');
+                    const store = transaction.objectStore(STORE_NAME);
+                    const request = store.get(key);
+                    
+                    request.onsuccess = () => {
+                        resolve(request.result);
+                    };
+                    
+                    request.onerror = () => {
+                        console.warn(`⚠️ Failed to get cache: ${key}`, request.error);
+                        resolve(null);
+                    };
+                    
+                    transaction.oncomplete = () => {
+                        db.close();
+                    };
+                });
+            } catch (err) {
+                console.warn(`⚠️ Error getting cache ${key}:`, err);
+                return null;
+            }
+        }
+
+        async function deleteCache(key) {
+            try {
+                const db = await openDatabase();
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction([STORE_NAME], 'readwrite');
+                    const store = transaction.objectStore(STORE_NAME);
+                    const request = store.delete(key);
+                    
+                    request.onsuccess = () => {
+                        console.log(`🗑️ Cache deleted: ${key}`);
+                        resolve();
+                    };
+                    
+                    request.onerror = () => {
+                        console.warn(`⚠️ Failed to delete cache: ${key}`);
+                        resolve();
+                    };
+                    
+                    transaction.oncomplete = () => {
+                        db.close();
+                    };
+                });
+            } catch (err) {
+                console.warn(`⚠️ Error deleting cache ${key}:`, err);
+            }
+        }
+
+        async function clearAllCache() {
+            try {
+                const db = await openDatabase();
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction([STORE_NAME], 'readwrite');
+                    const store = transaction.objectStore(STORE_NAME);
+                    const request = store.clear();
+                    
+                    request.onsuccess = () => {
+                        console.log('✅ All cache cleared');
+                        resolve();
+                    };
+                    
+                    request.onerror = () => {
+                        console.warn('⚠️ Failed to clear cache');
+                        resolve();
+                    };
+                    
+                    transaction.oncomplete = () => {
+                        db.close();
+                    };
+                });
+            } catch (err) {
+                console.warn('⚠️ Error clearing cache:', err);
+            }
+        }
 
         // ============================================================
         // FIREBASE CONFIG
@@ -1038,14 +1169,12 @@
         // ============================================================
         // CHECK CACHE VERSION
         // ============================================================
-        function checkCacheVersion() {
-            if (localStorage.getItem("cache_version") !== CACHE_VERSION) {
-                localStorage.removeItem(CACHE_KEY);
-                localStorage.removeItem(CACHE_TIME_KEY);
-                localStorage.removeItem(BUDGET_CACHE_KEY);
-                localStorage.removeItem(BUDGET_CACHE_TIME_KEY);
-                localStorage.setItem("cache_version", CACHE_VERSION);
-                console.log('🔄 Cache version updated, old cache cleared');
+        async function checkCacheVersion() {
+            const version = localStorage.getItem('cache_version');
+            if (version !== CACHE_VERSION) {
+                console.log('🔄 Cache version changed, clearing old cache...');
+                await clearAllCache();
+                localStorage.setItem('cache_version', CACHE_VERSION);
             }
         }
 
@@ -1286,7 +1415,6 @@
                 if (uploadTime.getTime() > Number(cacheTime || 0)) {
                     console.log('🔄 New budget upload detected, reloading...');
                     await loadBudgetFromFirestore();
-                    localStorage.setItem(BUDGET_CACHE_TIME_KEY, uploadTime.getTime().toString());
                 } else {
                     console.log('✅ Budget cache is up to date');
                 }
@@ -1315,21 +1443,29 @@
                     data.push(doc.data());
                 });
 
-                // Simpan ke cache
-                localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-                
-                // Ambil timestamp dari upload_logs untuk cache time
-                const uploadSnapshot = await firestore.collection('upload_logs')
-                    .orderBy('uploadTime', 'desc')
-                    .limit(1)
-                    .get();
-                
-                if (!uploadSnapshot.empty) {
-                    const uploadTime = uploadSnapshot.docs[0].data().uploadTime?.toDate?.() || new Date();
-                    localStorage.setItem(CACHE_TIME_KEY, uploadTime.getTime().toString());
+                // Ambil timestamp dari upload_logs
+                let uploadTime = Date.now();
+                try {
+                    const uploadSnapshot = await firestore.collection('upload_logs')
+                        .orderBy('uploadTime', 'desc')
+                        .limit(1)
+                        .get();
+                    
+                    if (!uploadSnapshot.empty) {
+                        const serverTime = uploadSnapshot.docs[0].data().uploadTime?.toDate?.() || new Date();
+                        uploadTime = serverTime.getTime();
+                    }
+                } catch (err) {
+                    console.warn('⚠️ Could not get upload time, using current time');
                 }
+
+                // Simpan ke IndexedDB
+                await saveCache("sales", {
+                    data: data,
+                    uploadTime: uploadTime
+                });
                 
-                console.log('💾 Sales data saved to cache, records:', data.length);
+                console.log('💾 Sales data saved to IndexedDB, records:', data.length);
 
                 originalData = data;
                 salesData = [...data];
@@ -1362,20 +1498,29 @@
                     budgetData.push(doc.data());
                 });
 
-                localStorage.setItem(BUDGET_CACHE_KEY, JSON.stringify(budgetData));
-                
                 // Ambil timestamp dari budget_logs
-                const budgetLogSnapshot = await firestore.collection('budget_logs')
-                    .orderBy('uploadTime', 'desc')
-                    .limit(1)
-                    .get();
-                
-                if (!budgetLogSnapshot.empty) {
-                    const budgetUploadTime = budgetLogSnapshot.docs[0].data().uploadTime?.toDate?.() || new Date();
-                    localStorage.setItem(BUDGET_CACHE_TIME_KEY, budgetUploadTime.getTime().toString());
+                let uploadTime = Date.now();
+                try {
+                    const budgetLogSnapshot = await firestore.collection('budget_logs')
+                        .orderBy('uploadTime', 'desc')
+                        .limit(1)
+                        .get();
+                    
+                    if (!budgetLogSnapshot.empty) {
+                        const serverTime = budgetLogSnapshot.docs[0].data().uploadTime?.toDate?.() || new Date();
+                        uploadTime = serverTime.getTime();
+                    }
+                } catch (err) {
+                    console.warn('⚠️ Could not get budget upload time, using current time');
                 }
+
+                // Simpan ke IndexedDB
+                await saveCache("budget", {
+                    data: budgetData,
+                    uploadTime: uploadTime
+                });
                 
-                console.log('💾 Budget data saved to cache, records:', budgetData.length);
+                console.log('💾 Budget data saved to IndexedDB, records:', budgetData.length);
             } catch (err) {
                 console.error('❌ Error loading budget from Firestore:', err);
             }
@@ -1390,18 +1535,16 @@
             try {
                 updateSyncStatus('syncing', 'Loading...');
                 
-                // 1. Cek cache dulu
-                const cache = localStorage.getItem(CACHE_KEY);
-                const cacheTime = localStorage.getItem(CACHE_TIME_KEY);
+                // 1. Cek cache dari IndexedDB
+                const cache = await getCache("sales");
                 
-                if (cache) {
-                    console.log('📦 Loading data from cache...');
-                    const cachedData = JSON.parse(cache);
-                    originalData = cachedData;
-                    salesData = [...cachedData];
+                if (cache && cache.data) {
+                    console.log('📦 Loading data from IndexedDB cache...');
+                    originalData = cache.data;
+                    salesData = [...cache.data];
                     
                     // Setup periods dari cache
-                    setupPeriodsFromData(cachedData);
+                    setupPeriodsFromData(cache.data);
                     
                     // Render dashboard dari cache
                     renderDashboard();
@@ -1409,7 +1552,7 @@
                     updateSyncStatus('synced', 'Connected (Cache)');
                     
                     // 2. Cek apakah ada upload baru
-                    await checkForNewUploads(cacheTime);
+                    await checkForNewUploads(cache.uploadTime);
                 } else {
                     console.log('📥 No cache found, loading from Firestore...');
                     // Ambil dari Firestore
@@ -1418,8 +1561,26 @@
                 
             } catch (err) {
                 console.error('Error loading data:', err);
-                updateSyncStatus('error', 'Load failed');
-                showEmptyState();
+                
+                // Jika semua gagal, coba pakai cache yang ada meskipun mungkin outdated
+                const fallbackCache = await getCache("sales");
+                if (fallbackCache && fallbackCache.data) {
+                    try {
+                        console.log('🔄 Using fallback cache...');
+                        originalData = fallbackCache.data;
+                        salesData = [...fallbackCache.data];
+                        setupPeriodsFromData(fallbackCache.data);
+                        renderDashboard();
+                        afterDataLoaded();
+                        updateSyncStatus('synced', 'Connected (Fallback Cache)');
+                    } catch (e) {
+                        showEmptyState();
+                        updateSyncStatus('error', 'Load failed');
+                    }
+                } else {
+                    showEmptyState();
+                    updateSyncStatus('error', 'Load failed');
+                }
             }
         }
 
@@ -1433,16 +1594,15 @@
             }
 
             try {
-                const cache = localStorage.getItem(BUDGET_CACHE_KEY);
-                const cacheTime = localStorage.getItem(BUDGET_CACHE_TIME_KEY);
+                const cache = await getCache("budget");
                 
-                if (cache) {
-                    console.log('📦 Loading budget from cache...');
-                    budgetData = JSON.parse(cache);
+                if (cache && cache.data) {
+                    console.log('📦 Loading budget from IndexedDB cache...');
+                    budgetData = cache.data;
                     console.log('✅ Budget loaded from cache:', budgetData.length, 'records');
                     
                     // Cek update di background
-                    await checkBudgetUpdates(cacheTime);
+                    await checkBudgetUpdates(cache.uploadTime);
                 } else {
                     console.log('📥 No budget cache found, loading from Firestore...');
                     await loadBudgetFromFirestore();
@@ -2086,10 +2246,12 @@
 
                 showToast(`✅ ${data.length} data sales berhasil diupload!`, 'success');
 
-                // Update cache
-                localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+                // Update cache - uploadTime akan diperbarui otomatis setelah loadData()
+                await saveCache("sales", {
+                    data: data,
+                    uploadTime: Date.now() // Sementara, nanti diupdate oleh loadData()
+                });
                 
-                // uploadTime akan diperbarui otomatis setelah loadData()
                 await loadData();
                 await loadUploadHistory();
 
@@ -2365,7 +2527,10 @@
                 showToast(`✅ ${data.length} data budget berhasil diupload!`, 'success');
 
                 // Update budget cache
-                localStorage.setItem(BUDGET_CACHE_KEY, JSON.stringify(data));
+                await saveCache("budget", {
+                    data: data,
+                    uploadTime: Date.now() // Sementara, nanti diupdate oleh loadBudget()
+                });
                 
                 // Biarkan loadBudget() mengambil uploadTime dari budget_logs
                 await loadBudget();
@@ -2511,11 +2676,11 @@
         // ============================================================
         // EVENT LISTENERS
         // ============================================================
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             console.log('🚀 Cek Data Sales starting...');
 
             // Check cache version before init
-            checkCacheVersion();
+            await checkCacheVersion();
 
             initFirebase();
 
