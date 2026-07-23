@@ -991,8 +991,9 @@
         // ============================================================
         const COLLECTION = "sales";
         const BUDGET_COLLECTION = "budget";
+        const SYNC_INFO = "sync_info";
         const VALID_DEPARTMENTS = ["2039", "2040", "5214"];
-        const CACHE_VERSION = "sales_cache_v8";
+        const CACHE_VERSION = "sales_cache_v9";
         const DB_NAME = "SalesAnalyzerDB";
         const DB_VERSION = 1;
         const STORE_NAME = "cache";
@@ -1204,7 +1205,7 @@
             if (dot) dot.className = 'dot ' + status;
             if (label) {
                 if (status === 'synced') label.textContent = '🟢 Connected';
-                else if (status === 'syncing') label.textContent = '🔄 Uploading';
+                else if (status === 'syncing') label.textContent = '🔄 Syncing...';
                 else if (status === 'error') label.textContent = '🔴 Error';
                 else label.textContent = text || status;
             }
@@ -1231,10 +1232,10 @@
                 
                 if (hasSalesCache || hasBudgetCache) {
                     renderDashboard();
-                    await checkAllUpdates();
+                    await checkSyncInfo();
                 } else {
-                    if (!hasSalesCache) await loadFromFirestoreFull();
-                    if (!hasBudgetCache) await loadBudgetFromFirestore();
+                    if (!hasSalesCache) await loadSalesFull();
+                    if (!hasBudgetCache) await loadBudgetFull();
                 }
                 
                 updateSyncStatus('synced', 'Connected');
@@ -1283,122 +1284,326 @@
         }
 
         // ============================================================
-        // CHECK ALL UPDATES (Gabungan - HANYA 2 READS)
+        // CHECK SYNC INFO (Menggantikan checkAllUpdates)
         // ============================================================
-        async function checkAllUpdates() {
+        async function checkSyncInfo() {
             if (!isFirebaseReady) return;
             
             try {
-                console.log('🔍 Checking for updates (2 reads only)...');
+                updateSyncStatus('syncing', 'Checking sync...');
+                console.log('🔍 Checking sync_info...');
                 
-                const [salesLogSnapshot, budgetLogSnapshot] = await Promise.all([
-                    firestore.collection('upload_logs')
-                        .orderBy('uploadTime', 'desc')
-                        .limit(1)
-                        .get(),
-                    firestore.collection('budget_logs')
-                        .orderBy('uploadTime', 'desc')
-                        .limit(1)
-                        .get()
+                // Baca sync_info/sales dan sync_info/budget sekaligus
+                const [salesSyncDoc, budgetSyncDoc] = await Promise.all([
+                    firestore.collection(SYNC_INFO).doc("sales").get(),
+                    firestore.collection(SYNC_INFO).doc("budget").get()
                 ]);
                 
-                updateSalesHistoryUI(salesLogSnapshot);
-                updateBudgetHistoryUI(budgetLogSnapshot);
-                
                 const salesCache = await getCache("sales");
-                if (!salesLogSnapshot.empty && salesCache) {
-                    const latestUpload = salesLogSnapshot.docs[0].data();
-                    const uploadTime = latestUpload.uploadTime?.toDate?.() || new Date();
+                const budgetCache = await getCache("budget");
+                
+                // === SALES: Incremental Sync ===
+                if (salesSyncDoc.exists && salesCache) {
+                    const serverInfo = salesSyncDoc.data();
+                    const cacheVersion = salesCache.version || 0;
                     
-                    if (uploadTime.getTime() > (salesCache.uploadTime || 0)) {
-                        console.log('🔄 New sales upload detected from another device, reloading...');
-                        await loadFromFirestoreFull();
+                    if (serverInfo.version > cacheVersion) {
+                        console.log(`🔄 Sales update: v${cacheVersion} → v${serverInfo.version}`);
+                        await syncSalesIncremental(serverInfo);
                     } else {
                         console.log('✅ Sales cache is up to date');
                     }
+                } else if (salesSyncDoc.exists && !salesCache) {
+                    await loadSalesFull();
                 }
                 
-                const budgetCache = await getCache("budget");
-                if (!budgetLogSnapshot.empty && budgetCache) {
-                    const latestBudget = budgetLogSnapshot.docs[0].data();
-                    const budgetUploadTime = latestBudget.uploadTime?.toDate?.() || new Date();
+                // === BUDGET: Full Sync (karena data kecil) ===
+                if (budgetSyncDoc.exists && budgetCache) {
+                    const serverInfo = budgetSyncDoc.data();
+                    const cacheVersion = budgetCache.version || 0;
                     
-                    if (budgetUploadTime.getTime() > (budgetCache.uploadTime || 0)) {
-                        console.log('🔄 New budget upload detected from another device, reloading...');
-                        await loadBudgetFromFirestore();
+                    if (serverInfo.version > cacheVersion) {
+                        console.log(`🔄 Budget update: v${cacheVersion} → v${serverInfo.version}`);
+                        await loadBudgetFull();
                     } else {
                         console.log('✅ Budget cache is up to date');
                     }
+                } else if (budgetSyncDoc.exists && !budgetCache) {
+                    await loadBudgetFull();
                 }
                 
-                console.log('✅ Update check complete');
+                // Update history UI dari upload_logs
+                await updateHistoryUI();
+                
+                updateSyncStatus('synced', 'Connected');
+                console.log('✅ Sync check complete');
             } catch (err) {
-                console.error('Error checking updates:', err);
+                console.error('Error checking sync info:', err);
+                updateSyncStatus('synced', 'Connected');
+            }
+        }
+
+        // ============================================================
+        // SYNC SALES INCREMENTAL (Hanya download changedPeriods)
+        // ============================================================
+        async function syncSalesIncremental(serverInfo) {
+            const changedPeriods = serverInfo.changedPeriods || [];
+            
+            if (changedPeriods.length === 0) {
+                console.log('⚠️ No changedPeriods, doing full reload...');
+                await loadSalesFull();
+                return;
+            }
+            
+            console.log(`📥 Incremental sync: periods ${changedPeriods.join(', ')}`);
+            
+            // Download hanya data untuk periode yang berubah
+            const newData = [];
+            
+            for (const period of changedPeriods) {
+                const snapshot = await firestore.collection(COLLECTION)
+                    .where("period", "==", period)
+                    .get();
+                
+                snapshot.forEach(doc => {
+                    newData.push(doc.data());
+                });
+            }
+            
+            console.log(`📥 Downloaded ${newData.length} records for changed periods`);
+            
+            // Hapus data lama untuk periode yang sama dari cache
+            let existingData = originalData.filter(d => !changedPeriods.includes(d.period));
+            
+            // Gabungkan
+            originalData = [...existingData, ...newData];
+            salesData = [...originalData];
+            
+            // Simpan cache dengan version baru
+            await saveCache("sales", {
+                data: originalData,
+                version: serverInfo.version,
+                uploadTime: Date.now()
+            });
+            
+            console.log(`💾 Cache updated: ${originalData.length} total records, version ${serverInfo.version}`);
+            
+            setupPeriodsFromData(originalData);
+            renderDashboard();
+        }
+
+        // ============================================================
+        // LOAD SALES FULL (Fallback)
+        // ============================================================
+        async function loadSalesFull() {
+            try {
+                console.log('⚠️ Full sales reload...');
+                const snapshot = await firestore.collection(COLLECTION)
+                    .orderBy('date', 'desc')
+                    .get();
+
+                if (snapshot.empty) {
+                    showEmptyState();
+                    return;
+                }
+
+                const data = [];
+                snapshot.forEach(doc => data.push(doc.data()));
+
+                // Ambil version dari sync_info
+                let version = 1;
+                try {
+                    const syncDoc = await firestore.collection(SYNC_INFO).doc("sales").get();
+                    if (syncDoc.exists) {
+                        version = syncDoc.data().version || 1;
+                    }
+                } catch (e) {}
+
+                await saveCache("sales", { data, version, uploadTime: Date.now() });
+                console.log('💾 Full sales saved, records:', data.length, 'version:', version);
+
+                originalData = data;
+                salesData = [...data];
+                setupPeriodsFromData(data);
+                renderDashboard();
+                afterDataLoaded();
+            } catch (err) {
+                console.error('Error in full sales reload:', err);
+                throw err;
+            }
+        }
+
+        // ============================================================
+        // LOAD BUDGET FULL
+        // ============================================================
+        async function loadBudgetFull() {
+            if (!isFirebaseReady) return;
+            
+            try {
+                console.log('📥 Loading budget from Firestore...');
+                const snapshot = await firestore.collection(BUDGET_COLLECTION)
+                    .orderBy('date', 'desc')
+                    .get();
+
+                budgetData = [];
+                snapshot.forEach(doc => {
+                    budgetData.push(doc.data());
+                });
+
+                let version = 1;
+                try {
+                    const syncDoc = await firestore.collection(SYNC_INFO).doc("budget").get();
+                    if (syncDoc.exists) {
+                        version = syncDoc.data().version || 1;
+                    }
+                } catch (err) {}
+
+                await saveCache("budget", { data: budgetData, version, uploadTime: Date.now() });
+                console.log('💾 Budget saved, records:', budgetData.length, 'version:', version);
+                
+                if (originalData.length > 0) {
+                    renderDashboard();
+                }
+            } catch (err) {
+                console.error('❌ Error loading budget:', err);
+            }
+        }
+
+        // ============================================================
+        // UPDATE SYNC INFO (Dipanggil setelah upload sukses)
+        // ============================================================
+        async function updateSalesSyncInfo(uploadedPeriods, recordCount) {
+            if (!isFirebaseReady) return;
+            
+            try {
+                // Baca version saat ini
+                const syncDoc = await firestore.collection(SYNC_INFO).doc("sales").get();
+                let currentVersion = 1;
+                
+                if (syncDoc.exists) {
+                    currentVersion = (syncDoc.data().version || 0) + 1;
+                }
+                
+                // Update sync_info
+                await firestore.collection(SYNC_INFO).doc("sales").set({
+                    version: currentVersion,
+                    lastUpload: firebase.firestore.FieldValue.serverTimestamp(),
+                    changedPeriods: uploadedPeriods,
+                    recordCount: recordCount
+                });
+                
+                console.log(`✅ sync_info/sales updated: v${currentVersion}, periods:`, uploadedPeriods);
+                
+                // Update cache version
+                const salesCache = await getCache("sales");
+                if (salesCache) {
+                    salesCache.version = currentVersion;
+                    await saveCache("sales", salesCache);
+                }
+                
+                return currentVersion;
+            } catch (err) {
+                console.error('Error updating sales sync_info:', err);
+            }
+        }
+
+        async function updateBudgetSyncInfo(uploadedPeriods, recordCount) {
+            if (!isFirebaseReady) return;
+            
+            try {
+                const syncDoc = await firestore.collection(SYNC_INFO).doc("budget").get();
+                let currentVersion = 1;
+                
+                if (syncDoc.exists) {
+                    currentVersion = (syncDoc.data().version || 0) + 1;
+                }
+                
+                await firestore.collection(SYNC_INFO).doc("budget").set({
+                    version: currentVersion,
+                    lastUpload: firebase.firestore.FieldValue.serverTimestamp(),
+                    changedPeriods: uploadedPeriods,
+                    recordCount: recordCount
+                });
+                
+                console.log(`✅ sync_info/budget updated: v${currentVersion}`);
+                
+                const budgetCache = await getCache("budget");
+                if (budgetCache) {
+                    budgetCache.version = currentVersion;
+                    await saveCache("budget", budgetCache);
+                }
+            } catch (err) {
+                console.error('Error updating budget sync_info:', err);
             }
         }
 
         // ============================================================
         // UPDATE HISTORY UI
         // ============================================================
-        function updateSalesHistoryUI(snapshot) {
-            const container = document.getElementById('uploadHistory');
-            const content = document.getElementById('historyContent');
+        async function updateHistoryUI() {
+            if (!isFirebaseReady) return;
             
-            if (!snapshot || snapshot.empty) {
-                container.style.display = 'none';
-                return;
+            try {
+                const [salesLogSnapshot, budgetLogSnapshot] = await Promise.all([
+                    firestore.collection('upload_logs').orderBy('uploadTime', 'desc').limit(1).get(),
+                    firestore.collection('budget_logs').orderBy('uploadTime', 'desc').limit(1).get()
+                ]);
+                
+                // Sales history
+                const salesContainer = document.getElementById('uploadHistory');
+                const salesContent = document.getElementById('historyContent');
+                
+                if (!salesLogSnapshot.empty) {
+                    salesContainer.style.display = 'block';
+                    let html = '';
+                    salesLogSnapshot.forEach(doc => {
+                        const d = doc.data();
+                        const status = d.status || 'SUCCESS';
+                        const statusClass = status === 'SUCCESS' ? 'status-success' : 'status-failed';
+                        const date = d.uploadTime?.toDate?.() || new Date();
+                        
+                        document.getElementById('infoUpdate').textContent = 
+                            date.toLocaleDateString('en-GB') + ' ' + date.toLocaleTimeString('en-GB');
+                        
+                        html += `
+                            <div class="history-item">
+                                <span class="date">${date.toLocaleDateString('en-GB')} ${date.toLocaleTimeString('en-GB')}</span>
+                                <span class="records">${d.recordCount || 0} records</span>
+                                <span class="${statusClass}">${status}</span>
+                                <span style="color:#888;font-size:9px;">${d.filename || ''}</span>
+                            </div>
+                        `;
+                    });
+                    salesContent.innerHTML = html;
+                }
+                
+                // Budget history
+                const budgetContainer = document.getElementById('budgetHistory');
+                const budgetContent = document.getElementById('budgetHistoryContent');
+                
+                if (!budgetLogSnapshot.empty) {
+                    budgetContainer.style.display = 'block';
+                    let html = '';
+                    budgetLogSnapshot.forEach(doc => {
+                        const d = doc.data();
+                        const status = d.status || 'SUCCESS';
+                        const statusClass = status === 'SUCCESS' ? 'status-success' : 'status-failed';
+                        const date = d.uploadTime?.toDate?.() || new Date();
+                        
+                        html += `
+                            <div class="history-item">
+                                <span class="date">${date.toLocaleDateString('en-GB')} ${date.toLocaleTimeString('en-GB')}</span>
+                                <span class="records">${d.recordCount || 0} records</span>
+                                <span class="${statusClass}">${status}</span>
+                                <span style="color:#888;font-size:9px;">${d.filename || ''}</span>
+                            </div>
+                        `;
+                    });
+                    budgetContent.innerHTML = html;
+                }
+            } catch (err) {
+                console.error('Error updating history UI:', err);
             }
-            
-            container.style.display = 'block';
-            let html = '';
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                const status = data.status || 'SUCCESS';
-                const statusClass = status === 'SUCCESS' ? 'status-success' : 'status-failed';
-                const date = data.uploadTime?.toDate?.() || new Date();
-                
-                document.getElementById('infoUpdate').textContent = 
-                    date.toLocaleDateString('en-GB') + ' ' + date.toLocaleTimeString('en-GB');
-                
-                html += `
-                    <div class="history-item">
-                        <span class="date">${date.toLocaleDateString('en-GB')} ${date.toLocaleTimeString('en-GB')}</span>
-                        <span class="records">${data.recordCount || 0} records</span>
-                        <span class="${statusClass}">${status}</span>
-                        <span style="color:#888;font-size:9px;">${data.filename || ''}</span>
-                    </div>
-                `;
-            });
-            content.innerHTML = html;
-        }
-
-        function updateBudgetHistoryUI(snapshot) {
-            const container = document.getElementById('budgetHistory');
-            const content = document.getElementById('budgetHistoryContent');
-            
-            if (!snapshot || snapshot.empty) {
-                container.style.display = 'none';
-                return;
-            }
-            
-            container.style.display = 'block';
-            let html = '';
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                const status = data.status || 'SUCCESS';
-                const statusClass = status === 'SUCCESS' ? 'status-success' : 'status-failed';
-                const date = data.uploadTime?.toDate?.() || new Date();
-                
-                html += `
-                    <div class="history-item">
-                        <span class="date">${date.toLocaleDateString('en-GB')} ${date.toLocaleTimeString('en-GB')}</span>
-                        <span class="records">${data.recordCount || 0} records</span>
-                        <span class="${statusClass}">${status}</span>
-                        <span style="color:#888;font-size:9px;">${data.filename || ''}</span>
-                    </div>
-                `;
-            });
-            content.innerHTML = html;
         }
 
         // ============================================================
@@ -1470,91 +1675,6 @@
                 currentPeriod = periods[0];
                 periodFilter.value = currentPeriod;
                 setPeriodDate(currentPeriod);
-            }
-        }
-
-        // ============================================================
-        // FULL RELOAD FROM FIRESTORE (Fallback only)
-        // ============================================================
-        async function loadFromFirestoreFull() {
-            try {
-                console.log('⚠️ Full reload from Firestore (fallback)...');
-                const snapshot = await firestore.collection(COLLECTION)
-                    .orderBy('date', 'desc')
-                    .get();
-
-                if (snapshot.empty) {
-                    showEmptyState();
-                    updateSyncStatus('synced', 'No Data');
-                    return;
-                }
-
-                const data = [];
-                snapshot.forEach(doc => data.push(doc.data()));
-
-                let uploadTime = Date.now();
-                try {
-                    const uploadSnapshot = await firestore.collection('upload_logs')
-                        .orderBy('uploadTime', 'desc')
-                        .limit(1)
-                        .get();
-                    if (!uploadSnapshot.empty) {
-                        uploadTime = uploadSnapshot.docs[0].data().uploadTime?.toDate?.().getTime() || Date.now();
-                    }
-                } catch (e) {}
-
-                await saveCache("sales", { data, uploadTime });
-                console.log('💾 Full sales data saved to IndexedDB, records:', data.length);
-
-                originalData = data;
-                salesData = [...data];
-                setupPeriodsFromData(data);
-                renderDashboard();
-                afterDataLoaded();
-                updateSyncStatus('synced', 'Connected');
-            } catch (err) {
-                console.error('Error in full reload:', err);
-                throw err;
-            }
-        }
-
-        // ============================================================
-        // LOAD BUDGET FROM FIRESTORE
-        // ============================================================
-        async function loadBudgetFromFirestore() {
-            if (!isFirebaseReady) return;
-            
-            try {
-                console.log('📥 Loading budget from Firestore...');
-                const snapshot = await firestore.collection(BUDGET_COLLECTION)
-                    .orderBy('date', 'desc')
-                    .get();
-
-                budgetData = [];
-                snapshot.forEach(doc => {
-                    budgetData.push(doc.data());
-                });
-
-                let uploadTime = Date.now();
-                try {
-                    const budgetLogSnapshot = await firestore.collection('budget_logs')
-                        .orderBy('uploadTime', 'desc')
-                        .limit(1)
-                        .get();
-                    
-                    if (!budgetLogSnapshot.empty) {
-                        uploadTime = budgetLogSnapshot.docs[0].data().uploadTime?.toDate?.().getTime() || Date.now();
-                    }
-                } catch (err) {}
-
-                await saveCache("budget", { data: budgetData, uploadTime });
-                console.log('💾 Budget data saved to IndexedDB, records:', budgetData.length);
-                
-                if (originalData.length > 0) {
-                    renderDashboard();
-                }
-            } catch (err) {
-                console.error('❌ Error loading budget from Firestore:', err);
             }
         }
 
@@ -1717,7 +1837,6 @@
                     mtdAchievement = mtdBudget > 0 ? (mtdSales / mtdBudget) * 100 : 0;
                 }
                 
-                // Achievement: Sales vs FULL MONTH Budget (dengan filter department)
                 let fullMonthBudget = budgetData.filter(d => d.period === currentPeriod);
                 if (deptFilter !== 'ALL') {
                     fullMonthBudget = fullMonthBudget.filter(d => d.department === deptFilter);
@@ -2179,11 +2298,13 @@
                 const totalQty = data.reduce((s, d) => s + (d.qty || 0), 0);
                 const uniqueSku = new Set(data.map(d => d.sku || d.itemName)).size;
                 const uniqueDates = [...new Set(data.map(d => d.date))];
+                const uploadedPeriods = [...new Set(data.map(d => d.period))];
 
+                // Tulis upload_logs
                 await firestore.collection('upload_logs').add({
                     filename: filename,
                     uploadTime: firebase.firestore.FieldValue.serverTimestamp(),
-                    period: uniqueDates.map(d => d.substring(0, 7)),
+                    period: uploadedPeriods,
                     recordCount: data.length,
                     dates: uniqueDates,
                     departments: [...new Set(data.map(d => d.department))],
@@ -2194,24 +2315,26 @@
                     status: "SUCCESS"
                 });
 
-                progressFill.style.width = '95%';
-                progressText.textContent = '95%';
-                uploadStatus.textContent = '📊 Update Tampilan...';
-
-                showToast(`✅ ${data.length} data sales berhasil diupload!`, 'success');
-
+                // ✅ Update sync_info (SETELAH upload sukses)
                 const existingData = originalData.length > 0 ? originalData : [];
-                originalData = mergeSalesData(existingData, data);
-                salesData = [...originalData];
+                const mergedData = mergeSalesData(existingData, data);
+                
+                await updateSalesSyncInfo(uploadedPeriods, mergedData.length);
 
+                // Update memori & cache
+                originalData = mergedData;
+                salesData = [...originalData];
                 setupPeriodsFromData(originalData);
 
                 const now = new Date();
+                const salesCache = await getCache("sales");
                 await saveCache("sales", {
                     data: originalData,
+                    version: salesCache ? (salesCache.version || 1) : 1,
                     uploadTime: now.getTime()
                 });
 
+                // Update UI
                 document.getElementById('uploadHistory').style.display = 'block';
                 document.getElementById('historyContent').innerHTML = `
                     <div class="history-item">
@@ -2478,11 +2601,12 @@
 
                 const totalBudget = data.reduce((s, d) => s + (d.budget || 0), 0);
                 const uniqueDates = [...new Set(data.map(d => d.date))];
+                const uploadedPeriods = [...new Set(data.map(d => d.period))];
 
                 await firestore.collection('budget_logs').add({
                     filename: filename,
                     uploadTime: firebase.firestore.FieldValue.serverTimestamp(),
-                    period: [...new Set(data.map(d => d.period))],
+                    period: uploadedPeriods,
                     recordCount: data.length,
                     dates: uniqueDates,
                     departments: [...new Set(data.map(d => d.department))],
@@ -2491,18 +2615,17 @@
                     status: "SUCCESS"
                 });
 
-                progressFill.style.width = '95%';
-                progressText.textContent = '95%';
-                uploadStatus.textContent = '📊 Update Tampilan...';
-
-                showToast(`✅ ${data.length} data budget berhasil diupload!`, 'success');
-
+                // ✅ Update sync_info/budget
                 const existingBudget = budgetData.length > 0 ? budgetData : [];
                 budgetData = mergeBudgetData(existingBudget, data);
+                
+                await updateBudgetSyncInfo(uploadedPeriods, budgetData.length);
 
                 const now = new Date();
+                const budgetCache = await getCache("budget");
                 await saveCache("budget", {
                     data: budgetData,
+                    version: budgetCache ? (budgetCache.version || 1) : 1,
                     uploadTime: now.getTime()
                 });
 
