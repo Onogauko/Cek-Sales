@@ -992,7 +992,7 @@
         const COLLECTION = "sales";
         const BUDGET_COLLECTION = "budget";
         const VALID_DEPARTMENTS = ["2039", "2040", "5214"];
-        const CACHE_VERSION = "sales_cache_v6";
+        const CACHE_VERSION = "sales_cache_v7";
         const DB_NAME = "SalesAnalyzerDB";
         const DB_VERSION = 1;
         const STORE_NAME = "cache";
@@ -1229,7 +1229,6 @@
                 const hasSalesCache = await loadDataFromCache();
                 const hasBudgetCache = await loadBudgetFromCache();
                 
-                // ✅ Render setelah kedua cache load
                 if (hasSalesCache || hasBudgetCache) {
                     renderDashboard();
                     await checkAllUpdates();
@@ -1551,7 +1550,6 @@
                 await saveCache("budget", { data: budgetData, uploadTime });
                 console.log('💾 Budget data saved to IndexedDB, records:', budgetData.length);
                 
-                // Render ulang setelah budget load
                 if (originalData.length > 0) {
                     renderDashboard();
                 }
@@ -1695,6 +1693,7 @@
             let mtdBudget = 0;
             let mtdSales = 0;
             let mtdAchievement = 0;
+            let achievement = 0;
             
             if (filteredBudget.length > 0) {
                 totalBudget = filteredBudget.reduce((sum, x) => sum + (x.budget || 0), 0);
@@ -1705,6 +1704,7 @@
                 if (lastSalesDate) {
                     const firstDayOfMonth = lastSalesDate.substring(0, 8) + '01';
                     
+                    // MTD: Budget 1 s/d tanggal sales terakhir
                     mtdBudget = filteredBudget
                         .filter(d => d.date >= firstDayOfMonth && d.date <= lastSalesDate)
                         .reduce((sum, x) => sum + (x.budget || 0), 0);
@@ -1715,9 +1715,14 @@
                     
                     mtdAchievement = mtdBudget > 0 ? (mtdSales / mtdBudget) * 100 : 0;
                 }
+                
+                // Achievement: Sales vs FULL MONTH Budget (tidak difilter tanggal)
+                const fullMonthBudget = budgetData
+                    .filter(d => d.period === currentPeriod)
+                    .reduce((sum, x) => sum + (x.budget || 0), 0);
+                
+                achievement = fullMonthBudget > 0 ? (totalSales / fullMonthBudget) * 100 : 0;
             }
-            
-            const achievement = totalBudget > 0 ? (totalSales / totalBudget) * 100 : 0;
 
             document.getElementById('totalBudget').textContent = formatRupiah(totalBudget);
             document.getElementById('totalSales').textContent = formatRupiah(totalSales);
